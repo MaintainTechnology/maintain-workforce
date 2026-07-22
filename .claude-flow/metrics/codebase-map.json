@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-07-17T17:39:27.188Z",
+  "projectRoot": "C:\\Users\\dalig\\Desktop\\MaintainTech\\MaintainOrg\\maintain-workforce",
+  "structure": {
+    "hasPackageJson": false,
+    "hasTsConfig": false,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1784309967188
+}
