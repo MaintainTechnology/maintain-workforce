@@ -1,0 +1,149 @@
+- generic [active] [ref=f26e1]:
+  - banner [ref=f26e2]:
+    - generic [ref=f26e3]:
+      - link "Maintain Workforce home" [ref=f26e4] [cursor=pointer]:
+        - /url: /
+        - img "Maintain Workforce" [ref=f26e5]
+      - navigation [ref=f26e6]:
+        - link "About" [ref=f26e7] [cursor=pointer]:
+          - /url: /about
+        - link "Capabilities" [ref=f26e8] [cursor=pointer]:
+          - /url: /capabilities
+        - link "Testimonials" [ref=f26e9] [cursor=pointer]:
+          - /url: /testimonials
+      - generic [ref=f26e10]:
+        - link "Hire a crew" [ref=f26e11] [cursor=pointer]:
+          - /url: /contact
+        - link "Join the crew" [ref=f26e12] [cursor=pointer]:
+          - /url: /apply
+  - main [ref=f26e13]:
+    - generic [ref=f26e16]:
+      - heading "The crew you’d want to be on." [level=1] [ref=f26e17]
+      - paragraph [ref=f26e18]: Directly employed technicians, kitted and briefed before they travel. Join us on the tools, or put a crew on site.
+      - generic [ref=f26e19]:
+        - link "Join the crew" [ref=f26e20] [cursor=pointer]:
+          - /url: /apply
+        - link "Hire a crew" [ref=f26e23] [cursor=pointer]:
+          - /url: /contact
+    - list [ref=f26e27]:
+      - listitem [ref=f26e28]: Vetted and insured crews
+      - listitem [ref=f26e31]: Documented on every job
+      - listitem [ref=f26e34]: One point of contact
+      - listitem [ref=f26e37]: Compliance built into the record
+    - generic [ref=f26e40]:
+      - generic [ref=f26e41]:
+        - heading "Two halves of the same job." [level=2] [ref=f26e42]
+        - paragraph [ref=f26e43]: Most suppliers sell you one or the other. Labour with no visibility, or software that still leaves you finding the labour.
+      - generic [ref=f26e44]:
+        - generic [ref=f26e46]:
+          - heading "The crews" [level=3] [ref=f26e49]
+          - paragraph [ref=f26e50]: Directly employed technicians, matched to the trade the job needs.
+          - list [ref=f26e51]:
+            - listitem [ref=f26e52]: Vetted, insured and inducted before first attendance
+            - listitem [ref=f26e55]: Briefed on the site history before they travel
+            - listitem [ref=f26e58]: The same faces back on the sites they know
+        - generic [ref=f26e62]:
+          - heading "The platform" [level=3] [ref=f26e65]
+          - paragraph [ref=f26e66]: Scheduling, dispatch and proof capture in one record you can both see.
+          - list [ref=f26e67]:
+            - listitem [ref=f26e68]: Planned and reactive work on one schedule
+            - listitem [ref=f26e71]: Status updated from site, as the work happens
+            - listitem [ref=f26e74]: Exports that survive an audit
+    - generic [ref=f26e78]:
+      - heading "From request to signed off." [level=2] [ref=f26e80]
+      - generic [ref=f26e81]:
+        - generic [ref=f26e83]:
+          - heading "Scope" [level=3] [ref=f26e84]
+          - paragraph [ref=f26e85]: You raise the job, or we pick it up from a planned schedule. Trade, access and priority are settled before anyone is dispatched.
+        - generic [ref=f26e87]:
+          - heading "Dispatch" [level=3] [ref=f26e88]
+          - paragraph [ref=f26e89]: The job routes to the crew with the right trade and the shortest run to your site. You get a name and a window, not a queue position.
+        - generic [ref=f26e91]:
+          - heading "Prove" [level=3] [ref=f26e92]
+          - paragraph [ref=f26e93]: Photos, parts, time on site and sign-off attach to the job record. The audit trail is written as the work happens, not reconstructed later.
+    - generic [ref=f26e94]:
+      - heading "Every job leaves a record." [level=2] [ref=f26e96]
+      - generic [ref=f26e97]:
+        - generic [ref=f26e100]:
+          - heading "Job states" [level=3] [ref=f26e101]
+          - paragraph [ref=f26e102]: Colour never carries the label, so nothing on the board competes with the brand accent.
+          - list [ref=f26e103]:
+            - listitem [ref=f26e104]:
+              - generic [ref=f26e105]: Active
+            - listitem [ref=f26e107]:
+              - generic [ref=f26e108]: Scheduled
+            - listitem [ref=f26e110]:
+              - generic [ref=f26e111]: Pending
+            - listitem [ref=f26e113]:
+              - generic [ref=f26e114]: Overdue
+            - listitem [ref=f26e116]:
+              - generic [ref=f26e117]: Critical
+        - paragraph [ref=f26e122]: One record, from raised to signed off.
+    - generic [ref=f26e124]:
+      - generic [ref=f26e125]:
+        - heading "The trades we cover." [level=2] [ref=f26e126]
+        - paragraph [ref=f26e127]:
+          - text: If a job crosses two of these, it is still one visit and one record.
+          - link "See how we run the work" [ref=f26e128] [cursor=pointer]:
+            - /url: /capabilities
+          - text: .
+      - generic [ref=f26e129]:
+        - generic [ref=f26e130]:
+          - heading "Mechanical" [level=3] [ref=f26e131]
+          - list [ref=f26e132]:
+            - listitem [ref=f26e133]: HVAC and chillers
+            - listitem [ref=f26e134]: Plumbing
+            - listitem [ref=f26e135]: Boilers
+            - listitem [ref=f26e136]: Pumps
+            - listitem [ref=f26e137]: Ventilation
+        - generic [ref=f26e138]:
+          - heading "Electrical" [level=3] [ref=f26e139]
+          - list [ref=f26e140]:
+            - listitem [ref=f26e141]: Lighting
+            - listitem [ref=f26e142]: Distribution boards
+            - listitem [ref=f26e143]: Fixed wire testing
+            - listitem [ref=f26e144]: Emergency systems
+            - listitem [ref=f26e145]: EV charging
+        - generic [ref=f26e146]:
+          - heading "Fabric" [level=3] [ref=f26e147]
+          - list [ref=f26e148]:
+            - listitem [ref=f26e149]: Roofing
+            - listitem [ref=f26e150]: Doors and shutters
+            - listitem [ref=f26e151]: Flooring
+            - listitem [ref=f26e152]: Glazing
+            - listitem [ref=f26e153]: Decorating
+    - figure "[Client name], [role], [company]" [ref=f26e156]:
+      - blockquote [ref=f26e159]: “They turned up in the window they gave us, and the paperwork was already done by the time they left site.”
+      - link "More from the crew and our clients" [ref=f26e161] [cursor=pointer]:
+        - /url: /testimonials
+    - generic [ref=f26e167]:
+      - heading "Join the crew, or put one on your site." [level=2] [ref=f26e168]
+      - paragraph [ref=f26e169]: Applications take a few minutes on a phone. Enquiries come back with coverage, a named contact and a start date.
+      - generic [ref=f26e170]:
+        - link "Join the crew" [ref=f26e171] [cursor=pointer]:
+          - /url: /apply
+        - link "Hire a crew" [ref=f26e174] [cursor=pointer]:
+          - /url: /contact
+  - contentinfo [ref=f26e175]:
+    - generic [ref=f26e176]:
+      - generic [ref=f26e177]:
+        - img "Maintain Workforce" [ref=f26e178]
+        - paragraph [ref=f26e179]: Skilled crews, scheduled and accountable.
+      - navigation "Footer" [ref=f26e180]:
+        - link "About" [ref=f26e181] [cursor=pointer]:
+          - /url: /about
+        - link "Capabilities" [ref=f26e182] [cursor=pointer]:
+          - /url: /capabilities
+        - link "Testimonials" [ref=f26e183] [cursor=pointer]:
+          - /url: /testimonials
+        - link "Hire a crew" [ref=f26e184] [cursor=pointer]:
+          - /url: /contact
+        - link "Join the crew" [ref=f26e185] [cursor=pointer]:
+          - /url: /apply
+      - generic [ref=f26e186]:
+        - link "hello@maintainworkforce.com" [ref=f26e187] [cursor=pointer]:
+          - /url: mailto:hello@maintainworkforce.com
+        - link "+44 20 0000 0000" [ref=f26e190] [cursor=pointer]:
+          - /url: tel:+442000000000
+    - paragraph [ref=f26e194]: © 2026 Maintain Workforce. All rights reserved.
+  - alert [ref=f26e195]

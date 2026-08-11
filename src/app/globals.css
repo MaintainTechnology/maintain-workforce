@@ -1,0 +1,295 @@
+@import "tailwindcss";
+/* Brand source of truth — do not redefine these values, map them.
+   Also brings in the .mw-grid-bg / .mw-glow signature utilities. */
+@import "../../public/design-system/tokens.css";
+
+/* tokens.css names 'Manrope' as a bare font string; next/font (see layout.tsx)
+   serves it self-hosted under --font-manrope. Point the tokens at it. The
+   Hi-Vis Standard has one family; there is no display/body split and no mono
+   voice (DESIGN.md, Single Family Rule). */
+:root {
+  --font-display: var(--font-manrope), "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-body: var(--font-manrope), "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* Expose the design system to Tailwind's utility namespaces.
+   `inline` keeps the utilities pointing at the live custom properties, so
+   anything that re-themes a token at runtime re-themes the utilities too. */
+@theme inline {
+  /* ---- Semantic roles — build against these ---- */
+  --color-bg: var(--mw-ink-teal);
+  --color-bg-deep: var(--mw-black);
+  --color-surface: var(--mw-white);
+  --color-surface-soft: var(--mw-cloud);
+  --color-ink: var(--mw-ink);
+  --color-ink-muted: var(--mw-slate);
+  --color-primary: var(--mw-amber);
+  --color-primary-ink: var(--mw-ink-teal);
+  --color-accent: var(--mw-amber);
+  --color-on-dark: var(--mw-on-dark);
+  --color-on-dark-muted: var(--mw-on-dark-muted);
+  --color-on-dark-faint: var(--mw-on-dark-faint);
+  --color-hairline: var(--color-line);
+  --color-hairline-light: var(--color-line-light);
+
+  /* ---- Brand ramp — use only when a semantic role does not fit ---- */
+  --color-black: var(--mw-black);
+  --color-black-2: var(--mw-black-2);
+  --color-black-3: var(--mw-black-3);
+  --color-ink-teal: var(--mw-ink-teal);
+  --color-teal-deep: var(--mw-teal-deep);
+  --color-teal-mist: var(--mw-teal-mist);
+  --color-amber: var(--mw-amber);
+  --color-amber-mid: var(--mw-amber-mid);
+  --color-amber-deep: var(--mw-amber-deep);
+  --color-amber-dark: var(--mw-amber-dark);
+  --color-amber-tint-1: var(--mw-amber-tint-1);
+  --color-amber-tint-2: var(--mw-amber-tint-2);
+  --color-cloud: var(--mw-cloud);
+  --color-cream-1: var(--mw-surface-cream-1);
+  --color-cream-2: var(--mw-surface-cream-2);
+
+  /* ---- Workforce status ---- */
+  --color-status-active: var(--status-active);
+  --color-status-scheduled: var(--status-scheduled);
+  --color-status-pending: var(--status-pending);
+  --color-status-overdue: var(--status-overdue);
+  --color-status-critical: var(--status-critical);
+
+  /* ---- Type family ---- */
+  --font-display: var(--font-manrope), "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-body: var(--font-manrope), "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* ---- Type scale — mirrored from tokens.css (Tailwind cannot read :root).
+     tokens.css stays the source of truth; keep these in sync.
+     text-sm / text-xs are omitted: Tailwind's defaults already match. ---- */
+  --text-display: clamp(2.75rem, 6vw, 4.5rem);
+  --text-h1: clamp(2rem, 4vw, 3rem);
+  --text-h2: clamp(1.5rem, 3vw, 2rem);
+  --text-h3: 1.375rem;
+  --text-h4: 1.125rem;
+  --text-body-lg: 1.125rem;
+  --text-body: 1rem;
+  --text-overline: 0.6875rem;
+}
+
+/* Every other scale (space / radius / shadow / tracking / leading / motion / z)
+   is already a :root custom property from tokens.css, so reach it inline:
+     rounded-(--radius-lg)  shadow-(--shadow-md)  tracking-(--tracking-caps)
+     p-(--space-7)          leading-(--leading-display)  ease-(--ease-out)   */
+
+/* Page theme lock: the brand is a dark-surface brand (tokens.css builds the
+   whole system on Ink Teal), so the page is dark end to end. Locking it here
+   means no section can flip to a light theme mid-scroll. */
+body {
+  background: var(--color-bg);
+  color: var(--mw-on-dark);
+  font-family: var(--font-body);
+  line-height: var(--leading-body);
+}
+
+/* .mw-grid-bg and .mw-glow both set background-image, so stacking the two
+   classes silently drops the grid (same specificity, .mw-glow wins). Compose
+   them once here so every co-occurrence renders both layers. */
+.mw-grid-bg.mw-glow {
+  background-image:
+    radial-gradient(60% 60% at 70% 18%, rgba(255, 196, 0, 0.16), transparent 70%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: auto, var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+}
+
+/* The header is sticky at 68px, so an in-page anchor would drop the section
+   heading underneath it. Clear the header plus a little breathing room. */
+section[id] {
+  scroll-margin-top: 84px;
+}
+
+/* DESIGN.md Balance Rule: headings this large produce ugly orphans without
+   balancing; long prose gets pretty-wrapping. */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* Base style for sprite icons, per design-system/README.md */
+.icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ==========================================================================
+   Motion primitives. One vocabulary, the brand curve (--ease-out), everything
+   below 300ms except the one-shot image reveal. CSS keyframes run off the
+   main thread, so first paint stays smooth while the page hydrates, and the
+   global prefers-reduced-motion block in tokens.css collapses all of it to
+   an instant settle.
+   ========================================================================== */
+
+/* Centred amber breath for a section that carries an emotional beat (quote,
+   coverage, closing FAQ). One definition; the alpha budget (0.06-0.08) lives
+   here and nowhere else. */
+.mw-glow-band {
+  background-image: radial-gradient(
+    50% 60% at 50% 30%,
+    rgba(255, 196, 0, 0.07),
+    transparent 70%
+  );
+}
+
+/* Entrance for hero content. Stagger via --enter-step (90ms per step). */
+@keyframes mw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.mw-enter {
+  animation: mw-rise 500ms var(--ease-out) both;
+  animation-delay: calc(var(--enter-step, 0) * 90ms);
+}
+
+/* Section reveal, scroll-driven. Reuses mw-rise so the page has ONE entrance
+   vocabulary rather than two that nearly match.
+
+   The element is VISIBLE by default and the animation only attaches where the
+   browser supports a view() timeline. That inversion is the whole point. The
+   previous JS reveal put opacity:0 in the SSR HTML and waited on an
+   IntersectionObserver, so content was lost whenever the observer never fired:
+   measured at 5 of 8 home sections permanently blank after a jump to the
+   bottom, and 17 of 17 blank with JavaScript off.
+
+   A view() timeline is driven by scroll POSITION, not by an event, so an
+   element that has been scrolled past sits at its end state by definition.
+   Jumping, refreshing mid-page and back-navigation cannot strand it.
+
+   The media query is load-bearing, not belt-and-braces: the global
+   prefers-reduced-motion block in tokens.css shortens animation-duration, and
+   a scroll-driven animation has no duration for that to shorten. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .mw-reveal {
+      animation: mw-rise linear both;
+      animation-timeline: view();
+      animation-range: entry calc(4% + var(--reveal-shift, 0%)) entry
+        calc(62% + var(--reveal-shift, 0%));
+    }
+  }
+}
+
+/* Image reveal: unclips upward while easing off a slight zoom. Same
+   visible-by-default contract as .mw-reveal, for the same measured reason. The
+   Motion version shipped opacity:0 plus a full clip-path inset in the SSR HTML,
+   so any image that was scrolled past, or any reader without JS, got a
+   permanently blank slot where a photograph should be. */
+@keyframes mw-unclip {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0% 0);
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .mw-reveal-image {
+      animation: mw-unclip linear both;
+      animation-timeline: view();
+      animation-range: entry 6% entry 72%;
+    }
+  }
+}
+
+/* Mobile menu panel: scales in from its trigger (top right), never from
+   nothing, never from center. */
+@keyframes mw-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+details[open] .mw-menu-panel {
+  transform-origin: top right;
+  animation: mw-menu-in 180ms var(--ease-out) both;
+}
+
+/* Pending-state crossfade for submit button labels: blur bridges the two
+   states so the swap reads as one object changing, not two swapping. */
+.mw-swap {
+  transition: filter var(--dur-base) ease, opacity var(--dur-base) ease;
+}
+.mw-swap-out {
+  filter: blur(2px);
+  opacity: 0.7;
+}
+
+/* Trailing-icon nudge on CTAs: the arrow leans the way the action goes.
+   :last-child scopes it to trailing arrows, so a leading mail icon stays put.
+   Hover-capable pointers only; touch gets the press scale instead. */
+@media (hover: hover) and (pointer: fine) {
+  .mw-cta .icon:last-child {
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+  .mw-cta:hover .icon:last-child,
+  .mw-cta:focus-visible .icon:last-child {
+    transform: translateX(3px);
+  }
+}
+
+/* One-shot settle for the home hero photograph: eases off a slight zoom while
+   the entrance stagger runs, so the largest image on the site arrives instead
+   of popping. Marketing tier (can exceed 300ms), CSS so it stays off the main
+   thread during hydration; the global reduced-motion block collapses it to
+   its end state. */
+@keyframes mw-settle {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.mw-hero-image {
+  animation: mw-settle 1400ms var(--ease-out) both;
+}
+
+/* Live pulse for the Active status dot in the job-state illustrations. The
+   ring inherits the dot's colour; the label still carries the meaning. */
+@keyframes mw-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.mw-dot-live {
+  position: relative;
+}
+.mw-dot-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: inherit;
+  animation: mw-ping 2400ms var(--ease-out) infinite;
+}

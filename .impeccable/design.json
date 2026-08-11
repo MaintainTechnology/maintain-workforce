@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-04T06:04:55.965Z",
+  "title": "Design System: Maintain Workforce",
+  "extensions": {
+    "colorMeta": {
+      "ink-teal": {
+        "role": "neutral",
+        "displayName": "Ink Teal",
+        "canonical": "oklch(25.3% 0.038 212.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.038 212.5)",
+          "oklch(26.0% 0.038 212.5)",
+          "oklch(37.0% 0.038 212.5)",
+          "oklch(48.0% 0.038 212.5)",
+          "oklch(59.0% 0.038 212.5)",
+          "oklch(70.0% 0.038 212.5)",
+          "oklch(83.0% 0.038 212.5)",
+          "oklch(95.0% 0.038 212.5)"
+        ]
+      },
+      "hi-vis-amber": {
+        "role": "primary",
+        "displayName": "Hi-Vis Amber",
+        "canonical": "oklch(85.0% 0.174 86.6)",
+        "tonalRamp": [
+          "oklch(15.0% 0.174 86.6)",
+          "oklch(26.0% 0.174 86.6)",
+          "oklch(37.0% 0.174 86.6)",
+          "oklch(48.0% 0.174 86.6)",
+          "oklch(59.0% 0.174 86.6)",
+          "oklch(70.0% 0.174 86.6)",
+          "oklch(83.0% 0.174 86.6)",
+          "oklch(95.0% 0.174 86.6)"
+        ]
+      },
+      "teal-mist": {
+        "role": "secondary",
+        "displayName": "Teal Mist",
+        "canonical": "oklch(67.2% 0.063 209.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.063 209.3)",
+          "oklch(26.0% 0.063 209.3)",
+          "oklch(37.0% 0.063 209.3)",
+          "oklch(48.0% 0.063 209.3)",
+          "oklch(59.0% 0.063 209.3)",
+          "oklch(70.0% 0.063 209.3)",
+          "oklch(83.0% 0.063 209.3)",
+          "oklch(95.0% 0.063 209.3)"
+        ]
+      },
+      "black": {
+        "role": "neutral",
+        "displayName": "Near Black",
+        "canonical": "oklch(20.5% 0.020 248.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.020 248.8)",
+          "oklch(26.0% 0.020 248.8)",
+          "oklch(37.0% 0.020 248.8)",
+          "oklch(48.0% 0.020 248.8)",
+          "oklch(59.0% 0.020 248.8)",
+          "oklch(70.0% 0.020 248.8)",
+          "oklch(83.0% 0.020 248.8)",
+          "oklch(95.0% 0.020 248.8)"
+        ]
+      },
+      "cloud": {
+        "role": "neutral",
+        "displayName": "Cloud",
+        "canonical": "oklch(96.9% 0.005 106.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.005 106.5)",
+          "oklch(26.0% 0.005 106.5)",
+          "oklch(37.0% 0.005 106.5)",
+          "oklch(48.0% 0.005 106.5)",
+          "oklch(59.0% 0.005 106.5)",
+          "oklch(70.0% 0.005 106.5)",
+          "oklch(83.0% 0.005 106.5)",
+          "oklch(95.0% 0.005 106.5)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(28.4% 0.019 185.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 185.3)",
+          "oklch(26.0% 0.019 185.3)",
+          "oklch(37.0% 0.019 185.3)",
+          "oklch(48.0% 0.019 185.3)",
+          "oklch(59.0% 0.019 185.3)",
+          "oklch(70.0% 0.019 185.3)",
+          "oklch(83.0% 0.019 185.3)",
+          "oklch(95.0% 0.019 185.3)"
+        ]
+      },
+      "slate": {
+        "role": "neutral",
+        "displayName": "Slate",
+        "canonical": "oklch(55.4% 0.041 257.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.041 257.4)",
+          "oklch(26.0% 0.041 257.4)",
+          "oklch(37.0% 0.041 257.4)",
+          "oklch(48.0% 0.041 257.4)",
+          "oklch(59.0% 0.041 257.4)",
+          "oklch(70.0% 0.041 257.4)",
+          "oklch(83.0% 0.041 257.4)",
+          "oklch(95.0% 0.041 257.4)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headline. One per page. Clamp max 4.5rem, deliberately under the shouting threshold."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings. The workhorse level; most h2 elements use it."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sub-section and panel headings."
+      },
+      "body-lg": {
+        "displayName": "Body Large",
+        "purpose": "Section intros and lead paragraphs. Capped at 58-60ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "List items and standard copy. Cap at 65-75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase status labels only. 0.08em tracking lifted from the wordmark's WORKFORCE line. Never a section eyebrow."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px rgba(7,39,45,.08)",
+        "purpose": "Light-surface documents and print only. Unused on the website."
+      },
+      {
+        "name": "shadow-md",
+        "value": "0 6px 20px rgba(7,39,45,.12)",
+        "purpose": "The primary amber button. The only shadow appearing in normal page flow."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 20px 50px rgba(5,31,36,.35)",
+        "purpose": "Overlaid surfaces: the mobile navigation panel. Signals 'above the page'."
+      },
+      {
+        "name": "glow-amber",
+        "value": "0 0 40px rgba(255,196,0,.25)",
+        "purpose": "Atmospheric hero glow. Never attached to a card as elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "dur-fast",
+        "value": "120ms",
+        "purpose": "Micro-feedback: icon colour shifts, small state flips."
+      },
+      {
+        "name": "dur-base",
+        "value": "200ms",
+        "purpose": "Default for hover and focus transitions on buttons, links and nav."
+      },
+      {
+        "name": "dur-slow",
+        "value": "320ms",
+        "purpose": "Larger surface transitions; disclosure panels."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "The single brand curve. CSS transitions and the JS Reveal component share it so motion feels like one system."
+      },
+      {
+        "name": "reveal",
+        "value": "opacity 0 to 1, translateY 20px to 0 over 500ms on ease-out, once, at 20% in view",
+        "purpose": "The page's only scroll motion. Gives each section a beat. Fully suppressed under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "shell-max", "value": "1400px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single highest-priority action in a viewport. Amber is rationed; if two of these appear together, one is wrong.",
+      "html": "<button class=\"ds-btn-primary\">Talk to us<svg class=\"ds-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/><polyline points=\"13,6 19,12 13,18\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: var(--space-2, 0.5rem); background: var(--mw-amber, #FFC400); color: var(--mw-ink-teal, #07272D); font-family: var(--font-body); font-weight: 700; font-size: 1rem; line-height: 1; padding: 0.75rem 2rem; min-height: 44px; border: none; border-radius: var(--radius-pill, 999px); box-shadow: var(--shadow-md, 0 6px 20px rgba(7,39,45,.12)); cursor: pointer; transition: background var(--dur-base, 200ms) var(--ease-out, cubic-bezier(0.22,1,0.36,1)), transform var(--dur-base, 200ms) var(--ease-out, cubic-bezier(0.22,1,0.36,1)); } .ds-btn-primary:hover { background: var(--mw-amber-tint-2, #FFE699); } .ds-btn-primary:focus-visible { outline: 2px solid var(--mw-amber, #FFC400); outline-offset: 3px; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary .ds-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "The secondary action. Same pill and padding as primary so the two sit on one baseline with no optical adjustment.",
+      "html": "<button class=\"ds-btn-ghost\">See coverage</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: var(--space-2, 0.5rem); background: transparent; color: var(--mw-on-dark, #FFFFFF); font-family: var(--font-body); font-weight: 700; font-size: 1rem; line-height: 1; padding: 0.75rem 2rem; min-height: 44px; border: 1px solid var(--color-line, rgba(255,255,255,0.10)); border-radius: var(--radius-pill, 999px); cursor: pointer; transition: background var(--dur-base, 200ms) var(--ease-out, cubic-bezier(0.22,1,0.36,1)); } .ds-btn-ghost:hover { background: rgba(255,255,255,0.05); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--mw-amber, #FFC400); outline-offset: 3px; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "The standard content container. Flat at rest: a hairline border and a tonal step do the work a shadow usually would.",
+      "html": "<div class=\"ds-panel\"><svg class=\"ds-panel-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 12l2 2 4-4\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/></svg><h3 class=\"ds-panel-title\">The crews</h3><p class=\"ds-panel-body\">Directly employed technicians, matched to the trade the job needs.</p></div>",
+      "css": ".ds-panel { background: var(--mw-black-2, #0C1319); border: 1px solid var(--color-line, rgba(255,255,255,0.10)); border-radius: var(--radius-lg, 16px); padding: 2rem; font-family: var(--font-body); } .ds-panel-icon { width: 32px; height: 32px; fill: none; stroke: var(--mw-amber, #FFC400); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-panel-title { margin: 1.5rem 0 0; font-weight: 700; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -0.01em; color: var(--mw-on-dark, #FFFFFF); } .ds-panel-body { margin: 0.75rem 0 0; font-size: 1.125rem; line-height: 1.6; color: var(--mw-on-dark-muted, rgba(255,255,255,0.70)); max-width: 58ch; }"
+    },
+    {
+      "name": "Status Dot",
+      "kind": "chip",
+      "refersTo": "status-dot",
+      "description": "A job state. The dot is decorative and aria-hidden; the written label is the accessible name. Never ships alone.",
+      "html": "<ul class=\"ds-status-list\"><li class=\"ds-status\"><span class=\"ds-status-dot ds-status-active\" aria-hidden=\"true\"></span>Active</li><li class=\"ds-status\"><span class=\"ds-status-dot ds-status-overdue\" aria-hidden=\"true\"></span>Overdue</li><li class=\"ds-status\"><span class=\"ds-status-dot ds-status-critical\" aria-hidden=\"true\"></span>Critical</li></ul>",
+      "css": ".ds-status-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; font-family: var(--font-body); } .ds-status { display: flex; align-items: center; gap: 0.75rem; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mw-on-dark-faint, rgba(255,255,255,0.55)); } .ds-status-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: var(--radius-pill, 999px); } .ds-status-active { background: var(--status-active, #22A05B); } .ds-status-overdue { background: var(--status-overdue, #EA580C); } .ds-status-critical { background: var(--status-critical, #DC2626); }"
+    },
+    {
+      "name": "Site Header",
+      "kind": "nav",
+      "refersTo": "site-header",
+      "description": "Sticky 68px header. Ink Teal at 85% with a backdrop blur, closed by a hairline. The blur is functional (content scrolls beneath), not decorative.",
+      "html": "<header class=\"ds-header\"><span class=\"ds-wordmark\">MAINTAIN WORKFORCE</span><nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">What we do</a><a class=\"ds-nav-link\" href=\"#\">How it works</a><a class=\"ds-nav-link\" href=\"#\">Coverage</a></nav></header>",
+      "css": ".ds-header { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 68px; padding: 0 1.5rem; background: color-mix(in srgb, var(--mw-ink-teal, #07272D) 85%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--color-line, rgba(255,255,255,0.10)); font-family: var(--font-body); } .ds-wordmark { font-weight: 800; font-size: 0.875rem; letter-spacing: 0.08em; color: var(--mw-amber, #FFC400); } .ds-nav { display: flex; align-items: center; gap: 2rem; } .ds-nav-link { font-size: 0.875rem; font-weight: 600; text-decoration: none; color: var(--mw-on-dark-muted, rgba(255,255,255,0.70)); transition: color var(--dur-base, 200ms) var(--ease-out, cubic-bezier(0.22,1,0.36,1)); } .ds-nav-link:hover { color: var(--mw-on-dark, #FFFFFF); } .ds-nav-link:focus-visible { outline: 2px solid var(--mw-amber, #FFC400); outline-offset: 4px; border-radius: 2px; }"
+    },
+    {
+      "name": "Signature Brand Surface",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The brand's own texture: a 40px amber grid at 5% over Ink Teal, plus an off-centre amber radial. Reserved for moments that must feel like the brand rather than like a section.",
+      "html": "<div class=\"ds-brand-surface\"><h2 class=\"ds-brand-heading\">Maintenance, staffed and managed.</h2></div>",
+      "css": ".ds-brand-surface { display: flex; align-items: flex-end; min-height: 220px; padding: 2rem; border-radius: var(--radius-lg, 16px); background-color: var(--mw-ink-teal, #07272D); background-image: radial-gradient(60% 60% at 70% 18%, rgba(255,196,0,.16), transparent 70%), linear-gradient(var(--grid-line, rgba(255,196,0,0.05)) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line, rgba(255,196,0,0.05)) 1px, transparent 1px); background-size: auto, var(--grid-size, 40px) var(--grid-size, 40px), var(--grid-size, 40px) var(--grid-size, 40px); } .ds-brand-heading { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; text-wrap: balance; color: var(--mw-on-dark, #FFFFFF); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Hi-Vis Standard",
+    "overview": "This system borrows its logic from safety-wear, not from web design. On a working site, one colour is reserved for the thing that must be seen, and everything else deliberately recedes so that reservation still means something at the end of a long shift. Hi-Vis Amber is that colour here. Ink Teal is everything else: the ground, the panels, the bands, the dark you read against. The discipline is not 'use amber sparingly for taste' - it is that amber marks the next action, and if two ambers compete in one viewport, one of them is a bug.\n\nThe surface is dark end to end, and that is a locked decision rather than a mood. The brand mark is an Ink Teal wordmark with amber chevrons; the tokens are built on dark surfaces shared across the Maintain group. A section that flips to a light theme mid-scroll breaks the family resemblance, so it does not happen. Depth is carried by 1px hairlines at 10% white and by tonal steps between Ink Teal, near-black and panel-black - not by shadow. Shadow is reserved for things that are genuinely lifted off the page.\n\nWhat this system explicitly rejects: editorial-magazine styling - display-serif italic headlines, ruled multi-column grids, tracked lowercase metadata, and layouts where typography carries the entire visual weight. This brand has hi-vis and real crews in it; it is not a type specimen. Manrope carries every level, and contrast comes from weight and size, never from a borrowed second family.",
+    "keyCharacteristics": [
+      "One accent, rationed. Amber is a signal, not a decoration.",
+      "Dark-locked surface, no theme flips between sections.",
+      "Flat at rest; hairlines and tonal steps do the work shadows usually do.",
+      "One type family (Manrope), 400 through 800, doing all the talking.",
+      "Status is always a dot plus a written label, never colour alone.",
+      "Field-legible: large tap targets, high contrast, no hover-only meaning."
+    ],
+    "rules": [
+      {
+        "name": "The Hi-Vis Rule",
+        "body": "Amber marks the next action. One primary amber element per viewport. If a second one appears, demote it to a ghost button or a hairline border - do not 'balance' the composition by adding more amber.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark Lock Rule",
+        "body": "The page background is Ink Teal from header to footer. Sections change texture - grid overlay, glow, terrain photograph, near-black band - never mode. No section is permitted to introduce a light theme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dot-and-Label Rule",
+        "body": "A status is a coloured dot plus a neutral uppercase label. Colour never carries the meaning on its own. This holds for colour-blind users and it holds for the accent budget; both reasons are load-bearing.",
+        "section": "colors"
+      },
+      {
+        "name": "The Single Family Rule",
+        "body": "Manrope carries every level. Hierarchy comes from weight (800 vs 400) and size, never from importing a second family. A display serif on this brand is a costume.",
+        "section": "typography"
+      },
+      {
+        "name": "The Caps-For-Labels-Only Rule",
+        "body": "Uppercase with 0.08em tracking is reserved for short status labels and the wordmark. It is explicitly not available as a section eyebrow. Never set body copy in caps.",
+        "section": "typography"
+      },
+      {
+        "name": "The Balance Rule",
+        "body": "text-wrap: balance on h1-h3, text-wrap: pretty on long prose. Headings this large produce ugly orphans without it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest. Reach for the hairline first, the tonal step second, and a shadow only when neither can express the relationship.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Lift-Means-Action Rule",
+        "body": "A shadow means interactive or overlaid. A static informational panel never carries one.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do spend amber on the next action and nothing else. One primary amber element per viewport.",
+      "Do use Amber Deep (#8F6400) when amber must be text on a light surface. Hi-Vis Amber (#FFC400) fails contrast as text on white.",
+      "Do keep every border at 1px hairline (10% white) on all four sides.",
+      "Do express depth as hairline first, tonal step second, shadow last.",
+      "Do pair every status colour with a written uppercase label.",
+      "Do hold body copy to 65-75ch and lead paragraphs to ~58ch.",
+      "Do give every animation a prefers-reduced-motion alternative. tokens.css ships the global block; component motion must honour it too.",
+      "Do keep tap targets at 44x44px or larger, and keep all meaning available without hover.",
+      "Do reach for the platform first - <details> for disclosure, <dialog> for modals - before adding a client component."
+    ],
+    "donts": [
+      "Don't use editorial-magazine styling: no display-serif italic headlines, no ruled multi-column grids, no tracked lowercase metadata, no layouts where typography carries the entire visual weight. Named in PRODUCT.md as the anti-reference.",
+      "Don't build a hero-metric template - big number, small label, supporting stats row.",
+      "Don't ship identical icon/heading/text card grids repeated down the page.",
+      "Don't use gradient text (background-clip: text). One solid colour; emphasis via weight or size.",
+      "Don't use glassmorphism as decoration. The header's backdrop blur is functional (content scrolls beneath it); nothing else gets one.",
+      "Don't use a coloured side-stripe border - no border-left over 1px as an accent.",
+      "Don't put a tiny tracked uppercase eyebrow above every section. Caps are for status labels and the wordmark only.",
+      "Don't flip a section to a light theme. The page is dark from header to footer.",
+      "Don't introduce a second font family, an icon library, or a colour outside this file.",
+      "Don't attach the amber glow to a card. It is atmosphere, not elevation.",
+      "Don't let a status read by colour alone."
+    ]
+  }
+}
