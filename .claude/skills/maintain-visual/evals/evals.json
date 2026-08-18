@@ -1,0 +1,54 @@
+{
+  "skill_name": "maintain-visual",
+  "evals": [
+    {
+      "id": 0,
+      "name": "late-payment-linkedin-portrait",
+      "prompt": "Create a marketing visual for Maintain Workforce to post on LinkedIn, portrait orientation, from this content:\n\nLate payment. Construction gets paid last. 92% of construction firms carried an overdue invoice last year — CreditorWatch. The highest late-payment and default rates of any industry. Australian small business now gets paid in 24 days, the fastest on record. Construction did not get the memo. So we run the sequence the other way. A priced quote, a deposit, then the calendar. maintainworkforce.com.au — The problem is structural.",
+      "expected_output": "One 1080x1350 PNG in the Hi-Vis Standard: ink-teal ground, Manrope, the 92% stat as the amber moment with its CreditorWatch attribution, verbatim copy, wordmark, footer with URL.",
+      "files": [],
+      "assertions": [
+        "A PNG deliverable exists at exactly 1080x1350 (LinkedIn portrait 4:5)",
+        "The '92%' stat appears verbatim and its CreditorWatch attribution is present on the visual",
+        "The URL maintainworkforce.com.au appears verbatim on the visual",
+        "Typography is a single sans family (Manrope) — no monospace or serif anywhere on the visual",
+        "The canvas ground is the dark brand teal (#07272D family), not a light/white design",
+        "Hi-vis amber #FFC400 is used, rationed to one dominant amber moment (plus at most a small kicker/label)",
+        "All rendered text is crisp and legible with no AI-mangled or misspelled words"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "register-instagram-pair",
+      "prompt": "We're pushing company registration this month. Make an Instagram feed post (square) AND an Instagram story from this content:\n\nYour company on the exchange. Maintain Workforce matches construction companies with verified capacity — ABN checked, licences sighted, insurance current. List your crews' trades and availability. ROOF · PLUMB · CARP · ELEC. Registration is free. maintainworkforce.com.au/register",
+      "expected_output": "Two PNGs — 1080x1080 square and 1080x1920 story — recomposed per canvas (story carries less copy, respects top/bottom safe areas), trade codes in Label style, one amber moment each.",
+      "files": [],
+      "assertions": [
+        "Two PNG deliverables exist: one at exactly 1080x1080 (square) and one at exactly 1080x1920 (story)",
+        "The story keeps its content out of the top and bottom ~250px (platform UI safe areas)",
+        "The story is a recomposition (less copy, resized type), not a stretched or cropped version of the square",
+        "The trade codes ROOF, PLUMB, CARP, ELEC appear in uppercase label treatment",
+        "The URL maintainworkforce.com.au/register appears verbatim on both visuals",
+        "Both canvases are dark brand teal with Manrope-style single sans typography — no monospace or serif",
+        "Hi-vis amber is rationed to one dominant moment per canvas",
+        "All rendered text is crisp and legible with no AI-mangled or misspelled words"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "verification-facebook-landscape",
+      "prompt": "Need a landscape banner for Facebook link posts. Content:\n\nEvery crew verified before they appear on the exchange. ABN checked. Licences sighted. Insurance current. No exceptions. Maintain Workforce — Australia's construction workforce exchange. maintainworkforce.com.au",
+      "expected_output": "One 1200x630 PNG, landscape composition (e.g. split type/photo), no invented stats, verification claims verbatim, dark ground with amber rationed to one moment.",
+      "files": [],
+      "assertions": [
+        "A PNG deliverable exists at exactly 1200x630 (Facebook link landscape)",
+        "The three verification claims (ABN checked / Licences sighted / Insurance current) appear verbatim",
+        "No invented statistics: the visual contains no numbers or claims that are absent from the source content",
+        "The canvas ground is the dark brand teal with single sans (Manrope-style) typography — no monospace or serif",
+        "Hi-vis amber is rationed to one dominant moment",
+        "The composition works in landscape (e.g. split type/photo or full-bleed with scrim), not a portrait layout squeezed sideways",
+        "All rendered text is crisp and legible with no AI-mangled or misspelled words"
+      ]
+    }
+  ]
+}

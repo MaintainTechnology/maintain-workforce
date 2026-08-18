@@ -149,3 +149,6 @@ next-env.d.ts
 
 # Local tooling state
 .claude-flow/
+
+# maintain-visual skill eval workspace (throwaway test artifacts)
+.claude/skills/maintain-visual-workspace/

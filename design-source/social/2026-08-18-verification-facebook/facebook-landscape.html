@@ -1,0 +1,92 @@
+<!doctype html>
+<!--
+  maintain-visual canvas — Facebook link/ad landscape 1200x630.
+  Verification standard post. Master file; screenshot with
+  npx playwright screenshot --viewport-size=1200,630
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>maintain-visual canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=block" rel="stylesheet">
+<style>
+  :root{
+    /* Brand core — from public/design-system/tokens.css */
+    --mw-ink-teal:#07272D; --mw-teal-deep:#051F24; --mw-teal-mist:#66A1AB;
+    --mw-amber:#FFC400; --mw-amber-mid:#C79600; --mw-amber-deep:#8F6400;
+    --mw-amber-tint-1:#FFF4CC; --mw-amber-tint-2:#FFE699;
+    --mw-black:#101820; --mw-black-2:#0C1319; --mw-black-3:#1A2330;
+    --mw-cloud:#F5F5F1; --mw-white:#FFFFFF;
+    --on-dark:#FFFFFF; --on-dark-muted:rgba(255,255,255,.70); --on-dark-faint:rgba(255,255,255,.55);
+    --hairline:rgba(255,255,255,.10);
+    --font:'Manrope','Segoe UI',system-ui,sans-serif;
+    --tracking-display:-0.02em; --tracking-caps:0.08em;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-pill:999px;
+    --grid-line:rgba(255,196,0,0.05); --grid-size:40px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--mw-ink-teal)}
+  body{font-family:var(--font);color:var(--on-dark);-webkit-font-smoothing:antialiased}
+
+  .canvas{width:var(--w);height:var(--h);background:var(--mw-ink-teal);
+    overflow:hidden;position:relative;display:flex;flex-direction:column}
+
+  .grid-bg{background-image:
+    linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+    background-size:var(--grid-size) var(--grid-size)}
+
+  .display{font-weight:800;line-height:1.06;letter-spacing:var(--tracking-display);text-wrap:balance}
+  .body{font-weight:400;line-height:1.55;color:var(--on-dark-muted)}
+  .label{font-weight:600;font-size:.6875em;letter-spacing:var(--tracking-caps);
+    text-transform:uppercase;color:var(--on-dark-faint)}
+
+  .hairline-l{border-left:1px solid var(--hairline)}
+  .photo{object-fit:cover;width:100%;height:100%;display:block}
+  .chip{display:inline-flex;align-items:center;gap:.55em;border:1px solid var(--hairline);
+    border-radius:var(--radius-pill);padding:.55em 1.1em}
+  .tick{font-weight:800;color:var(--on-dark-muted)}
+
+  .band{background:var(--mw-amber);color:var(--mw-ink-teal);
+    display:flex;align-items:center;justify-content:space-between}
+  .band .label{color:var(--mw-ink-teal)}
+</style>
+</head>
+<body>
+<div class="canvas" style="--w:1200px; --h:630px">
+
+  <!-- Split panel: type left, photo right -->
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div class="grid-bg" style="flex:1;display:flex;flex-direction:column;padding:44px 56px 40px 64px;min-width:0">
+      <img src="wordmark-on-dark.svg" alt="Maintain Workforce" style="height:34px;align-self:flex-start">
+
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px">
+        <div class="label" style="font-size:14px;color:var(--mw-amber)">Verification</div>
+        <h1 class="display" style="font-size:47px;max-width:15ch">Every crew verified before they appear on the exchange.</h1>
+
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:4px">
+          <span class="chip"><span class="tick" style="font-size:13px">&#10003;</span><span class="label" style="font-size:13px;color:var(--on-dark)">ABN checked</span></span>
+          <span class="chip"><span class="tick" style="font-size:13px">&#10003;</span><span class="label" style="font-size:13px;color:var(--on-dark)">Licences sighted</span></span>
+          <span class="chip"><span class="tick" style="font-size:13px">&#10003;</span><span class="label" style="font-size:13px;color:var(--on-dark)">Insurance current</span></span>
+        </div>
+
+        <div class="display" style="font-size:24px">No exceptions.</div>
+      </div>
+    </div>
+
+    <div class="hairline-l" style="width:430px;flex:none">
+      <img class="photo" src="panel-1.png" alt="">
+    </div>
+
+  </div>
+
+  <footer class="band" style="padding:22px 64px;flex:none">
+    <span class="label" style="font-size:14px">maintainworkforce.com.au</span>
+    <span class="label" style="font-size:14px">Australia&rsquo;s construction workforce exchange</span>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<!-- maintain-visual master: Instagram story 1080x1920 — company registration push.
+     Recomposed for 9:16: one message, bigger type, content clear of top/bottom ~250px UI chrome. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>maintain-visual canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=block" rel="stylesheet">
+<style>
+  :root{
+    --mw-ink-teal:#07272D; --mw-teal-deep:#051F24; --mw-teal-mist:#66A1AB;
+    --mw-amber:#FFC400; --mw-amber-mid:#C79600; --mw-amber-deep:#8F6400;
+    --mw-amber-tint-1:#FFF4CC; --mw-amber-tint-2:#FFE699;
+    --mw-black:#101820; --mw-black-2:#0C1319; --mw-black-3:#1A2330;
+    --mw-cloud:#F5F5F1; --mw-white:#FFFFFF;
+    --on-dark:#FFFFFF; --on-dark-muted:rgba(255,255,255,.70); --on-dark-faint:rgba(255,255,255,.55);
+    --hairline:rgba(255,255,255,.10);
+    --font:'Manrope','Segoe UI',system-ui,sans-serif;
+    --tracking-display:-0.02em; --tracking-caps:0.08em;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-pill:999px;
+    --grid-line:rgba(255,196,0,0.05); --grid-size:40px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--mw-ink-teal)}
+  body{font-family:var(--font);color:var(--on-dark);-webkit-font-smoothing:antialiased}
+  .canvas{width:var(--w);height:var(--h);background:var(--mw-ink-teal);
+    overflow:hidden;position:relative;display:flex;flex-direction:column}
+  /* Grid + glow layered in one rule: separate .grid-bg/.glow background-image
+     declarations override each other and tile the glow at 40px (blob artifact). */
+  .grid-bg.glow{background-image:
+    radial-gradient(60% 60% at 70% 14%,rgba(255,196,0,.16),transparent 70%),
+    linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+    background-size:100% 100%,var(--grid-size) var(--grid-size),var(--grid-size) var(--grid-size);
+    background-repeat:no-repeat,repeat,repeat}
+  .display{font-weight:800;line-height:1.02;letter-spacing:var(--tracking-display);text-wrap:balance}
+  .label{font-weight:600;font-size:.6875em;letter-spacing:var(--tracking-caps);
+    text-transform:uppercase;color:var(--on-dark-faint)}
+  .hairline-t{border-top:1px solid var(--hairline)}
+  .photo{object-fit:cover;width:100%;height:100%;display:block}
+  .chip{display:inline-flex;align-items:center;gap:.5em;border:1px solid var(--hairline);
+    border-radius:var(--radius-pill);padding:.45em 1em}
+  .band{background:var(--mw-amber);color:var(--mw-ink-teal);
+    display:flex;align-items:center;justify-content:space-between}
+  .band .label{color:var(--mw-ink-teal)}
+</style>
+</head>
+<body>
+<div class="canvas grid-bg glow" style="--w:1080px; --h:1920px">
+
+  <!-- top ~250px kept clear of content (story UI chrome) -->
+  <header style="display:flex;align-items:center;padding:250px 72px 0">
+    <img src="wordmark-on-dark.svg" alt="Maintain Workforce" style="height:48px">
+  </header>
+
+  <main style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 72px;gap:40px">
+    <div class="label" style="font-size:17px;color:var(--mw-amber)">Company registration</div>
+    <h1 class="display" style="font-size:104px">Your company<br>on the exchange.</h1>
+    <div class="label" style="font-size:16px">ABN checked&ensp;&middot;&ensp;Licences sighted&ensp;&middot;&ensp;Insurance current</div>
+    <div style="display:flex;gap:16px">
+      <span class="chip label" style="font-size:17px;color:var(--on-dark)">ROOF</span>
+      <span class="chip label" style="font-size:17px;color:var(--on-dark)">PLUMB</span>
+      <span class="chip label" style="font-size:17px;color:var(--on-dark)">CARP</span>
+      <span class="chip label" style="font-size:17px;color:var(--on-dark)">ELEC</span>
+    </div>
+  </main>
+
+  <div class="band" style="padding:34px 72px">
+    <span class="label" style="font-size:16px">maintainworkforce.com.au/register</span>
+    <span class="label" style="font-size:16px">Registration is free</span>
+  </div>
+
+  <!-- decorative photo may run into the bottom unsafe zone; no copy lives here -->
+  <div style="height:560px" class="hairline-t">
+    <img class="photo" src="panel-crew-story.png" alt="" style="object-position:center 70%">
+  </div>
+
+</div>
+</body>
+</html>
