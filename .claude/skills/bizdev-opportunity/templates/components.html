@@ -1,0 +1,976 @@
+<!--
+=================================================================
+OPPORTUNITY CARD COMPONENT TEMPLATES
+=================================================================
+
+Reusable HTML components for displaying opportunities in the
+BizDev Pipeline dashboard. All components use NGM design system
+CSS variables and can be rendered independently or composed.
+
+Components:
+1. opportunity_card - Full detail view for sidebars/modals
+2. opportunity_card_compact - Pipeline board card view
+3. signal_badge - Evidence indicator with tooltip
+4. action_button - CTA buttons (proposal, email, etc.)
+
+Usage:
+These templates use Mustache-style {{variable}} placeholders.
+The dashboard.py module processes these templates with actual
+opportunity data to generate the final HTML.
+=================================================================
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Component Library - BizDev Opportunity</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* =================================================================
+           NGM DESIGN SYSTEM - CSS Variables
+           ================================================================= */
+        :root {
+            /* Backgrounds */
+            --paper: #FFFFFF;
+            --paper-alt: #F5F2EC;
+
+            /* Text */
+            --ink-900: #302C27;
+            --ink-700: #4A4540;
+            --ink-500: #706C66;
+            --ink-400: #9C9890;
+
+            /* Structural */
+            --line: #E3DFD7;
+
+            /* Accents */
+            --gold: #C49A6C;
+            --vermillion: #C07050;
+
+            /* Opportunity Type Colors */
+            --type-consulting: #C49A6C;
+            --type-membership: #4A90A4;
+            --type-report-generator: #7B68A6;
+            --type-commons: #5A8F5A;
+
+            /* Spacing */
+            --space-1: 8px;
+            --space-2: 12px;
+            --space-3: 20px;
+            --space-4: 32px;
+            --space-5: 48px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--ink-700);
+            background: var(--paper-alt);
+            padding: var(--space-4);
+        }
+
+        .component-section {
+            margin-bottom: var(--space-5);
+        }
+
+        .component-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--ink-900);
+            margin-bottom: var(--space-3);
+            padding-bottom: var(--space-2);
+            border-bottom: 2px solid var(--line);
+        }
+
+        .component-grid {
+            display: grid;
+            gap: var(--space-3);
+        }
+    </style>
+</head>
+<body>
+
+<!-- =================================================================
+     COMPONENT 1: opportunity_card (Full Detail View)
+     =================================================================
+
+     Use for: Sidebar panels, modal views, detailed opportunity pages
+     Width: 320-400px recommended
+
+     Variables:
+     - {{id}}: Unique opportunity ID
+     - {{contact_name}}: Full name
+     - {{contact_email}}: Email address
+     - {{contact_title}}: Job title
+     - {{company}}: Company name
+     - {{opportunity_type}}: consulting|membership|report_generator|commons_partnership
+     - {{opportunity_type_display}}: Human-readable type
+     - {{type_color}}: CSS color value
+     - {{confidence_score}}: 0-100
+     - {{confidence_level}}: high|medium|low
+     - {{pipeline_stage}}: Current stage
+     - {{pipeline_stage_display}}: Human-readable stage
+     - {{source}}: transcript|email
+     - {{source_id}}: Reference to source document
+     - {{discovered_at}}: ISO date
+     - {{last_activity}}: Relative date string
+     - {{days_inactive}}: Number of days
+     - {{activity_status}}: normal|stale|cold
+     - {{estimated_value}}: Formatted currency or "TBD"
+     - {{#signals}}: Array of signals
+     - {{next_action}}: Recommended action
+     ================================================================= -->
+
+<div class="component-section">
+    <h2 class="component-title">1. Opportunity Card (Full Detail)</h2>
+    <div class="component-grid">
+
+<style>
+/* opportunity_card - Full detail view */
+.opportunity-card-full {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    max-width: 400px;
+    overflow: hidden;
+}
+
+.opportunity-card-full .card-type-banner {
+    height: 6px;
+    background: var(--type-consulting); /* Default, override with inline style */
+}
+
+.opportunity-card-full .card-type-banner.consulting { background: var(--type-consulting); }
+.opportunity-card-full .card-type-banner.membership { background: var(--type-membership); }
+.opportunity-card-full .card-type-banner.report_generator { background: var(--type-report-generator); }
+.opportunity-card-full .card-type-banner.commons_partnership { background: var(--type-commons); }
+
+.opportunity-card-full .card-header-full {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--line);
+}
+
+.opportunity-card-full .card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-1);
+}
+
+.opportunity-card-full .contact-name-full {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink-900);
+    line-height: 1.2;
+}
+
+.opportunity-card-full .confidence-badge {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 16px;
+    flex-shrink: 0;
+}
+
+.opportunity-card-full .confidence-badge.high {
+    background: rgba(90, 143, 90, 0.15);
+    color: #5A8F5A;
+}
+
+.opportunity-card-full .confidence-badge.medium {
+    background: rgba(197, 165, 114, 0.15);
+    color: var(--gold);
+}
+
+.opportunity-card-full .confidence-badge.low {
+    background: rgba(139, 144, 154, 0.15);
+    color: var(--ink-500);
+}
+
+.opportunity-card-full .contact-details {
+    font-size: 13px;
+    color: var(--ink-500);
+}
+
+.opportunity-card-full .contact-details .company {
+    font-weight: 500;
+    color: var(--ink-700);
+}
+
+.opportunity-card-full .contact-details .title {
+    margin-top: 2px;
+}
+
+.opportunity-card-full .contact-details .email {
+    margin-top: 4px;
+}
+
+.opportunity-card-full .contact-details .email a {
+    color: var(--gold);
+    text-decoration: none;
+}
+
+.opportunity-card-full .card-body-full {
+    padding: var(--space-3);
+}
+
+.opportunity-card-full .meta-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-3);
+}
+
+.opportunity-card-full .meta-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--paper-alt);
+    color: var(--ink-500);
+}
+
+.opportunity-card-full .meta-chip .chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+.opportunity-card-full .meta-chip .chip-dot.consulting { background: var(--type-consulting); }
+.opportunity-card-full .meta-chip .chip-dot.membership { background: var(--type-membership); }
+.opportunity-card-full .meta-chip .chip-dot.report_generator { background: var(--type-report-generator); }
+.opportunity-card-full .meta-chip .chip-dot.commons_partnership { background: var(--type-commons); }
+
+.opportunity-card-full .signals-section {
+    margin-bottom: var(--space-3);
+}
+
+.opportunity-card-full .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-400);
+    margin-bottom: var(--space-1);
+}
+
+.opportunity-card-full .signal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.opportunity-card-full .signal-item {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    background: var(--paper-alt);
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.opportunity-card-full .signal-type {
+    font-weight: 600;
+    color: var(--gold);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+.opportunity-card-full .signal-content {
+    color: var(--ink-700);
+    line-height: 1.4;
+}
+
+.opportunity-card-full .activity-section {
+    padding: var(--space-2) var(--space-3);
+    background: var(--paper-alt);
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.opportunity-card-full .activity-info {
+    font-size: 12px;
+    color: var(--ink-500);
+}
+
+.opportunity-card-full .activity-info.stale {
+    color: var(--vermillion);
+}
+
+.opportunity-card-full .activity-info.cold {
+    color: var(--vermillion);
+    font-weight: 500;
+}
+
+.opportunity-card-full .estimated-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink-900);
+}
+
+.opportunity-card-full .card-actions {
+    padding: var(--space-3);
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: var(--space-2);
+}
+
+.opportunity-card-full .next-action {
+    padding: var(--space-2) var(--space-3);
+    background: var(--paper-alt);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--ink-500);
+}
+
+.opportunity-card-full .next-action strong {
+    color: var(--ink-700);
+}
+</style>
+
+<!-- Example: Opportunity Card Full -->
+<div class="opportunity-card-full">
+    <div class="card-type-banner {{opportunity_type}}"></div>
+    <div class="card-header-full">
+        <div class="card-header-row">
+            <div class="contact-name-full">{{contact_name}}</div>
+            <div class="confidence-badge {{confidence_level}}">{{confidence_score}}</div>
+        </div>
+        <div class="contact-details">
+            <div class="company">{{company}}</div>
+            <div class="title">{{contact_title}}</div>
+            <div class="email"><a href="mailto:{{contact_email}}">{{contact_email}}</a></div>
+        </div>
+    </div>
+    <div class="card-body-full">
+        <div class="meta-row">
+            <div class="meta-chip">
+                <span class="chip-dot {{opportunity_type}}"></span>
+                {{opportunity_type_display}}
+            </div>
+            <div class="meta-chip">{{pipeline_stage_display}}</div>
+            <div class="meta-chip">Via {{source}}</div>
+        </div>
+
+        <div class="signals-section">
+            <div class="section-label">Evidence Signals</div>
+            <div class="signal-list">
+                {{#signals}}
+                <div class="signal-item">
+                    <span class="signal-type">{{type}}</span>
+                    <span class="signal-content">"{{content}}"</span>
+                </div>
+                {{/signals}}
+            </div>
+        </div>
+
+        <div class="next-action">
+            <strong>Next Action:</strong> {{next_action}}
+        </div>
+    </div>
+    <div class="activity-section">
+        <div class="activity-info {{activity_status}}">
+            Last activity: {{last_activity}} ({{days_inactive}} days)
+        </div>
+        <div class="estimated-value">{{estimated_value}}</div>
+    </div>
+    <div class="card-actions">
+        <!-- Action buttons inserted here -->
+    </div>
+</div>
+
+    </div>
+</div>
+
+
+<!-- =================================================================
+     COMPONENT 2: opportunity_card_compact (Pipeline Board View)
+     =================================================================
+
+     Use for: Kanban pipeline columns
+     Width: 260-300px (fits column width)
+
+     Variables: Same as full card, subset displayed
+     ================================================================= -->
+
+<div class="component-section">
+    <h2 class="component-title">2. Opportunity Card (Compact)</h2>
+    <div class="component-grid" style="max-width: 600px; grid-template-columns: repeat(2, 1fr);">
+
+<style>
+/* opportunity_card_compact - Pipeline board view */
+.opportunity-card-compact {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: var(--space-2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.opportunity-card-compact:hover {
+    border-color: var(--gold);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+
+.opportunity-card-compact::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
+}
+
+.opportunity-card-compact[data-type="consulting"]::before { background: var(--type-consulting); }
+.opportunity-card-compact[data-type="membership"]::before { background: var(--type-membership); }
+.opportunity-card-compact[data-type="report_generator"]::before { background: var(--type-report-generator); }
+.opportunity-card-compact[data-type="commons_partnership"]::before { background: var(--type-commons); }
+
+.opportunity-card-compact .compact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    padding-left: 8px;
+}
+
+.opportunity-card-compact .compact-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink-900);
+    line-height: 1.3;
+}
+
+.opportunity-card-compact .compact-score {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.opportunity-card-compact .compact-score.high {
+    background: rgba(90, 143, 90, 0.15);
+    color: #5A8F5A;
+}
+
+.opportunity-card-compact .compact-score.medium {
+    background: rgba(197, 165, 114, 0.15);
+    color: var(--gold);
+}
+
+.opportunity-card-compact .compact-score.low {
+    background: rgba(139, 144, 154, 0.15);
+    color: var(--ink-500);
+}
+
+.opportunity-card-compact .compact-body {
+    padding-left: 8px;
+}
+
+.opportunity-card-compact .compact-company {
+    font-size: 13px;
+    color: var(--ink-500);
+    margin-bottom: 6px;
+}
+
+.opportunity-card-compact .compact-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.opportunity-card-compact .compact-tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--paper-alt);
+    color: var(--ink-500);
+}
+
+.opportunity-card-compact .compact-tag.source {
+    background: rgba(197, 165, 114, 0.1);
+    color: var(--gold);
+}
+
+.opportunity-card-compact .compact-signals {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.opportunity-card-compact .compact-activity {
+    font-size: 11px;
+    color: var(--ink-400);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+}
+
+.opportunity-card-compact .compact-activity.stale {
+    color: var(--vermillion);
+}
+</style>
+
+<!-- Example: Compact Card (Consulting) -->
+<div class="opportunity-card-compact" data-type="consulting" data-id="{{id}}">
+    <div class="compact-header">
+        <div class="compact-name">{{contact_name}}</div>
+        <div class="compact-score {{confidence_level}}">{{confidence_score}}</div>
+    </div>
+    <div class="compact-body">
+        <div class="compact-company">{{company}}</div>
+        <div class="compact-meta">
+            <span class="compact-tag">{{opportunity_type_display}}</span>
+            <span class="compact-tag source">{{source}}</span>
+        </div>
+        <div class="compact-signals">
+            {{#signals}}
+            <!-- signal_badge component inserted here -->
+            {{/signals}}
+        </div>
+        <div class="compact-activity {{activity_status}}">
+            Last: {{last_activity}}
+        </div>
+    </div>
+</div>
+
+<!-- Example: Compact Card (Membership) -->
+<div class="opportunity-card-compact" data-type="membership" data-id="demo-2">
+    <div class="compact-header">
+        <div class="compact-name">Dr. Sarah Chen</div>
+        <div class="compact-score medium">58</div>
+    </div>
+    <div class="compact-body">
+        <div class="compact-company">Integrative Health Partners</div>
+        <div class="compact-meta">
+            <span class="compact-tag">Membership</span>
+            <span class="compact-tag source">email</span>
+        </div>
+        <div class="compact-activity">
+            Last: 3 days ago
+        </div>
+    </div>
+</div>
+
+    </div>
+</div>
+
+
+<!-- =================================================================
+     COMPONENT 3: signal_badge (Evidence Indicator)
+     =================================================================
+
+     Use for: Displaying signal types on cards
+
+     Variables:
+     - {{signal_type}}: EXPLICIT_INTEREST, PAIN_POINT, etc.
+     - {{signal_abbrev}}: Short form (INT, PAIN, etc.)
+     - {{signal_strength}}: strong|normal
+     - {{tooltip_text}}: Full signal content for tooltip
+     ================================================================= -->
+
+<div class="component-section">
+    <h2 class="component-title">3. Signal Badges</h2>
+    <div class="component-grid" style="flex-direction: row; display: flex; flex-wrap: wrap; gap: 8px;">
+
+<style>
+/* signal_badge - Evidence indicator */
+.signal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: var(--paper-alt);
+    color: var(--ink-500);
+    cursor: help;
+    position: relative;
+}
+
+.signal-badge.strong {
+    background: rgba(197, 165, 114, 0.15);
+    color: var(--gold);
+    font-weight: 500;
+}
+
+.signal-badge .signal-icon {
+    font-size: 10px;
+}
+
+/* Signal type specific styling */
+.signal-badge[data-signal="EXPLICIT_INTEREST"] {
+    background: rgba(197, 165, 114, 0.15);
+    color: var(--gold);
+}
+
+.signal-badge[data-signal="FOLLOW_UP_REQUEST"] {
+    background: rgba(90, 143, 90, 0.15);
+    color: #5A8F5A;
+}
+
+.signal-badge[data-signal="DECISION_MAKER"] {
+    background: rgba(74, 144, 164, 0.15);
+    color: #4A90A4;
+}
+
+.signal-badge[data-signal="BUDGET_MENTION"] {
+    background: rgba(123, 104, 166, 0.15);
+    color: #7B68A6;
+}
+
+.signal-badge[data-signal="TIMELINE_MENTION"] {
+    background: rgba(224, 62, 47, 0.1);
+    color: var(--vermillion);
+}
+
+.signal-badge[data-signal="PAIN_POINT"] {
+    background: var(--paper-alt);
+    color: var(--ink-500);
+}
+
+/* Tooltip */
+.signal-badge .tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink-900);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: nowrap;
+    max-width: 250px;
+    white-space: normal;
+    line-height: 1.4;
+    z-index: 100;
+    transition: all 0.2s;
+}
+
+.signal-badge .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--ink-900);
+}
+
+.signal-badge:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+</style>
+
+<!-- Signal Badge Examples -->
+<span class="signal-badge strong" data-signal="EXPLICIT_INTEREST">
+    <span class="signal-icon">★</span>
+    Interest
+    <span class="tooltip">"Very interested in your lab report tool"</span>
+</span>
+
+<span class="signal-badge" data-signal="FOLLOW_UP_REQUEST">
+    <span class="signal-icon">→</span>
+    Follow-up
+    <span class="tooltip">"Can we schedule a call next week?"</span>
+</span>
+
+<span class="signal-badge" data-signal="DECISION_MAKER">
+    <span class="signal-icon">◆</span>
+    Decision Maker
+    <span class="tooltip">Contact confirmed as purchasing authority</span>
+</span>
+
+<span class="signal-badge" data-signal="BUDGET_MENTION">
+    <span class="signal-icon">$</span>
+    Budget
+    <span class="tooltip">"We have budget allocated for Q2"</span>
+</span>
+
+<span class="signal-badge" data-signal="TIMELINE_MENTION">
+    <span class="signal-icon">◷</span>
+    Timeline
+    <span class="tooltip">"Need this implemented by March"</span>
+</span>
+
+<span class="signal-badge" data-signal="PAIN_POINT">
+    <span class="signal-icon">!</span>
+    Pain Point
+    <span class="tooltip">"Spending 45 minutes per patient report"</span>
+</span>
+
+    </div>
+</div>
+
+
+<!-- =================================================================
+     COMPONENT 4: action_button (CTAs)
+     =================================================================
+
+     Use for: Card actions, generate proposal, send email, etc.
+
+     Variables:
+     - {{button_text}}: Button label
+     - {{button_href}}: Link URL or action trigger
+     - {{button_type}}: primary|secondary|ghost
+     - {{button_icon}}: Optional icon
+     ================================================================= -->
+
+<div class="component-section">
+    <h2 class="component-title">4. Action Buttons</h2>
+    <div class="component-grid" style="flex-direction: row; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+
+<style>
+/* action_button - CTA buttons */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* Primary - Dark background */
+.action-btn.primary {
+    background: var(--ink-900);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    background: var(--vermillion);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Secondary - Outlined */
+.action-btn.secondary {
+    background: var(--paper);
+    color: var(--ink-700);
+    border: 1px solid var(--line);
+}
+
+.action-btn.secondary:hover {
+    background: var(--paper-alt);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+}
+
+/* Ghost - Minimal */
+.action-btn.ghost {
+    background: transparent;
+    color: var(--ink-500);
+    padding: 8px 12px;
+}
+
+.action-btn.ghost:hover {
+    color: var(--gold);
+    background: rgba(197, 165, 114, 0.1);
+}
+
+/* Gold accent */
+.action-btn.gold {
+    background: var(--gold);
+    color: white;
+}
+
+.action-btn.gold:hover {
+    background: #B89555;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(197, 165, 114, 0.3);
+}
+
+/* Small variant */
+.action-btn.small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* Icon */
+.action-btn .btn-icon {
+    font-size: 14px;
+}
+
+/* Full width */
+.action-btn.full-width {
+    width: 100%;
+    justify-content: center;
+}
+</style>
+
+<!-- Action Button Examples -->
+<button class="action-btn primary">
+    <span class="btn-icon">📄</span>
+    Generate Proposal
+</button>
+
+<button class="action-btn gold">
+    <span class="btn-icon">✉</span>
+    Send Follow-up
+</button>
+
+<button class="action-btn secondary">
+    <span class="btn-icon">👁</span>
+    View Details
+</button>
+
+<button class="action-btn ghost">
+    <span class="btn-icon">↗</span>
+    Open Source
+</button>
+
+<button class="action-btn secondary small">
+    Mark as Contacted
+</button>
+
+<button class="action-btn ghost small">
+    Dismiss
+</button>
+
+    </div>
+</div>
+
+
+<!-- =================================================================
+     COMPONENT 5: Card with Actions (Composed)
+     =================================================================
+
+     Full card with action buttons for practical use
+     ================================================================= -->
+
+<div class="component-section">
+    <h2 class="component-title">5. Composed: Card with Actions</h2>
+    <div class="component-grid" style="max-width: 400px;">
+
+<div class="opportunity-card-full">
+    <div class="card-type-banner consulting"></div>
+    <div class="card-header-full">
+        <div class="card-header-row">
+            <div class="contact-name-full">Dr. James Mitchell</div>
+            <div class="confidence-badge high">82</div>
+        </div>
+        <div class="contact-details">
+            <div class="company">Mitchell Longevity Clinic</div>
+            <div class="title">Medical Director</div>
+            <div class="email"><a href="mailto:james@mitchelllongevity.com">james@mitchelllongevity.com</a></div>
+        </div>
+    </div>
+    <div class="card-body-full">
+        <div class="meta-row">
+            <div class="meta-chip">
+                <span class="chip-dot consulting"></span>
+                Consulting
+            </div>
+            <div class="meta-chip">Engaged</div>
+            <div class="meta-chip">Via transcript</div>
+        </div>
+
+        <div class="signals-section">
+            <div class="section-label">Evidence Signals</div>
+            <div class="signal-list">
+                <div class="signal-item">
+                    <span class="signal-type">Interest</span>
+                    <span class="signal-content">"Interested in practice transformation consulting"</span>
+                </div>
+                <div class="signal-item">
+                    <span class="signal-type">Budget</span>
+                    <span class="signal-content">"We have allocated $50k for this initiative"</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="next-action">
+            <strong>Next Action:</strong> Schedule strategy call and prepare proposal
+        </div>
+    </div>
+    <div class="activity-section">
+        <div class="activity-info">
+            Last activity: 5 days ago (5 days)
+        </div>
+        <div class="estimated-value">$25,000 - $50,000</div>
+    </div>
+    <div class="card-actions" style="display: flex; gap: 8px;">
+        <button class="action-btn primary small" style="flex: 1;">
+            <span class="btn-icon">📄</span>
+            Generate Proposal
+        </button>
+        <button class="action-btn secondary small">
+            <span class="btn-icon">✉</span>
+            Email
+        </button>
+    </div>
+</div>
+
+    </div>
+</div>
+
+
+<!-- =================================================================
+     TEMPLATE VARIABLE REFERENCE
+     ================================================================= -->
+<div class="component-section">
+    <h2 class="component-title">Template Variables Reference</h2>
+    <div style="background: var(--paper); padding: var(--space-3); border: 1px solid var(--line); border-radius: 4px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+        <strong>Card Variables:</strong><br>
+        {{id}}, {{contact_name}}, {{contact_email}}, {{contact_title}}, {{company}}<br>
+        {{opportunity_type}}, {{opportunity_type_display}}, {{type_color}}<br>
+        {{confidence_score}}, {{confidence_level}} (high|medium|low)<br>
+        {{pipeline_stage}}, {{pipeline_stage_display}}<br>
+        {{source}}, {{source_id}}, {{discovered_at}}, {{last_activity}}<br>
+        {{days_inactive}}, {{activity_status}} (normal|stale|cold)<br>
+        {{estimated_value}}, {{next_action}}<br><br>
+
+        <strong>Signal Variables:</strong><br>
+        {{#signals}} ... {{/signals}} (array)<br>
+        {{type}}, {{content}}, {{confidence}}, {{signal_strength}}<br><br>
+
+        <strong>Button Variables:</strong><br>
+        {{button_text}}, {{button_href}}, {{button_type}}, {{button_icon}}
+    </div>
+</div>
+
+</body>
+</html>

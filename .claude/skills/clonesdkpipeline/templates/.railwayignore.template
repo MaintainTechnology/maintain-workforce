@@ -1,0 +1,26 @@
+# Files excluded from Railway builds (acts like .dockerignore).
+
+node_modules/
+.git/
+.github/
+.vscode/
+.idea/
+
+# Secrets — use `railway variables set` instead
+.env
+.env.*
+!.env.example
+
+# Tests
+tests/
+*.test.js
+
+# Local artifacts
+boot.log
+smoke.log
+*.log
+data/api-keys.json
+
+# OS junk
+.DS_Store
+Thumbs.db

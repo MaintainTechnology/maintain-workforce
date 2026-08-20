@@ -1,0 +1,172 @@
+{
+  "pathway_id": "axis-1-nutrient-sensing/mtor-signaling",
+  "axis": 1,
+  "axis_name": "Nutrient Sensing & Energetics",
+  "shift_domain": "S",
+  "sub_pathway_name": "mTOR Signaling",
+  
+  "description": "The mechanistic target of rapamycin (mTOR) pathway is a master regulator of cell growth, integrating signals from nutrients (especially amino acids), growth factors (IGF-1, insulin), and energy status (ATP levels). mTOR exists in two complexes: mTORC1 (promotes anabolism, inhibits autophagy) and mTORC2 (regulates metabolism and survival). This pathway is central to aging biology and is a key target for longevity interventions.",
+  
+  "core_nodes": [
+    "MTOR",
+    "RPTOR",
+    "RICTOR",
+    "MLST8",
+    "EIF4EBP1",
+    "RPS6KB1",
+    "ULK1",
+    "AKT1"
+  ],
+  
+  "upstream_triggers": [
+    "Amino acids (especially leucine, arginine)",
+    "Insulin/IGF-1 via PI3K-AKT",
+    "Growth factors",
+    "Energy status (high ATP/AMP ratio)",
+    "Oxygen availability",
+    "Mechanical loading (in muscle)"
+  ],
+  
+  "downstream_effects": [
+    "Protein synthesis (via S6K1 and 4E-BP1)",
+    "Lipid synthesis",
+    "Autophagy inhibition (via ULK1 phosphorylation)",
+    "Cell growth and proliferation",
+    "Mitochondrial biogenesis (complex regulation)",
+    "Ribosome biogenesis"
+  ],
+  
+  "crosstalk": [
+    {
+      "target_pathway": "axis-2-proteostasis/autophagy",
+      "relationship": "inhibits",
+      "mechanism": "mTORC1 phosphorylates ULK1 at Ser757, preventing AMPK-mediated ULK1 activation and autophagy initiation. mTOR inhibition relieves this block, activating autophagy.",
+      "bidirectional": false
+    },
+    {
+      "target_pathway": "axis-1-nutrient-sensing/ampk-signaling",
+      "relationship": "inhibits",
+      "mechanism": "Reciprocal inhibition: AMPK inhibits mTORC1 via TSC2 and Raptor phosphorylation; mTORC1 activity generally indicates low AMPK activity due to opposing energy states.",
+      "bidirectional": true
+    },
+    {
+      "target_pathway": "axis-3-mitochondrial/biogenesis",
+      "relationship": "modulates",
+      "mechanism": "Complex relationship: mTORC1 can support mitochondrial biogenesis via 4E-BP1/PGC-1alpha interactions, but chronic overactivation impairs mitophagy. mTOR inhibition enhances mitophagy.",
+      "bidirectional": false
+    },
+    {
+      "target_pathway": "axis-5-senescence/sasp",
+      "relationship": "activates",
+      "mechanism": "Chronic mTORC1 activation promotes cellular senescence; mTOR inhibition can reduce senescent cell burden and SASP.",
+      "bidirectional": false
+    },
+    {
+      "target_pathway": "axis-1-nutrient-sensing/igf1-axis",
+      "relationship": "feeds_into",
+      "mechanism": "IGF-1 signaling activates PI3K-AKT, which activates mTORC1. mTOR is downstream of IGF-1 signaling.",
+      "bidirectional": false
+    }
+  ],
+  
+  "interventions_targeting": [
+    {
+      "intervention_id": "rapamycin",
+      "effect": "inhibit",
+      "specificity": "mTORC1 selective at low/pulsed doses; mTORC2 inhibition with prolonged high-dose exposure",
+      "via": "FKBP12-rapamycin complex directly binds mTOR"
+    },
+    {
+      "intervention_id": "everolimus",
+      "effect": "inhibit",
+      "specificity": "mTORC1 selective rapalog",
+      "via": "Similar to rapamycin; FKBP12-mediated"
+    },
+    {
+      "intervention_id": "metformin",
+      "effect": "indirect_inhibit",
+      "specificity": "Modest mTORC1 inhibition",
+      "via": "AMPK activation leads to TSC2 activation and mTORC1 inhibition"
+    },
+    {
+      "intervention_id": "leucine",
+      "effect": "activate",
+      "specificity": "mTORC1 activation",
+      "via": "Amino acid sensing via Sestrin2 and CASTOR1"
+    },
+    {
+      "intervention_id": "fasting",
+      "effect": "inhibit",
+      "specificity": "mTORC1 inhibition during fasted state",
+      "via": "Reduced amino acids and growth factor signaling"
+    },
+    {
+      "intervention_id": "caloric-restriction",
+      "effect": "inhibit",
+      "specificity": "Chronic mTORC1 dampening",
+      "via": "Reduced nutrient and growth factor signaling"
+    }
+  ],
+  
+  "biomarker_relevance": [
+    {
+      "biomarker_id": "igf1",
+      "relationship": "upstream_activator",
+      "notes": "IGF-1 activates mTORC1 via PI3K-AKT pathway"
+    },
+    {
+      "biomarker_id": "p70s6k-phospho",
+      "relationship": "activity_marker",
+      "notes": "Phosphorylated S6K1 is a direct readout of mTORC1 activity"
+    },
+    {
+      "biomarker_id": "4ebp1-phospho",
+      "relationship": "activity_marker",
+      "notes": "4E-BP1 phosphorylation indicates mTORC1 activity"
+    }
+  ],
+  
+  "key_evidence": [
+    {
+      "statement": "mTOR inhibition with rapamycin extends lifespan in multiple model organisms including yeast, worms, flies, and mice",
+      "evidence_type": "EXPLICIT",
+      "source_type": "peer_reviewed",
+      "confidence": "high",
+      "peer_reviewed_citations": [
+        {
+          "citation": "Harrison DE et al. (2009) Rapamycin fed late in life extends lifespan in genetically heterogeneous mice. Nature. 460:392-395",
+          "doi": "10.1038/nature08221"
+        }
+      ],
+      "extraction_ref": "ext_001"
+    },
+    {
+      "statement": "mTORC1 inhibition activates autophagy by relieving ULK1 suppression",
+      "evidence_type": "EXPLICIT",
+      "source_type": "peer_reviewed",
+      "confidence": "high",
+      "peer_reviewed_citations": [
+        {
+          "citation": "Kim J et al. (2011) AMPK and mTOR regulate autophagy through direct phosphorylation of Ulk1. Nat Cell Biol. 13:132-141",
+          "doi": "10.1038/ncb2152"
+        }
+      ],
+      "extraction_ref": "ext_023"
+    },
+    {
+      "statement": "Weekly pulsed rapamycin dosing preferentially inhibits mTORC1 while allowing mTORC2 function recovery, potentially optimizing the benefit/risk ratio for longevity applications",
+      "evidence_type": "STRONGLY_INFERRED",
+      "source_type": "expert_lecture",
+      "confidence": "moderate",
+      "extraction_ref": "ext_042"
+    }
+  ],
+  
+  "source_type": "expert_lecture",
+  "extraction_refs": ["ext_001", "ext_023", "ext_042", "ext_067"],
+  
+  "conflicts": [],
+  
+  "created_at": "2025-01-15T09:00:00Z",
+  "updated_at": "2025-01-16T12:00:00Z"
+}

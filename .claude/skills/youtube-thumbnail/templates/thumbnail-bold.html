@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YT Thumbnail - [TOPIC]</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #2a2a2a;
+      padding: 40px;
+    }
+
+    .canvas {
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #302C27 0%, #141619 100%);
+    }
+
+    /* ── Speaker Photo (smaller, right side) ── */
+    .speaker-photo {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 42%;
+      height: 90%;
+      object-fit: cover;
+      object-position: top center;
+      z-index: 2;
+    }
+
+    /* Photo fade */
+    .photo-fade {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(to right, #302C27 0%, transparent 50%);
+      z-index: 3;
+    }
+
+    /* ── Massive Headline ── */
+    .headline-area {
+      position: absolute;
+      left: 50px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      max-width: 680px;
+    }
+
+    .headline {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 900;
+      font-size: 110px;
+      line-height: 0.88;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+      text-shadow: 0 4px 40px rgba(0,0,0,0.8);
+    }
+
+    .headline .accent {
+      color: #C49A6C;
+    }
+
+    /* ── Brand Mark ── */
+    .brand-mark {
+      position: absolute;
+      bottom: 24px;
+      left: 50px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .brand-mark .logo {
+      width: 28px;
+      height: 28px;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+
+    .brand-mark .name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .accent-line {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(to right, #C49A6C 0%, transparent 50%);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+
+    <img class="speaker-photo" src="[PHOTO_PATH]" alt="[SPEAKER_NAME]">
+    <div class="photo-fade"></div>
+
+    <div class="headline-area">
+      <div class="headline">
+        [LINE_1]<br>
+        [LINE_2]<br>
+        <span class="accent">[LINE_3]</span>
+      </div>
+    </div>
+
+    <div class="brand-mark">
+      <div class="logo">N</div>
+      <span class="name">NGM</span>
+    </div>
+
+    <div class="accent-line"></div>
+  </div>
+</body>
+</html>

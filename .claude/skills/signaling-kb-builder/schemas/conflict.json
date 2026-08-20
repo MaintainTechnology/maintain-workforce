@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "conflict.schema.json",
+  "title": "Conflict Record",
+  "description": "Schema for recording and characterizing conflicts between claims",
+  "type": "object",
+  "required": ["conflict_id", "topic", "nature", "position_a", "position_b", "resolution_status"],
+  "properties": {
+    "conflict_id": {
+      "type": "string",
+      "description": "Unique conflict identifier",
+      "pattern": "^conflict_[a-z0-9_]+$"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Human-readable topic of conflict"
+    },
+    "nature": {
+      "type": "string",
+      "enum": [
+        "directional",
+        "numeric",
+        "contextual",
+        "temporal",
+        "evidence_grade",
+        "definitional"
+      ],
+      "description": "Nature of the disagreement"
+    },
+    "truly_contradictory": {
+      "type": "boolean",
+      "description": "Whether positions are truly contradictory or potentially complementary"
+    },
+    "position_a": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "Brief summary of position A"
+        },
+        "detail": {
+          "type": "string",
+          "description": "Detailed explanation"
+        },
+        "evidence_type": {
+          "type": "string",
+          "enum": ["EXPLICIT", "STRONGLY_INFERRED", "LOOSELY_INFERRED"]
+        },
+        "source_type": {
+          "type": "string",
+          "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion", "case_report"]
+        },
+        "extraction_ref": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "moderate", "low"]
+        },
+        "peer_reviewed_citations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "citation": { "type": "string" },
+              "doi": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "position_b": {
+      "type": "object",
+      "required": ["summary"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "Brief summary of position B"
+        },
+        "detail": {
+          "type": "string",
+          "description": "Detailed explanation"
+        },
+        "evidence_type": {
+          "type": "string",
+          "enum": ["EXPLICIT", "STRONGLY_INFERRED", "LOOSELY_INFERRED"]
+        },
+        "source_type": {
+          "type": "string",
+          "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion", "case_report"]
+        },
+        "extraction_ref": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "moderate", "low"]
+        },
+        "peer_reviewed_citations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "citation": { "type": "string" },
+              "doi": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "characterization": {
+      "type": "string",
+      "description": "LLM-generated explanation of why these conflict or how they might be reconciled"
+    },
+    "clinical_note": {
+      "type": "string",
+      "description": "Guidance for clinicians on how to interpret this conflict"
+    },
+    "resolution_status": {
+      "type": "string",
+      "enum": ["unresolved", "reviewed", "known_complementary", "resolved"],
+      "description": "Current resolution status"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "description": "Notes if reviewed or resolved"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "Who reviewed this conflict (if applicable)"
+    },
+    "flagged_for_review": {
+      "type": "boolean",
+      "description": "Whether this needs clinical expert review"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

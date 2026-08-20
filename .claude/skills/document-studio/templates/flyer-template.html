@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[PROGRAM_NAME] | Next Generation Medicine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #FFFFFF;
+      --paper-alt: #F5F2EC;
+      --ink-900: #302C27;
+      --ink-700: #4A4540;
+      --ink-500: #706C66;
+      --ink-400: #9C9890;
+      --line: #E3DFD7;
+      --gold: #C49A6C;
+      --vermillion: #C07050;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--ink-700);
+      background: var(--paper);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.5in;
+      background: var(--paper);
+    }
+
+    @media print {
+      body { background: white; }
+      .page {
+        width: 100%;
+        min-height: auto;
+        padding: 0.4in;
+        page-break-after: avoid;
+      }
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    h1 { font-size: 28px; line-height: 1.1; }
+    h2 { font-size: 16px; line-height: 1.2; }
+    h3 { font-size: 13px; line-height: 1.3; }
+    h4 { font-size: 11px; line-height: 1.4; }
+
+    .label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* Layout */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 20px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--ink-900);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: white;
+    }
+
+    .logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    .logo-subtitle {
+      font-size: 9px;
+      color: var(--ink-500);
+      letter-spacing: 0.02em;
+    }
+
+    .contact-info {
+      text-align: right;
+      font-size: 9px;
+      color: var(--ink-500);
+    }
+
+    .contact-info a {
+      color: var(--ink-700);
+      text-decoration: none;
+    }
+
+    /* Hero */
+    .hero {
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      margin-bottom: 10px;
+    }
+
+    .hero-subtitle {
+      font-size: 13px;
+      color: var(--ink-500);
+      max-width: 85%;
+      line-height: 1.6;
+    }
+
+    .hero-subtitle strong {
+      color: var(--ink-700);
+      font-weight: 600;
+    }
+
+    /* Value Props Grid */
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .value-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: var(--paper-alt);
+    }
+
+    .value-card .label {
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .value-card h3 {
+      margin-bottom: 6px;
+    }
+
+    .value-card p {
+      font-size: 10px;
+      color: var(--ink-500);
+      line-height: 1.5;
+    }
+
+    /* Tiers Section */
+    .tiers-section {
+      margin-bottom: 20px;
+    }
+
+    .tiers-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tiers-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .tier-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .tier-card.featured {
+      background: var(--ink-900);
+      color: white;
+      border-color: var(--gold);
+      border-width: 2px;
+    }
+
+    .tier-card.featured h3,
+    .tier-card.featured h4,
+    .tier-card.featured .price {
+      color: white;
+    }
+
+    .tier-card.featured p,
+    .tier-card.featured li {
+      color: var(--ink-400);
+    }
+
+    .tier-card.featured .label {
+      color: var(--gold);
+    }
+
+    .tier-badge {
+      position: absolute;
+      top: -8px;
+      left: 16px;
+      background: var(--gold);
+      color: white;
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+    }
+
+    .tier-card .label {
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .tier-card h3 {
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .price {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink-900);
+      margin-bottom: 2px;
+    }
+
+    .price-note {
+      font-size: 9px;
+      color: var(--ink-400);
+      margin-bottom: 10px;
+    }
+
+    .tier-card p.desc {
+      font-size: 10px;
+      color: var(--ink-500);
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .tier-features {
+      list-style: none;
+    }
+
+    .tier-features li {
+      font-size: 9px;
+      color: var(--ink-500);
+      padding-left: 12px;
+      position: relative;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .tier-features li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    /* Promise Section */
+    .promise-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .promise-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+    }
+
+    .promise-card h4 {
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .promise-card p {
+      font-size: 9px;
+      color: var(--ink-500);
+      line-height: 1.5;
+    }
+
+    /* Footer CTA */
+    .footer-cta {
+      background: var(--ink-900);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-cta h3 {
+      color: white;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .footer-cta p {
+      font-size: 10px;
+      color: var(--ink-400);
+    }
+
+    .footer-cta .cta-email {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    .footer-cta .cta-web {
+      font-size: 10px;
+      color: var(--ink-400);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Utility */
+    .check-icon {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .check-icon::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 2px;
+      width: 3px;
+      height: 5px;
+      border: solid white;
+      border-width: 0 1.5px 1.5px 0;
+      transform: rotate(45deg);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <div class="logo-mark">N</div>
+        <div>
+          <div class="logo-text">[PROGRAM_NAME]</div>
+          <div class="logo-subtitle">[PROGRAM_TAGLINE]</div>
+        </div>
+      </div>
+      <div class="contact-info">
+        <div><a href="mailto:anant@nextgenerationmedicine.co">anant@nextgenerationmedicine.co</a></div>
+        <div>nextgenerationmedicine.co</div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <span class="label">[LABEL_TEXT]</span>
+      <h1>[HEADLINE]</h1>
+      <p class="hero-subtitle">
+        [SUBHEADLINE - Explain the problem and introduce the solution. Use <strong>bold</strong> for emphasis.]
+      </p>
+    </section>
+
+    <!-- Value Props -->
+    <section class="value-grid">
+      <div class="value-card">
+        <span class="label">[VALUE_1_LABEL]</span>
+        <h3>[VALUE_1_TITLE]</h3>
+        <p>[VALUE_1_DESCRIPTION]</p>
+      </div>
+      <div class="value-card">
+        <span class="label">[VALUE_2_LABEL]</span>
+        <h3>[VALUE_2_TITLE]</h3>
+        <p>[VALUE_2_DESCRIPTION]</p>
+      </div>
+      <div class="value-card">
+        <span class="label">[VALUE_3_LABEL]</span>
+        <h3>[VALUE_3_TITLE]</h3>
+        <p>[VALUE_3_DESCRIPTION]</p>
+      </div>
+    </section>
+
+    <!-- Tiers Section -->
+    <section class="tiers-section">
+      <div class="tiers-header">
+        <h2>[TIERS_SECTION_TITLE]</h2>
+      </div>
+
+      <div class="tiers-grid">
+        <!-- Featured Tier -->
+        <div class="tier-card featured">
+          <span class="tier-badge">[BADGE_TEXT]</span>
+          <span class="label">[TIER_1_LABEL]</span>
+          <h3>[TIER_1_NAME]</h3>
+          <div class="price">[TIER_1_PRICE]</div>
+          <div class="price-note">[TIER_1_PRICE_NOTE]</div>
+          <p class="desc">[TIER_1_DESCRIPTION]</p>
+          <ul class="tier-features">
+            <li>[TIER_1_FEATURE_1]</li>
+            <li>[TIER_1_FEATURE_2]</li>
+            <li>[TIER_1_FEATURE_3]</li>
+            <li>[TIER_1_FEATURE_4]</li>
+          </ul>
+        </div>
+
+        <!-- Standard Tier -->
+        <div class="tier-card">
+          <span class="label">[TIER_2_LABEL]</span>
+          <h3>[TIER_2_NAME]</h3>
+          <div class="price">[TIER_2_PRICE]</div>
+          <div class="price-note">[TIER_2_PRICE_NOTE]</div>
+          <p class="desc">[TIER_2_DESCRIPTION]</p>
+          <ul class="tier-features">
+            <li>[TIER_2_FEATURE_1]</li>
+            <li>[TIER_2_FEATURE_2]</li>
+            <li>[TIER_2_FEATURE_3]</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Promise Section -->
+    <section class="promise-section">
+      <div class="promise-card">
+        <h4><span class="check-icon"></span> [PROMISE_1_TITLE]</h4>
+        <p>[PROMISE_1_DESCRIPTION]</p>
+      </div>
+      <div class="promise-card">
+        <h4><span class="check-icon"></span> [PROMISE_2_TITLE]</h4>
+        <p>[PROMISE_2_DESCRIPTION]</p>
+      </div>
+    </section>
+
+    <!-- Footer CTA -->
+    <footer class="footer-cta">
+      <div>
+        <h3>[CTA_HEADLINE]</h3>
+        <p>[CTA_SUBTEXT]</p>
+      </div>
+      <div style="text-align: right;">
+        <a href="mailto:anant@nextgenerationmedicine.co" class="cta-email">anant@nextgenerationmedicine.co</a>
+        <span class="cta-web">nextgenerationmedicine.co</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
+

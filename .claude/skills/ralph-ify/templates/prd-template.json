@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ralph-prd-schema",
+  "title": "RALPH PRD Schema",
+  "description": "Standard schema for RALPH-style Product Requirements Documents",
+
+  "template": {
+    "version": "1.0",
+    "skill": "{{SKILL_NAME}}",
+    "createdAt": "{{CREATED_AT}}",
+    "updatedAt": "{{UPDATED_AT}}",
+
+    "config": {
+      "maxIterations": "{{MAX_ITERATIONS}}",
+      "maxFailuresPerItem": "{{MAX_FAILURES_PER_ITEM}}",
+      "settings": {}
+    },
+
+    "items": [
+      {
+        "id": "{{ITEM_TYPE}}-001",
+        "title": "{{ITEM_TITLE}}",
+        "description": "{{ITEM_DESCRIPTION}}",
+        "priority": 1,
+        "status": "pending",
+        "attempts": 0,
+        "failureCount": 0,
+        "dependsOn": [],
+        "acceptanceCriteria": [
+          "{{CRITERION_1}}",
+          "{{CRITERION_2}}"
+        ],
+        "result": null,
+        "error": null,
+        "feedback": null,
+        "metadata": {
+          "complexity": "Low|Medium|High",
+          "iterationValue": "Low|Medium|High"
+        },
+        "createdAt": "{{CREATED_AT}}",
+        "completedAt": null
+      }
+    ],
+
+    "summary": {
+      "totalItems": "{{TOTAL_ITEMS}}",
+      "pending": "{{PENDING_COUNT}}",
+      "inProgress": 0,
+      "passed": 0,
+      "failed": 0,
+      "blocked": 0,
+      "iterationsRun": 0
+    }
+  },
+
+  "statusValues": [
+    "pending",
+    "in_progress",
+    "passed",
+    "failed",
+    "blocked",
+    "skipped"
+  ],
+
+  "requiredFields": [
+    "id",
+    "title",
+    "description",
+    "priority",
+    "status"
+  ],
+
+  "optionalFields": [
+    "dependsOn",
+    "acceptanceCriteria",
+    "result",
+    "error",
+    "feedback",
+    "metadata",
+    "attempts",
+    "failureCount",
+    "createdAt",
+    "completedAt"
+  ],
+
+  "conventions": {
+    "idFormat": "{ITEM_TYPE}-{NNN}",
+    "priorityRanges": {
+      "critical": "1-99",
+      "important": "100-199",
+      "optional": "200-299"
+    },
+    "timestampFormat": "ISO 8601"
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "intervention_id": "rapamycin",
+  "aliases": ["sirolimus", "Rapamune"],
+  "category": "small_molecule",
+  "primary_pathways": ["axis-1-nutrient-sensing/mtor-signaling"],
+  
+  "dosing_protocols": [
+    {
+      "protocol_id": "longevity-weekly-5mg",
+      "indication": "longevity/healthspan",
+      "dose": "5mg",
+      "frequency": "weekly",
+      "duration": "indefinite with monitoring",
+      "route": "oral",
+      "context": "Pulsed weekly dosing to achieve mTORC1 inhibition while allowing immune recovery between doses. For adults over 40 with no active infections or wound healing needs.",
+      "evidence_grade": "moderate",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [
+        {
+          "citation": "Mannick JB, Del Giudice G, Lattanzi M, et al. (2014) mTOR inhibition improves immune function in the elderly. Science Translational Medicine. 6(268):268ra179",
+          "doi": "10.1126/scitranslmed.3009892",
+          "pmid": "25540326",
+          "relevance": "Supports intermittent mTOR inhibition concept; studied RAD001 weekly dosing"
+        },
+        {
+          "citation": "Harrison DE, Strong R, Sharp ZD, et al. (2009) Rapamycin fed late in life extends lifespan in genetically heterogeneous mice. Nature. 460(7253):392-395",
+          "doi": "10.1038/nature08221",
+          "pmid": "19587680",
+          "relevance": "ITP study demonstrating rapamycin lifespan extension in mice"
+        }
+      ],
+      "extraction_ref": "ext_001",
+      "confidence": "moderate",
+      "timecode": "tc:23:45-26:12"
+    },
+    {
+      "protocol_id": "longevity-weekly-6mg",
+      "indication": "longevity/healthspan",
+      "dose": "6mg",
+      "frequency": "weekly",
+      "duration": "indefinite with monitoring",
+      "route": "oral",
+      "context": "For adults over 50 with robust health status. Some practitioners prefer 6mg for more robust effect.",
+      "evidence_grade": "moderate",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [],
+      "extraction_ref": "ext_042",
+      "confidence": "moderate"
+    },
+    {
+      "protocol_id": "transplant-standard",
+      "indication": "transplant immunosuppression",
+      "dose": "2mg",
+      "frequency": "daily",
+      "duration": "indefinite",
+      "route": "oral",
+      "context": "Standard transplant dosing per FDA labeling. Requires therapeutic drug monitoring.",
+      "evidence_grade": "high",
+      "source_type": "peer_reviewed",
+      "peer_reviewed_citations": [
+        {
+          "citation": "FDA Prescribing Information for Rapamune (sirolimus)",
+          "relevance": "Official prescribing information"
+        }
+      ],
+      "extraction_ref": "ext_015",
+      "confidence": "high"
+    }
+  ],
+  
+  "mechanism_claims": [
+    {
+      "claim_id": "rapa_mtorc1_001",
+      "target": "MTORC1",
+      "effect": "inhibit",
+      "specificity": "mTORC1 selective at low/pulsed doses; mTORC2 inhibition at higher continuous doses",
+      "context": "Rapamycin binds FKBP12, forming complex that directly inhibits mTORC1. Weekly pulsed dosing preferentially inhibits mTORC1 while allowing mTORC2 recovery.",
+      "evidence_type": "EXPLICIT",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [
+        {
+          "citation": "Sarbassov DD, Ali SM, Sengupta S, et al. (2006) Prolonged rapamycin treatment inhibits mTORC2 assembly and Akt/PKB. Mol Cell. 22(2):159-168",
+          "doi": "10.1016/j.molcel.2006.03.029",
+          "relevance": "Demonstrates differential mTORC1/mTORC2 sensitivity to rapamycin"
+        }
+      ],
+      "extraction_ref": "ext_001",
+      "confidence": "high"
+    },
+    {
+      "claim_id": "rapa_autophagy_001",
+      "target": "autophagy",
+      "effect": "activate",
+      "context": "mTORC1 inhibition relieves suppression of ULK1, activating autophagy machinery",
+      "evidence_type": "EXPLICIT",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [
+        {
+          "citation": "Kim J, Kundu M, Bhavani V, et al. (2011) AMPK and mTOR regulate autophagy through direct phosphorylation of Ulk1. Nat Cell Biol. 13(2):132-141",
+          "doi": "10.1038/ncb2152",
+          "relevance": "Mechanism of mTOR-autophagy connection"
+        }
+      ],
+      "extraction_ref": "ext_023",
+      "confidence": "high"
+    },
+    {
+      "claim_id": "rapa_pgc1a_001",
+      "target": "PGC1A",
+      "effect": "inhibit",
+      "context": "Acute mTORC1 inhibition reduces PGC-1alpha transcriptional activity",
+      "evidence_type": "STRONGLY_INFERRED",
+      "source_type": "expert_lecture",
+      "extraction_ref": "ext_034",
+      "confidence": "moderate"
+    },
+    {
+      "claim_id": "rapa_pgc1a_002",
+      "target": "PGC1A",
+      "effect": "biphasic",
+      "context": "Chronic rapamycin may upregulate PGC-1alpha through enhanced mitophagy and compensatory mitochondrial biogenesis",
+      "evidence_type": "LOOSELY_INFERRED",
+      "source_type": "expert_lecture",
+      "extraction_ref": "ext_042",
+      "confidence": "low"
+    }
+  ],
+  
+  "regulatory_status": {
+    "fda": "Approved for transplant rejection prophylaxis; off-label for longevity",
+    "wada": "Not prohibited",
+    "dea": "Not scheduled",
+    "notes": "Prescription required. Off-label longevity use not FDA-endorsed."
+  },
+  
+  "contraindications": [
+    "Active infection",
+    "Wound healing (peri-surgical period)",
+    "Pregnancy/nursing",
+    "Hypersensitivity to rapamycin/sirolimus",
+    "Severe hepatic impairment"
+  ],
+  
+  "monitoring": [
+    "Complete blood count (monitor for cytopenias)",
+    "Lipid panel (rapamycin can elevate cholesterol/triglycerides)",
+    "Fasting glucose/HbA1c",
+    "Kidney function (BUN/creatinine)",
+    "Liver function tests",
+    "Drug levels if using for transplant"
+  ],
+  
+  "interactions": [
+    {
+      "interacting_with": "CYP3A4 inhibitors",
+      "effect": "Increased rapamycin levels",
+      "severity": "major",
+      "recommendation": "Avoid or adjust dose; monitor levels"
+    },
+    {
+      "interacting_with": "grapefruit",
+      "effect": "Increased rapamycin levels",
+      "severity": "moderate",
+      "recommendation": "Avoid grapefruit consumption"
+    }
+  ],
+  
+  "conflicts": [
+    {
+      "conflict_id": "conflict_rapa_dose_longevity_001",
+      "topic": "Optimal weekly dose for longevity",
+      "nature": "numeric",
+      "truly_contradictory": false,
+      "position_a": {
+        "summary": "5mg weekly is standard longevity dose",
+        "detail": "Most commonly cited dose in longevity protocols",
+        "evidence_type": "EXPLICIT",
+        "confidence": "moderate",
+        "extraction_ref": "ext_001"
+      },
+      "position_b": {
+        "summary": "6mg weekly for adults over 50 with robust health",
+        "detail": "Some practitioners prefer slightly higher dose for more robust effect",
+        "evidence_type": "EXPLICIT",
+        "confidence": "moderate",
+        "extraction_ref": "ext_042"
+      },
+      "characterization": "Both doses are within a reasonable range for longevity protocols. The difference may reflect patient population (more robust patients may tolerate/benefit from 6mg) or practitioner preference. Neither is definitively 'correct.'",
+      "clinical_note": "Consider starting at 5mg and adjusting based on response and tolerability. Either dose is reasonable for longevity protocols in otherwise healthy adults.",
+      "context_factors": [
+        "Patient age and health robustness",
+        "Body weight",
+        "Tolerance of initial dose",
+        "Response markers"
+      ],
+      "resolution_status": "unresolved",
+      "flagged_for_review": false,
+      "created_at": "2025-01-16T10:00:00Z"
+    },
+    {
+      "conflict_id": "conflict_rapa_pgc1a_temporal_001",
+      "topic": "Rapamycin effect on PGC-1alpha",
+      "nature": "temporal",
+      "truly_contradictory": false,
+      "position_a": {
+        "summary": "Rapamycin inhibits PGC-1alpha",
+        "detail": "Acute mTORC1 inhibition reduces PGC-1alpha transcriptional activity",
+        "evidence_type": "STRONGLY_INFERRED",
+        "confidence": "moderate",
+        "extraction_ref": "ext_034"
+      },
+      "position_b": {
+        "summary": "Chronic rapamycin upregulates PGC-1alpha",
+        "detail": "Long-term use enhances mitophagy leading to compensatory mitochondrial biogenesis",
+        "evidence_type": "LOOSELY_INFERRED",
+        "confidence": "low",
+        "extraction_ref": "ext_042"
+      },
+      "characterization": "These positions likely describe different timeframes of rapamycin's effect. Acutely, mTORC1 inhibition directly suppresses PGC-1alpha. Chronically, enhanced autophagy/mitophagy may trigger compensatory mitochondrial biogenesis. Both mechanisms are biologically plausible.",
+      "clinical_note": "When evaluating rapamycin's effect on mitochondrial biogenesis, consider treatment duration. Short-term vs long-term use may show different effects on PGC-1alpha and mitochondrial outcomes.",
+      "context_factors": [
+        "Treatment duration (weeks vs months/years)",
+        "Dosing regimen (daily vs weekly)",
+        "Measurement timepoint",
+        "Patient's baseline mitochondrial status"
+      ],
+      "resolution_status": "unresolved",
+      "flagged_for_review": true,
+      "created_at": "2025-01-16T14:30:00Z"
+    }
+  ],
+  
+  "created_at": "2025-01-15T10:00:00Z",
+  "updated_at": "2025-01-16T14:30:00Z"
+}

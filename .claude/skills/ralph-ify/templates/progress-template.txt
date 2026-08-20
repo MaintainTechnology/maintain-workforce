@@ -1,0 +1,83 @@
+================================================================================
+{{SKILL_TITLE}} - PROGRESS LOG
+================================================================================
+
+Session Started: {{SESSION_START}}
+Skill Version: 1.0
+PRD: .{{SKILL_NAME}}/prd.json
+
+================================================================================
+CONFIGURATION
+================================================================================
+
+Max Iterations: {{MAX_ITERATIONS}}
+Max Failures Per Item: {{MAX_FAILURES_PER_ITEM}}
+Total Items: {{TOTAL_ITEMS}}
+
+================================================================================
+PATTERNS & LEARNINGS (Updated Dynamically)
+================================================================================
+
+This section is updated as patterns are discovered during execution.
+Learnings from iteration N are available to iteration N+1.
+
+### Domain Patterns
+- {Pattern discovered during execution}
+
+### Common Gotchas
+- {Issues encountered and how they were resolved}
+
+### Effective Approaches
+- {Strategies that worked well}
+
+================================================================================
+ITEM STATUS SUMMARY
+================================================================================
+
+| Status      | Count |
+|-------------|-------|
+| Pending     | {{PENDING_COUNT}} |
+| In Progress | 0     |
+| Passed      | 0     |
+| Failed      | 0     |
+| Blocked     | 0     |
+
+================================================================================
+ITERATION LOG
+================================================================================
+
+Each iteration is logged below with its learnings.
+
+---
+
+--- ITERATION 1 | {{ITEM_ID}}: {{ITEM_TITLE}} ---
+Timestamp: {{TIMESTAMP}}
+Status: PENDING
+
+Attempt: 1/{{MAX_FAILURES_PER_ITEM}}
+
+Quality Gate Results:
+- check_1: PENDING
+- check_2: PENDING
+
+Learnings:
+- (To be filled after execution)
+
+Files Modified:
+- (To be filled after execution)
+
+---
+
+================================================================================
+SESSION SUMMARY (Updated on Completion)
+================================================================================
+
+Total Iterations: 0
+Items Passed: 0
+Items Blocked: 0
+Duration: --
+
+Key Learnings:
+- (Summarized at session end)
+
+================================================================================

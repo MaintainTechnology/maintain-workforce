@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "biomarker.schema.json",
+  "title": "Biomarker Interpretation Node",
+  "description": "Schema for biomarker interpretation nodes - patterns and clinical meanings",
+  "type": "object",
+  "required": ["biomarker_id", "full_name"],
+  "properties": {
+    "biomarker_id": {
+      "type": "string",
+      "description": "Canonical identifier (lowercase, hyphenated)",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Full biomarker name"
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Alternative names or abbreviations"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "hormone",
+        "metabolite",
+        "enzyme",
+        "inflammatory_marker",
+        "lipid",
+        "vitamin",
+        "mineral",
+        "genetic_marker",
+        "functional_marker",
+        "composite_index"
+      ],
+      "description": "Biomarker category"
+    },
+    "reference_range": {
+      "type": "object",
+      "properties": {
+        "low": { "type": "number" },
+        "high": { "type": "number" },
+        "unit": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "description": "Standard laboratory reference range"
+    },
+    "interpretation_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern_id", "biomarker_state", "interpretation"],
+        "properties": {
+          "pattern_id": {
+            "type": "string",
+            "description": "Unique pattern identifier"
+          },
+          "biomarker_state": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["low", "normal", "high", "elevated", "suppressed", "absent", "present"]
+            },
+            "description": "State of this and related biomarkers (e.g., {'igf1': 'low', 'homa_ir': 'elevated'})"
+          },
+          "interpretation": {
+            "type": "string",
+            "description": "Clinical interpretation of this pattern"
+          },
+          "differential": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Differential diagnoses to consider"
+          },
+          "clinical_implications": {
+            "type": "string",
+            "description": "What this means for clinical management"
+          },
+          "next_steps": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Recommended next diagnostic or therapeutic steps"
+          },
+          "evidence_grade": {
+            "type": "string",
+            "enum": ["high", "moderate", "low", "anecdotal"]
+          },
+          "source_type": {
+            "type": "string",
+            "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion", "case_report"]
+          },
+          "peer_reviewed_citations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "citation": { "type": "string" },
+                "doi": { "type": "string" },
+                "pmid": { "type": "string" },
+                "relevance": { "type": "string" }
+              }
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "moderate", "low"]
+          }
+        }
+      },
+      "description": "Clinical interpretation patterns for various biomarker states"
+    },
+    "optimal_ranges_by_context": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["range_id", "optimal", "context"],
+        "properties": {
+          "range_id": {
+            "type": "string",
+            "description": "Unique range identifier"
+          },
+          "optimal": {
+            "type": "object",
+            "properties": {
+              "low": { "type": "number" },
+              "high": { "type": "number" },
+              "target": { "type": "number" }
+            },
+            "description": "Optimal range values"
+          },
+          "context": {
+            "type": "string",
+            "description": "Clinical context (age group, goal, condition)"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Rationale for this optimal range"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion"]
+          },
+          "peer_reviewed_citations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "citation": { "type": "string" },
+                "doi": { "type": "string" },
+                "relevance": { "type": "string" }
+              }
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "moderate", "low"]
+          }
+        }
+      },
+      "description": "Context-specific optimal ranges (may differ from lab reference)"
+    },
+    "interventions_affecting": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["intervention_id", "effect"],
+        "properties": {
+          "intervention_id": {
+            "type": "string",
+            "description": "Intervention node ID"
+          },
+          "effect": {
+            "type": "string",
+            "enum": ["increase", "decrease", "normalize", "variable"],
+            "description": "Effect on biomarker level"
+          },
+          "magnitude": {
+            "type": "string",
+            "description": "Expected magnitude of effect"
+          },
+          "timeframe": {
+            "type": "string",
+            "description": "Expected timeframe for effect"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "moderate", "low"]
+          },
+          "notes": { "type": "string" }
+        }
+      },
+      "description": "Interventions that affect this biomarker"
+    },
+    "pathways_involved": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Pathway node IDs this biomarker is involved in"
+    },
+    "related_biomarkers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "biomarker_id": { "type": "string" },
+          "relationship": {
+            "type": "string",
+            "enum": ["precursor", "metabolite", "ratio_component", "correlated", "inverse_correlated"]
+          },
+          "notes": { "type": "string" }
+        }
+      },
+      "description": "Related biomarkers for panel interpretation"
+    },
+    "range_conflicts": {
+      "type": "array",
+      "items": { "$ref": "conflict.json" },
+      "description": "Conflicts between different optimal range claims"
+    },
+    "interpretation_conflicts": {
+      "type": "array",
+      "items": { "$ref": "conflict.json" },
+      "description": "Conflicts between interpretation claims"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

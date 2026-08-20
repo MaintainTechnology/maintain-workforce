@@ -1,0 +1,15 @@
+# Nixpacks build configuration for Railway.
+# Pins Node.js 22 LTS and skips dev dependencies on install.
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm ci --omit=dev --no-audit --prefer-offline || npm install --omit=dev --no-audit"]
+
+[start]
+cmd = "node src/index.js"
+
+[variables]
+NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "true"

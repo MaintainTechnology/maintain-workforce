@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{company_name}} — Clinical Evaluation | NGM Commons</title>
+  <meta name="description" content="{{meta_description}}">
+
+  <!-- REQUIRED: Use these exact Google Fonts for design consistency -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script type="application/ld+json">
+  {{structured_data}}
+  </script>
+
+  <style>
+    /* ============================================
+       NGM COMMONS COMPANY PROFILE DESIGN SYSTEM
+       Based on guide_page.html with company-specific additions
+       ============================================ */
+
+    :root {
+      --font-serif: "Cormorant Garamond", Georgia, serif;
+      --font-sans: "DM Sans", system-ui, sans-serif;
+
+      --paper: #FFFFFF;
+      --paper-alt: #F5F2EC;
+      --ink-900: #302C27;
+      --ink-700: #4A4540;
+      --ink-500: #706C66;
+      --ink-400: #9C9890;
+      --ink-300: #B0B5BD;
+      --line: #E3DFD7;
+
+      --gold: #C49A6C;
+      --gold-light: #F5EFE3;
+      --green: #5C8A6B;
+      --blue: #5C7A8A;
+      --purple: #7A6C8A;
+      --orange: #D4845C;
+
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 20px;
+      --space-4: 32px;
+      --space-5: 48px;
+      --space-6: 64px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--ink-700);
+      background: var(--paper);
+      max-width: 860px;
+      margin: 0 auto;
+      padding: var(--space-5) var(--space-3);
+    }
+
+    h1, h2, h3, h4 {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+    h1 { font-size: 2.25rem; line-height: 1.2; margin-bottom: var(--space-2); }
+    h2 { font-size: 1.4rem; margin: var(--space-5) 0 var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); }
+    h3 { font-size: 1.15rem; margin: var(--space-4) 0 var(--space-2); }
+    h4 { font-size: 1rem; margin: var(--space-3) 0 var(--space-2); }
+    p { margin-bottom: var(--space-3); }
+
+    /* ---- Company Header ---- */
+    .company-header {
+      margin-bottom: var(--space-5);
+    }
+    .breadcrumb {
+      font-size: 13px;
+      color: var(--ink-400);
+      margin-bottom: var(--space-3);
+    }
+    .breadcrumb a {
+      color: var(--ink-400);
+      text-decoration: none;
+    }
+    .breadcrumb a:hover {
+      color: var(--gold);
+    }
+    .subtitle {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      color: var(--ink-500);
+      margin-bottom: var(--space-4);
+      max-width: 680px;
+    }
+
+    /* ---- Partner Badge ---- */
+    .partner-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--space-3);
+    }
+    .partner-badge-verified {
+      background: var(--gold-light);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+    }
+    .partner-badge-strategic {
+      background: var(--ink-900);
+      color: var(--gold);
+    }
+
+    /* ---- Quick Facts Grid ---- */
+    .quick-facts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--space-2);
+      background: var(--paper-alt);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+    .quick-fact {
+      padding: var(--space-1) 0;
+    }
+    .quick-fact-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-400);
+      margin-bottom: 2px;
+    }
+    .quick-fact-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    /* ---- Summary Box ---- */
+    .summary-box {
+      background: var(--paper-alt);
+      border-left: 3px solid var(--gold);
+      padding: var(--space-3) var(--space-4);
+      margin-bottom: var(--space-5);
+      border-radius: 0 8px 8px 0;
+    }
+    .summary-box p {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: var(--space-2);
+    }
+    .summary-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ---- Evidence Table ---- */
+    .evidence-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--space-3) 0 var(--space-4);
+      font-size: 14px;
+    }
+    .evidence-table th {
+      background: var(--ink-900);
+      color: white;
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .evidence-table td {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    .evidence-table tr:last-child td {
+      border-bottom: none;
+    }
+    .evidence-table tr:nth-child(even) {
+      background: var(--paper-alt);
+    }
+
+    /* ---- Evidence Badge ---- */
+    .evidence-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .evidence-strong { background: #E8F5E9; color: #2E7D32; }
+    .evidence-moderate { background: #FFF3E0; color: #E65100; }
+    .evidence-emerging { background: #E3F2FD; color: #1565C0; }
+    .evidence-preliminary { background: #F3E5F5; color: #6A1B9A; }
+
+    /* ---- Inline Q&A ---- */
+    .inline-qa {
+      background: linear-gradient(135deg, #F0F7F2, #F8FBF9);
+      border: 1px solid #D4E8DA;
+      border-radius: 8px;
+      padding: var(--space-3) var(--space-4);
+      margin: var(--space-3) 0;
+    }
+    .inline-qa-question {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      color: var(--ink-900);
+      font-size: 1.05rem;
+      margin-bottom: var(--space-2);
+    }
+    .inline-qa-answer {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--ink-700);
+    }
+    .inline-qa-answer p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ---- KB Insight ---- */
+    .kb-insight {
+      border-left: 3px solid var(--green);
+      padding: var(--space-2) var(--space-3);
+      margin: var(--space-3) 0;
+      background: #F8FBF9;
+      border-radius: 0 6px 6px 0;
+      font-size: 14px;
+    }
+    .kb-insight-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    /* ---- Comparison Table ---- */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--space-3) 0 var(--space-4);
+      font-size: 14px;
+    }
+    .comparison-table th {
+      background: var(--paper-alt);
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-500);
+      border-bottom: 2px solid var(--line);
+    }
+    .comparison-table td {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    .comparison-table .current-company {
+      background: var(--gold-light);
+      font-weight: 500;
+    }
+
+    /* ---- Video Embed ---- */
+    .video-section {
+      margin: var(--space-4) 0;
+      padding: var(--space-3);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper-alt);
+    }
+    .video-section .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+      margin-bottom: var(--space-2);
+    }
+    .video-placeholder {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: var(--ink-900);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-400);
+      font-size: 14px;
+    }
+
+    /* ---- CTA Section ---- */
+    .vendor-cta {
+      border: 2px solid var(--gold);
+      border-radius: 12px;
+      padding: var(--space-4);
+      margin: var(--space-5) 0;
+      text-align: center;
+    }
+    .vendor-cta h3 {
+      font-size: 1.2rem;
+      margin-bottom: var(--space-2);
+    }
+    .vendor-cta p {
+      font-size: 14px;
+      color: var(--ink-500);
+      margin-bottom: var(--space-3);
+    }
+    .vendor-cta a {
+      display: inline-block;
+      background: var(--ink-900);
+      color: white;
+      padding: 10px 28px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .vendor-cta a:hover {
+      background: var(--ink-700);
+    }
+
+    /* ---- FAQ ---- */
+    .faq-item {
+      margin-bottom: var(--space-4);
+    }
+    .faq-question {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      color: var(--ink-900);
+      font-size: 1.05rem;
+      margin-bottom: var(--space-1);
+    }
+    .faq-answer {
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ---- Sources ---- */
+    .sources-list {
+      list-style: none;
+      padding: 0;
+      margin: var(--space-3) 0;
+    }
+    .sources-list li {
+      font-size: 13px;
+      color: var(--ink-500);
+      padding: var(--space-1) 0;
+      border-bottom: 1px solid var(--line);
+      line-height: 1.5;
+    }
+    .sources-list li:last-child {
+      border-bottom: none;
+    }
+    .sources-list a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .sources-list a:hover {
+      text-decoration: underline;
+    }
+
+    /* ---- Framework Badge ---- */
+    .framework-badge {
+      position: fixed;
+      bottom: var(--space-3);
+      right: var(--space-3);
+      background: var(--ink-900);
+      color: var(--ink-400);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+      z-index: 100;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      body { padding: var(--space-3) var(--space-2); }
+      h1 { font-size: 1.75rem; }
+      .quick-facts { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ---- HEADER ---- -->
+<div class="company-header">
+  <div class="breadcrumb">
+    <a href="/commons">NGM Commons</a> &rsaquo;
+    <a href="/commons/{{category_slug}}">{{category_name}}</a> &rsaquo;
+    {{company_name}}
+  </div>
+  <div class="partner-badge {{partner_badge_class}}">{{partner_badge_text}}</div>
+  <h1>{{company_name}}</h1>
+  <p class="subtitle">{{company_tagline}}</p>
+</div>
+
+<!-- ---- QUICK FACTS ---- -->
+<div class="quick-facts">
+  {{quick_facts_items}}
+  <!--
+  Each item follows this pattern:
+  <div class="quick-fact">
+    <div class="quick-fact-label">Methodology</div>
+    <div class="quick-fact-value">Metatranscriptomics + AI</div>
+  </div>
+  -->
+</div>
+
+<!-- ---- EXECUTIVE SUMMARY ---- -->
+<div class="summary-box">
+  {{executive_summary}}
+  <!--
+  2-3 paragraphs in <p> tags summarizing:
+  - What the company does and how
+  - Why it's notable within its category
+  - Clinical relevance
+  -->
+</div>
+
+<!-- ---- THE APPROACH (H2) ---- -->
+<h2>The Approach</h2>
+{{approach_content}}
+<!--
+1000+ words structured as:
+- H3: Foundational methodology
+- H3: Technical differentiation
+- SVG diagram of company-specific process (inline)
+- Inline Q&A blocks distributed throughout
+
+This is where Lens 1 (mechanistic) analysis is primary.
+KBV2 enrichment: tier_1_files (pathways) for precise mechanistic detail.
+-->
+
+<!-- ---- EVIDENCE & VALIDATION (H2) ---- -->
+<h2>Evidence &amp; Validation</h2>
+{{evidence_content}}
+<!--
+800+ words structured as:
+- H3: Published studies
+- Evidence grading table (.evidence-table)
+- H3: Regulatory status
+- H3: Clinical performance data
+- Inline Q&A blocks
+
+This is where Lens 2 (literature) analysis is primary.
+KBV2 enrichment: conflict_synthesis for known field debates, citation_harvest for curated PMIDs.
+-->
+
+<!-- ---- CLINICAL IMPLEMENTATION (H2) ---- -->
+<h2>Clinical Implementation</h2>
+{{clinical_implementation_content}}
+<!--
+600+ words structured as:
+- H3: Patient/population fit
+- H3: Workflow integration
+- H3: Interpretation framework
+- Inline Q&A on usage patterns
+
+This is where Lens 3 (KB cross-reference) analysis is primary.
+KBV2 enrichment: tier_1_files (interventions) for dosing, tier_1_files (biomarkers) for interpretation.
+-->
+
+<!-- ---- KB INTEGRATION (H2) ---- -->
+<h2>Related Interventions &amp; Pathways</h2>
+{{kb_integration_content}}
+<!--
+Structured as:
+- H3: What practitioners typically do with results
+- H3: Biomarkers this company measures
+- H3: Signaling pathways targeted
+- Action table mapping findings → interventions → evidence grade
+
+This section draws heavily from Lens 3 KB cross-reference output.
+-->
+
+<!-- ---- VIDEO EMBED (Tier 2+ only) ---- -->
+{{video_section}}
+<!--
+Only included for Tier 2+ partners. Pattern:
+<div class="video-section">
+  <div class="section-label">Product Walkthrough</div>
+  <div class="video-placeholder">{{video_embed_or_placeholder}}</div>
+</div>
+-->
+
+<!-- ---- CATEGORY CONTEXT (H2) ---- -->
+<h2>Category Context</h2>
+{{category_context_content}}
+<!--
+Structured as:
+- H3: Methodological comparison (comparison table with .current-company class on this company's row)
+- H3: Where the field is evolving
+
+This section positions the company within its category without ranking or comparative claims.
+Use "notable for" / "takes a [X] approach" / "distinctive in" framing.
+-->
+
+<!-- ---- VENDOR CTA ---- -->
+<div class="vendor-cta">
+  <h3>{{vendor_cta_heading}}</h3>
+  <p>{{vendor_cta_description}}</p>
+  <a href="{{vendor_cta_url}}">{{vendor_cta_label}}</a>
+</div>
+
+<!-- ---- FAQ (H2) ---- -->
+<h2>Frequently Asked Questions</h2>
+{{faq_items}}
+<!--
+6-10 Q&A pairs, each as:
+<div class="faq-item">
+  <div class="faq-question">Q: [Question]</div>
+  <div class="faq-answer">[Answer — starts affirmative, never with "No."]</div>
+</div>
+-->
+
+<!-- ---- SOURCES (H2) ---- -->
+<h2>Sources</h2>
+<ol class="sources-list">
+  {{sources}}
+  <!--
+  Each source as <li> with PMID/DOI links:
+  <li>[1] Author et al. (Year). "Title." <em>Journal</em>. <a href="https://pubmed.ncbi.nlm.nih.gov/PMID">PMID: 12345678</a></li>
+  -->
+</ol>
+
+<!-- ---- FRAMEWORK BADGE ---- -->
+<div class="framework-badge">company-v1 | {{category_name}}</div>
+
+</body>
+</html>

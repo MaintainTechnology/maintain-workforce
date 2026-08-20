@@ -1,0 +1,24 @@
+{
+  "inputs": [
+    {
+      "input": "Update the Ralph content skill to use Opus 4.8 for every copy-generation step.",
+      "type": "free_text"
+    },
+    {
+      "input": "change every step to opus 4.8 actually",
+      "type": "free_text"
+    },
+    {
+      "input": "yes commit",
+      "type": "free_text"
+    },
+    {
+      "input": "merge it into main",
+      "type": "free_text"
+    },
+    {
+      "input": "one other thing, i want to change how /ralph-content interacts with my KB. im not sure how its doing it now, but what id like to do instead is just agentically query the google drive folder directly using opus 4.8 agentic capabilities. i beleive i already have the google drive connector enabled. i think that will enable us to get much better insights from the KB\n\nKB is located here: https://drive.google.com/drive/u/0/folders/1U-aevYGAWJQkoSQ5keSZFKDl4bkkXevb",
+      "type": "free_text"
+    }
+  ]
+}

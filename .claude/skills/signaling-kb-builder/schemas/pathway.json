@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pathway.schema.json",
+  "title": "Pathway Node",
+  "description": "Schema for pathway nodes following SIGNAL-10 axis structure",
+  "type": "object",
+  "required": ["pathway_id", "axis", "axis_name", "core_nodes"],
+  "properties": {
+    "pathway_id": {
+      "type": "string",
+      "description": "Canonical identifier (e.g., 'axis-1-nutrient-sensing/mtor-signaling')",
+      "pattern": "^axis-[0-9]+-[a-z-]+/[a-z0-9-]+$"
+    },
+    "axis": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "SIGNAL-10 axis number (1-10)"
+    },
+    "axis_name": {
+      "type": "string",
+      "enum": [
+        "Nutrient Sensing & Energetics",
+        "Proteostasis & Autophagy/UPR",
+        "Mitochondrial Function & Mitohormesis",
+        "Innate Inflammation",
+        "Cellular Senescence & SASP",
+        "Genomic Integrity & Epigenetics",
+        "Stem Cell & Regeneration",
+        "Intercellular Communication",
+        "Circadian & Timing",
+        "Tissue-Specific Aging"
+      ],
+      "description": "SIGNAL-10 axis name"
+    },
+    "shift_domain": {
+      "type": "string",
+      "enum": ["S", "H", "I", "F", "T"],
+      "description": "SHIFT domain mapping"
+    },
+    "sub_pathway_name": {
+      "type": "string",
+      "description": "Specific sub-pathway within the axis"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of pathway function"
+    },
+    "core_nodes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Core genes/proteins in this pathway (HGNC symbols)"
+    },
+    "upstream_triggers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Upstream activators/triggers of this pathway"
+    },
+    "downstream_effects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Downstream effects when pathway is activated"
+    },
+    "crosstalk": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target_pathway", "relationship"],
+        "properties": {
+          "target_pathway": {
+            "type": "string",
+            "description": "Target pathway ID"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": ["activates", "inhibits", "modulates", "feeds_into"],
+            "description": "Relationship type"
+          },
+          "mechanism": {
+            "type": "string",
+            "description": "Mechanism of crosstalk"
+          },
+          "bidirectional": {
+            "type": "boolean",
+            "description": "Whether crosstalk is bidirectional"
+          }
+        }
+      },
+      "description": "Crosstalk with other pathways"
+    },
+    "interventions_targeting": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["intervention_id", "effect"],
+        "properties": {
+          "intervention_id": {
+            "type": "string",
+            "description": "Intervention node ID"
+          },
+          "effect": {
+            "type": "string",
+            "enum": ["activate", "inhibit", "modulate", "indirect_activate", "indirect_inhibit"],
+            "description": "Effect on pathway"
+          },
+          "specificity": {
+            "type": "string",
+            "description": "Specificity notes"
+          },
+          "via": {
+            "type": "string",
+            "description": "Mechanism if indirect"
+          }
+        }
+      },
+      "description": "Interventions that target this pathway"
+    },
+    "biomarker_relevance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["biomarker_id", "relationship"],
+        "properties": {
+          "biomarker_id": {
+            "type": "string",
+            "description": "Biomarker node ID"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": ["upstream_activator", "activity_marker", "downstream_indicator", "substrate"],
+            "description": "Relationship to biomarker"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional context"
+          }
+        }
+      },
+      "description": "Biomarkers related to this pathway"
+    },
+    "key_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "statement": { "type": "string" },
+          "evidence_type": {
+            "type": "string",
+            "enum": ["EXPLICIT", "STRONGLY_INFERRED", "LOOSELY_INFERRED"]
+          },
+          "source_type": {
+            "type": "string",
+            "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion"]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "moderate", "low"]
+          },
+        }
+      }
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion"],
+      "description": "Primary source type for this pathway description"
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "conflict.json" }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "state.schema.json",
+  "title": "Processing State",
+  "description": "Schema for KB processing state management",
+  "type": "object",
+  "required": ["last_processed", "transcripts_processed", "nodes_created"],
+  "properties": {
+    "last_processed": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last processing run"
+    },
+    "transcripts_processed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of transcripts processed"
+    },
+    "transcripts_pending": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of transcripts awaiting processing"
+    },
+    "nodes_created": {
+      "type": "object",
+      "properties": {
+        "interventions": { "type": "integer", "minimum": 0 },
+        "pathways": { "type": "integer", "minimum": 0 },
+        "biomarkers": { "type": "integer", "minimum": 0 }
+      },
+      "description": "Count of nodes by type"
+    },
+    "active_conflicts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of unresolved conflicts"
+    },
+    "conflicts_reviewed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of conflicts marked as reviewed"
+    },
+    "last_enrichment_run": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last enrichment batch"
+    },
+    "extraction_counter": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Counter for generating extraction refs"
+    },
+    "processing_queue": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_path": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed"]
+          },
+          "added_at": { "type": "string", "format": "date-time" },
+          "started_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": "string", "format": "date-time" },
+          "error": { "type": "string" }
+        }
+      },
+      "description": "Queue of sources to process"
+    }
+  }
+}

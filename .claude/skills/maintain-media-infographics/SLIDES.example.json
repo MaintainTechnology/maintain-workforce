@@ -1,0 +1,41 @@
+[
+  {
+    "type": "stat",
+    "kicker": "The problem",
+    "value": "40",
+    "unit": "%",
+    "label": "of marketing time is lost re-making the same graphic",
+    "support": "Every post rebuilt from scratch is time not spent on the message."
+  },
+  {
+    "type": "list",
+    "title": "One system, every asset",
+    "items": [
+      { "icon": "target", "title": "On-brand by default", "text": "Real logo, real purple, real fonts, every time." },
+      { "icon": "chart", "title": "Built from your numbers", "text": "Stat and metric cards straight from the data you give it." },
+      { "icon": "fast", "title": "Minutes, not hours", "text": "Edit the copy, render the deck, post it." }
+    ]
+  },
+  {
+    "type": "steps",
+    "title": "How it works",
+    "steps": [
+      { "title": "Write the copy", "text": "Headlines, numbers, and a real quote." },
+      { "title": "Render the deck", "text": "The engine styles every panel to spec." },
+      { "title": "Post it", "text": "PNG slides plus a ready carousel PDF." }
+    ]
+  },
+  {
+    "type": "quote",
+    "quote": "It finally all looks like the same company.",
+    "name": "Add a real name",
+    "role": "Real role, real company"
+  },
+  {
+    "type": "cta",
+    "headline": "Make it look like Maintain Media.",
+    "sub": "Give it the copy. It handles the design.",
+    "action": "Start a carousel",
+    "url": "maintainmedia.com"
+  }
+]

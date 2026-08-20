@@ -1,0 +1,26 @@
+{
+  "skill_name": "polish-prompt",
+  "evals": [
+    {
+      "id": 1,
+      "name": "short-casual-light-polish",
+      "prompt": "Polish this prompt for me:\n\nhey can u look at this csv file i have and tell me whats wrong with the data or anything weird, then maybe help me clean it up if needed kthx",
+      "expected_output": "A light-polish output. Returns a tight one-paragraph polished prompt (no headers in the polished text) plus 2-4 change-notes bullets. Should replace vague 'whats wrong with the data' with concrete criteria (e.g. missing values, schema violations, outliers), remove filler ('hey', 'u', 'kthx'), and specify an output shape. Should NOT add a heavy Role/Context/Task/Constraints template.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "long-system-prompt-structured-polish",
+      "prompt": "Polish this system prompt for a coding assistant I'm building:\n\nYou are a helpful coding assistant. You should help users with their coding problems. When users ask for code, write code that is good and works. Try to use modern best practices. If you don't know something, just say so. Be careful with security issues. Don't write code that has bugs. Always test your code mentally before giving it. Use comments to explain things. When you don't know what language someone wants, ask them. Try to be efficient. Format your code nicely. Be helpful but don't be too long-winded. If users ask about non-coding topics try to redirect them back to coding. Use markdown for code blocks. Don't make up libraries or functions that don't exist. If you're unsure about an API, suggest the user check the docs.",
+      "expected_output": "A structured-polish output. Returns a Role / Context / Task / Constraints / Output Format breakdown, plus 3-4 change-notes bullets. Should replace vague 'be helpful' / 'be careful' / 'be efficient' with concrete behaviors. Should preserve the 'don't make up libraries' constraint (that's the most important real instruction). Should consolidate the duplicate 'don't have bugs' / 'mentally test' / 'use modern practices' guidance.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "medium-clinical-judgment-zone",
+      "prompt": "Improve this prompt for a clinical LLM:\n\nLook at the patient case below and recommend what tests we should run next. Consider their family history when making recommendations. Don't recommend tests that are contraindicated for them based on their meds or conditions. Format as a numbered list with the test name and a one-sentence rationale for each. The patient case is: [PATIENT_CASE_HERE]",
+      "expected_output": "A judgment-zone prompt — roughly 60 words, single coherent ask, but with multiple specific requirements (consider history, exclude contraindications, numbered list, name + rationale). Either light or structured polish is acceptable here. A good answer tightens the wording, makes the contraindication check explicit (e.g. 'if a test is contraindicated, omit it and note why in a separate Excluded section'), and clarifies what 'family history' means. Should NOT swap [PATIENT_CASE_HERE] placeholder for example data — preserve user's template syntax.",
+      "files": []
+    }
+  ]
+}

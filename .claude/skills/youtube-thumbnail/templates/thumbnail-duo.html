@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YT Thumbnail - [TOPIC]</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #2a2a2a;
+      padding: 40px;
+    }
+
+    .canvas {
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(160deg, #302C27 0%, #12151a 40%, #0f1215 100%);
+    }
+
+    /* Optional: AI-generated background image
+    .canvas {
+      background: url('[BG_IMAGE_PATH]') center/cover no-repeat;
+    }
+    */
+
+    /* Dark overlay — heavier on top for text readability */
+    .canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(10, 11, 12, 0.85) 0%,
+        rgba(10, 11, 12, 0.4) 45%,
+        rgba(10, 11, 12, 0.2) 100%
+      );
+      z-index: 1;
+    }
+
+    /* ── Headline (top center) ── */
+    .headline-area {
+      position: absolute;
+      top: 50px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 10;
+      padding: 0 60px;
+    }
+
+    .headline {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 900;
+      font-size: 82px;
+      line-height: 0.92;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      text-shadow: 0 4px 30px rgba(0,0,0,0.7);
+    }
+
+    .headline .accent {
+      color: #C49A6C;
+    }
+
+    /* ── Speaker Photos (bottom) ── */
+    .speakers {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 80px;
+      z-index: 5;
+    }
+
+    .speaker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .speaker-photo {
+      width: 360px;
+      height: 420px;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    /* Gradient fade on bottom of photo for label readability */
+    .speaker-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 0;
+      text-align: center;
+      background: linear-gradient(to top, rgba(10,11,12,0.9) 0%, transparent 100%);
+    }
+
+    .speaker-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .speaker-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.02em;
+    }
+
+    .speaker-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 2px;
+    }
+
+    /* ── Divider between speakers ── */
+    .speaker-divider {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 180px;
+      background: linear-gradient(to bottom, transparent 0%, rgba(197,165,114,0.4) 50%, transparent 100%);
+      z-index: 6;
+    }
+
+    /* ── Brand Mark ── */
+    .brand-mark {
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .brand-mark .logo {
+      width: 26px;
+      height: 26px;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 500;
+    }
+
+    .brand-mark .name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── Accent line ── */
+    .accent-line {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(to right, transparent 20%, #C49A6C 50%, transparent 80%);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+
+    <!-- Headline — 3-5 words, centered top -->
+    <div class="headline-area">
+      <div class="headline">
+        [LINE_1] <span class="accent">[LINE_2]</span>
+      </div>
+    </div>
+
+    <!-- Two speakers side by side -->
+    <div class="speakers">
+      <!-- Host -->
+      <div class="speaker">
+        <div class="speaker-wrapper">
+          <img class="speaker-photo" src="[HOST_PHOTO_PATH]" alt="[HOST_NAME]">
+          <div class="speaker-info">
+            <div class="speaker-name">[HOST_NAME]</div>
+            <div class="speaker-title">[HOST_SHORT_TITLE]</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guest -->
+      <div class="speaker">
+        <div class="speaker-wrapper">
+          <img class="speaker-photo" src="[GUEST_PHOTO_PATH]" alt="[GUEST_NAME]">
+          <div class="speaker-info">
+            <div class="speaker-name">[GUEST_NAME]</div>
+            <div class="speaker-title">[GUEST_SHORT_TITLE]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Divider between speakers -->
+    <div class="speaker-divider"></div>
+
+    <!-- Brand mark -->
+    <div class="brand-mark">
+      <div class="logo">N</div>
+      <span class="name">NGM</span>
+    </div>
+
+    <!-- Bottom accent -->
+    <div class="accent-line"></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,258 @@
+{
+  "biomarker_id": "igf1",
+  "full_name": "Insulin-like Growth Factor 1",
+  "aliases": ["IGF-1", "somatomedin C"],
+  "category": "hormone",
+  
+  "reference_range": {
+    "low": 100,
+    "high": 300,
+    "unit": "ng/mL",
+    "notes": "Reference range varies by age and lab; this is approximate adult range"
+  },
+  
+  "interpretation_patterns": [
+    {
+      "pattern_id": "low-igf1-with-insulin-resistance",
+      "biomarker_state": {
+        "igf1": "low",
+        "homa_ir": "elevated"
+      },
+      "interpretation": "Low IGF-1 in the setting of insulin resistance suggests hepatic GH resistance rather than true GH deficiency. The liver produces IGF-1 in response to GH, but insulin resistance impairs this hepatic response. The patient may have adequate GH but the liver cannot respond properly.",
+      "differential": [
+        "Hepatic insulin resistance",
+        "GH resistance (functional)",
+        "Non-alcoholic fatty liver disease",
+        "Metabolic syndrome",
+        "Chronic inflammation"
+      ],
+      "clinical_implications": "Consider addressing insulin resistance before initiating GH therapy. GH may be ineffective if hepatic GH signaling is impaired. Focus on metabolic optimization first.",
+      "next_steps": [
+        "Assess liver function and fatty liver status",
+        "Consider metabolic interventions (diet, exercise, metformin)",
+        "Recheck IGF-1 after metabolic improvement",
+        "GH stimulation testing only if IGF-1 remains low after metabolic optimization"
+      ],
+      "evidence_grade": "moderate",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [
+        {
+          "citation": "Sjogren K, Wallenius K, Liu JL, et al. (2001) Liver-derived IGF-I is the principal source of IGF-I in blood. Annals of Medicine. 33(3):138-143",
+          "doi": "10.3109/07853890109002072",
+          "relevance": "Establishes liver as primary IGF-1 source"
+        }
+      ],
+      "extraction_ref": "ext_018",
+      "confidence": "moderate"
+    },
+    {
+      "pattern_id": "low-igf1-normal-insulin-sensitivity",
+      "biomarker_state": {
+        "igf1": "low",
+        "homa_ir": "normal",
+        "fasting_insulin": "normal"
+      },
+      "interpretation": "Low IGF-1 with normal insulin sensitivity is more suggestive of true GH deficiency or inadequate protein/caloric intake. The liver appears capable of responding to GH (no insulin resistance block), but either GH stimulus is insufficient or nutritional substrates are lacking.",
+      "differential": [
+        "Adult GH deficiency",
+        "Inadequate protein intake",
+        "Caloric restriction",
+        "Chronic illness/catabolic state",
+        "Pituitary dysfunction"
+      ],
+      "clinical_implications": "Evaluate nutritional status and consider GH stimulation testing. GH therapy may be appropriate if deficiency is confirmed.",
+      "next_steps": [
+        "Assess dietary protein intake (target 1.0-1.6g/kg)",
+        "Check overall caloric adequacy",
+        "Consider GH stimulation testing (insulin tolerance test, glucagon, GHRH-arginine)",
+        "Evaluate pituitary function if other axes appear affected"
+      ],
+      "evidence_grade": "moderate",
+      "source_type": "expert_lecture",
+      "extraction_ref": "ext_019",
+      "confidence": "moderate"
+    },
+    {
+      "pattern_id": "high-igf1-longevity-concern",
+      "biomarker_state": {
+        "igf1": "high"
+      },
+      "interpretation": "Elevated IGF-1 in a longevity context may indicate accelerated growth signaling associated with faster aging and potentially increased cancer risk. However, very low IGF-1 is also associated with frailty and sarcopenia. The optimal zone depends on clinical context.",
+      "differential": [
+        "Exogenous GH/IGF-1 use",
+        "Acromegaly (if very high)",
+        "High protein diet",
+        "Genetic variation"
+      ],
+      "clinical_implications": "In longevity-focused patients, consider whether IGF-1 optimization to mid-range is appropriate. Balance anabolic needs against longevity concerns.",
+      "next_steps": [
+        "Assess patient's goals (anabolism vs longevity optimization)",
+        "Review any exogenous hormone use",
+        "Consider dietary protein moderation if very high intake",
+        "Screen for acromegaly if IGF-1 very elevated with symptoms"
+      ],
+      "evidence_grade": "low",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [
+        {
+          "citation": "Milman S, Atzmon G, Huffman DM, et al. (2014) Low insulin-like growth factor-1 level predicts survival in humans with exceptional longevity. Aging Cell. 13(4):769-771",
+          "doi": "10.1111/acel.12213",
+          "relevance": "Association of lower IGF-1 with longevity in centenarians"
+        }
+      ],
+      "extraction_ref": "ext_056",
+      "confidence": "low"
+    }
+  ],
+  
+  "optimal_ranges_by_context": [
+    {
+      "range_id": "longevity-40-60",
+      "optimal": {
+        "low": 150,
+        "high": 250,
+        "target": 200
+      },
+      "context": "Longevity optimization in adults 40-60 years old",
+      "rationale": "Below 150 ng/mL may indicate deficiency with sarcopenia risk; above 250 ng/mL may accelerate aging. Mid-range balances anabolism and longevity.",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [],
+      "extraction_ref": "ext_018",
+      "confidence": "moderate"
+    },
+    {
+      "range_id": "longevity-over-60",
+      "optimal": {
+        "low": 120,
+        "high": 200,
+        "target": 160
+      },
+      "context": "Longevity optimization in adults over 60 years old",
+      "rationale": "Lower targets may be appropriate for older adults given cancer risk considerations. However, must balance against sarcopenia and frailty risk.",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [],
+      "extraction_ref": "ext_057",
+      "confidence": "low"
+    },
+    {
+      "range_id": "athletic-performance",
+      "optimal": {
+        "low": 200,
+        "high": 350,
+        "target": 275
+      },
+      "context": "Athletic performance and recovery in competitive athletes",
+      "rationale": "Higher IGF-1 supports muscle protein synthesis and recovery. May be appropriate for competitive athletes where performance is priority over longevity optimization.",
+      "source_type": "expert_lecture",
+      "peer_reviewed_citations": [],
+      "extraction_ref": "ext_062",
+      "confidence": "low"
+    }
+  ],
+  
+  "interventions_affecting": [
+    {
+      "intervention_id": "growth-hormone",
+      "effect": "increase",
+      "magnitude": "significant (typically 50-200% increase)",
+      "timeframe": "weeks to months",
+      "confidence": "high",
+      "notes": "Primary physiologic stimulator of hepatic IGF-1 production"
+    },
+    {
+      "intervention_id": "ghrh-ghrp-combination",
+      "effect": "increase",
+      "magnitude": "moderate (30-100% increase)",
+      "timeframe": "weeks",
+      "confidence": "moderate",
+      "notes": "Stimulates endogenous GH release, less predictable than exogenous GH"
+    },
+    {
+      "intervention_id": "carnitine-with-gh",
+      "effect": "increase",
+      "magnitude": "additive to GH effect (+50-100 ng/mL claimed)",
+      "timeframe": "weeks",
+      "confidence": "low",
+      "notes": "Anecdotal reports of enhanced IGF-1 response when combining carnitine with GH"
+    },
+    {
+      "intervention_id": "protein-intake",
+      "effect": "increase",
+      "magnitude": "modest if previously deficient",
+      "timeframe": "weeks",
+      "confidence": "moderate",
+      "notes": "Adequate protein required for IGF-1 synthesis; deficiency lowers IGF-1"
+    },
+    {
+      "intervention_id": "fasting-extended",
+      "effect": "decrease",
+      "magnitude": "significant during fast",
+      "timeframe": "days",
+      "confidence": "high",
+      "notes": "Prolonged fasting suppresses IGF-1 as adaptive response"
+    }
+  ],
+  
+  "pathways_involved": [
+    "axis-1-nutrient-sensing/igf1-axis",
+    "axis-1-nutrient-sensing/mtor-signaling",
+    "axis-7-regeneration/growth-signaling"
+  ],
+  
+  "related_biomarkers": [
+    {
+      "biomarker_id": "igfbp3",
+      "relationship": "ratio_component",
+      "notes": "IGF-1/IGFBP-3 ratio may better reflect bioavailable IGF-1"
+    },
+    {
+      "biomarker_id": "growth-hormone",
+      "relationship": "precursor",
+      "notes": "GH stimulates hepatic IGF-1 production"
+    },
+    {
+      "biomarker_id": "homa-ir",
+      "relationship": "correlated",
+      "notes": "Insulin resistance affects hepatic IGF-1 response to GH"
+    }
+  ],
+  
+  "range_conflicts": [
+    {
+      "conflict_id": "conflict_igf1_range_longevity_001",
+      "topic": "Optimal IGF-1 range for longevity in adults 40-60",
+      "nature": "numeric",
+      "truly_contradictory": true,
+      "position_a": {
+        "summary": "Optimal range 150-250 ng/mL",
+        "detail": "Balances anabolic function against longevity concerns",
+        "confidence": "moderate",
+        "extraction_ref": "ext_018"
+      },
+      "position_b": {
+        "summary": "Optimal range 100-180 ng/mL",
+        "detail": "More conservative target to minimize cancer/accelerated aging risk",
+        "confidence": "moderate",
+        "extraction_ref": "ext_089"
+      },
+      "characterization": "Different experts recommend different optimal ranges for the same population. The difference reflects different weighting of anabolic benefits versus longevity/cancer risk. Position A prioritizes maintaining muscle and function; Position B prioritizes longevity risk minimization.",
+      "clinical_note": "Both ranges are advocated by different practitioners. Consider individual patient factors: sarcopenia/frailty concerns favor higher range; cancer history or strong longevity focus favor lower range. Neither is definitively correct.",
+      "context_factors": [
+        "Patient's cancer history or family history",
+        "Sarcopenia or frailty status",
+        "Primary goal (function vs maximum lifespan)",
+        "Current IGF-1 level and direction of change"
+      ],
+      "resolution_status": "unresolved",
+      "flagged_for_review": true,
+      "created_at": "2025-01-16T11:00:00Z"
+    }
+  ],
+  
+  "interpretation_conflicts": [],
+  
+  "extraction_refs": ["ext_018", "ext_019", "ext_056", "ext_057", "ext_062", "ext_089"],
+  
+  "created_at": "2025-01-15T11:00:00Z",
+  "updated_at": "2025-01-16T11:00:00Z"
+}

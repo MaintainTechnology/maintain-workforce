@@ -1,0 +1,46 @@
+{
+  "size": "1080x1350",
+  "handle": "maintainaudits.com.au",
+  "slides": [
+    {
+      "type": "stat",
+      "kicker": "48-hour turnaround",
+      "value": "48hr",
+      "label": "From engagement to report",
+      "note": "Independent franchise assurance, delivered when it matters."
+    },
+    {
+      "type": "list",
+      "headline": "Three types of franchise risk",
+      "items": [
+        { "title": "Revenue risk", "detail": "Lost income from non-compliant sites." },
+        { "title": "Brand risk", "detail": "Erosion of your franchise's core value." },
+        { "title": "Reputation risk", "detail": "The exposure that keeps franchisors up at night." }
+      ]
+    },
+    {
+      "type": "steps",
+      "headline": "What actually happens during an audit",
+      "steps": [
+        "Pre-audit preparation",
+        "On-site or remote assessment",
+        "Analysis of findings",
+        "Report delivered within 48 hours",
+        "Follow-up on corrective actions"
+      ]
+    },
+    {
+      "type": "quote",
+      "quote": "Replace this with a real client quote. Never invent a testimonial.",
+      "name": "Client name",
+      "role": "Role, Franchise Network"
+    },
+    {
+      "type": "cta",
+      "headline": "Know what is happening in your network",
+      "sub": "Independent assurance reveals what internal reporting misses.",
+      "action": "Book an audit",
+      "url": "maintainaudits.com.au"
+    }
+  ]
+}

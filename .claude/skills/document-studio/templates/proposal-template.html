@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposal for [CLIENT_NAME] | Next Generation Medicine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600&family=Noto+Serif+JP:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #FFFFFF;
+      --paper-alt: #F5F2EC;
+      --ink-900: #302C27;
+      --ink-700: #4A4540;
+      --ink-500: #706C66;
+      --ink-400: #9C9890;
+      --line: #E3DFD7;
+      --gold: #C49A6C;
+      --vermillion: #C07050;
+
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 20px;
+      --space-4: 32px;
+      --space-5: 48px;
+      --space-6: 72px;
+      --space-7: 96px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink-700);
+      background-color: var(--paper);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: clamp(20px, 5vw, 48px);
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', 'Noto Serif JP', serif;
+      color: var(--ink-900);
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: clamp(32px, 4vw, 42px);
+      line-height: 1.2;
+      margin-bottom: var(--space-4);
+    }
+
+    h2 {
+      font-size: clamp(24px, 3vw, 32px);
+      line-height: 1.2;
+      margin-bottom: var(--space-3);
+    }
+
+    h3 {
+      font-size: clamp(18px, 2.5vw, 24px);
+      line-height: 1.3;
+      margin-bottom: var(--space-2);
+    }
+
+    p {
+      margin-bottom: var(--space-3);
+    }
+
+    /* Header */
+    .header {
+      background: var(--paper-alt);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: var(--space-6);
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 clamp(20px, 5vw, 48px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .wordmark {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+    }
+
+    .header-meta {
+      font-size: 13px;
+      color: var(--ink-500);
+      text-align: right;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: var(--space-6);
+    }
+
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--ink-900);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: var(--space-2);
+    }
+
+    .section-subtitle {
+      font-style: italic;
+      color: var(--ink-500);
+      margin-bottom: var(--space-3);
+    }
+
+    /* Lists */
+    ul, ol {
+      margin-bottom: var(--space-3);
+      padding-left: var(--space-4);
+    }
+
+    li {
+      margin-bottom: var(--space-1);
+    }
+
+    /* Highlight Box */
+    .highlight-box {
+      background: var(--paper-alt);
+      padding: var(--space-4);
+      border-left: 4px solid var(--gold);
+      margin: var(--space-4) 0;
+    }
+
+    /* Pricing Table */
+    .pricing-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--space-4) 0;
+    }
+
+    .pricing-table th {
+      text-align: left;
+      padding: var(--space-2) var(--space-3);
+      background: var(--paper-alt);
+      border-bottom: 2px solid var(--line);
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-500);
+    }
+
+    .pricing-table td {
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    .pricing-table .option-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    .pricing-table .price {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--ink-900);
+    }
+
+    .pricing-table .recommended {
+      background: rgba(197, 165, 114, 0.1);
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--gold);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 8px;
+      margin-left: var(--space-2);
+    }
+
+    /* Credentials */
+    .credential-item {
+      display: flex;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+    }
+
+    .credential-icon {
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    /* Deliverable cards */
+    .deliverable-grid {
+      display: grid;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    .deliverable-card {
+      background: var(--paper-alt);
+      padding: var(--space-3);
+      border-left: 3px solid var(--gold);
+    }
+
+    .deliverable-card h4 {
+      font-size: 16px;
+      margin-bottom: var(--space-1);
+    }
+
+    .deliverable-card p {
+      margin-bottom: 0;
+      font-size: 14px;
+      color: var(--ink-500);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: var(--space-5) 0;
+      color: var(--ink-400);
+      font-size: 13px;
+    }
+
+    /* Print styles */
+    @media print {
+      .container {
+        padding: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="wordmark">Next Generation Medicine</div>
+      <div class="header-meta">
+        [DATE]<br>
+        Prepared for [CLIENT_NAME]
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Title Section -->
+    <section class="section">
+      <h1>[PROPOSAL_TITLE]</h1>
+      <p class="section-subtitle">[PROPOSAL_SUBTITLE]</p>
+    </section>
+
+    <!-- Section 1: Executive Summary -->
+    <section class="section">
+      <div class="section-number">1</div>
+      <h2>Executive Summary</h2>
+      <p>[EXECUTIVE_SUMMARY - 2-3 sentences maximum. What the opportunity is, what we're proposing, the key outcome.]</p>
+    </section>
+
+    <!-- Section 2: Understanding Your Situation -->
+    <section class="section">
+      <div class="section-number">2</div>
+      <h2>Understanding Your Situation</h2>
+
+      <h3>What You've Built / Current State</h3>
+      <p>[CURRENT_STATE - What they have, what they're doing now]</p>
+
+      <h3>The Challenge</h3>
+      <p>[CHALLENGES - What's not working, what gaps exist]</p>
+
+      <h3>The Goal</h3>
+      <p>[GOALS - Where they want to be, what success looks like]</p>
+
+      <div class="highlight-box">
+        <strong>The Core Opportunity:</strong><br>
+        [KEY_INSIGHT - Brief statement of the main opportunity from the conversation]
+      </div>
+    </section>
+
+    <!-- Section 3: Proposed Solution -->
+    <section class="section">
+      <div class="section-number">3</div>
+      <h2>Proposed Solution</h2>
+
+      <p>[SOLUTION_OVERVIEW - What we'll deliver and how]</p>
+
+      <div class="deliverable-grid">
+        <div class="deliverable-card">
+          <h4>[DELIVERABLE_1_TITLE]</h4>
+          <p>[DELIVERABLE_1_DESCRIPTION]</p>
+        </div>
+        <div class="deliverable-card">
+          <h4>[DELIVERABLE_2_TITLE]</h4>
+          <p>[DELIVERABLE_2_DESCRIPTION]</p>
+        </div>
+        <div class="deliverable-card">
+          <h4>[DELIVERABLE_3_TITLE]</h4>
+          <p>[DELIVERABLE_3_DESCRIPTION]</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Why NGM -->
+    <section class="section">
+      <div class="section-number">4</div>
+      <h2>Why This Partnership</h2>
+
+      <p>[WHY_INTRO - Connect credentials to their specific needs]</p>
+
+      <div class="credential-item">
+        <span class="credential-icon">&rarr;</span>
+        <span><strong>[CREDENTIAL_1_TITLE]:</strong> [CREDENTIAL_1_DESCRIPTION]</span>
+      </div>
+
+      <div class="credential-item">
+        <span class="credential-icon">&rarr;</span>
+        <span><strong>[CREDENTIAL_2_TITLE]:</strong> [CREDENTIAL_2_DESCRIPTION]</span>
+      </div>
+
+      <div class="credential-item">
+        <span class="credential-icon">&rarr;</span>
+        <span><strong>[CREDENTIAL_3_TITLE]:</strong> [CREDENTIAL_3_DESCRIPTION]</span>
+      </div>
+    </section>
+
+    <!-- Section 5: Investment -->
+    <section class="section">
+      <div class="section-number">5</div>
+      <h2>Investment</h2>
+
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Engagement</th>
+            <th>Investment</th>
+            <th>Terms</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="recommended">
+            <td>
+              <div class="option-name">[ENGAGEMENT_NAME]</div>
+              <p style="margin-top: 8px; margin-bottom: 0; font-size: 14px; color: var(--ink-500);">
+                [ENGAGEMENT_DESCRIPTION]
+              </p>
+            </td>
+            <td>
+              <div class="price">[PRICE]</div>
+            </td>
+            <td>
+              [TERMS - Payment structure, minimums, etc.]
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight-box">
+        <strong>What's Included:</strong>
+        <ul style="margin-top: 12px; margin-bottom: 0;">
+          <li>[INCLUDED_1]</li>
+          <li>[INCLUDED_2]</li>
+          <li>[INCLUDED_3]</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Next Generation Medicine</p>
+      <p style="margin-top: 4px;">Turning science into strategy—and strategy into systems that deliver results.</p>
+    </div>
+  </main>
+</body>
+</html>
+

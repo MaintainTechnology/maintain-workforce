@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizDev Pipeline - {{generated_date}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* =================================================================
+           NGM DESIGN SYSTEM - CSS Variables
+           ================================================================= */
+        :root {
+            /* Backgrounds */
+            --paper: #FFFFFF;
+            --paper-alt: #F5F2EC;
+
+            /* Text */
+            --ink-900: #302C27;
+            --ink-700: #4A4540;
+            --ink-500: #706C66;
+            --ink-400: #9C9890;
+
+            /* Structural */
+            --line: #E3DFD7;
+
+            /* Accents */
+            --gold: #C49A6C;
+            --vermillion: #C07050;
+
+            /* Opportunity Type Colors */
+            --type-consulting: #C49A6C;      /* Gold */
+            --type-membership: #4A90A4;       /* Teal/Blue */
+            --type-report-generator: #7B68A6; /* Purple */
+            --type-commons: #5A8F5A;          /* Green */
+
+            /* Stage Colors */
+            --stage-discovered: var(--ink-400);
+            --stage-qualified: var(--gold);
+            --stage-engaged: #4A90A4;
+            --stage-proposal: #7B68A6;
+            --stage-closed-won: #5A8F5A;
+            --stage-closed-lost: var(--vermillion);
+
+            /* Spacing */
+            --space-1: 8px;
+            --space-2: 12px;
+            --space-3: 20px;
+            --space-4: 32px;
+            --space-5: 48px;
+            --space-6: 72px;
+        }
+
+        /* =================================================================
+           BASE STYLES
+           ================================================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--ink-700);
+            background: var(--paper-alt);
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* =================================================================
+           HEADER
+           ================================================================= */
+        .header {
+            background: var(--paper);
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--line);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            background: var(--ink-900);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .header-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--ink-900);
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--ink-500);
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 13px;
+            color: var(--ink-500);
+        }
+
+        /* =================================================================
+           SUMMARY STATS
+           ================================================================= */
+        .summary-bar {
+            background: var(--paper);
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .summary-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            gap: var(--space-5);
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--ink-900);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--ink-500);
+            margin-top: 4px;
+        }
+
+        .stat-item.highlight .stat-value {
+            color: var(--gold);
+        }
+
+        /* Type Legend */
+        .type-legend {
+            display: flex;
+            gap: var(--space-3);
+            margin-left: auto;
+            align-items: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--ink-500);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        .legend-dot.consulting { background: var(--type-consulting); }
+        .legend-dot.membership { background: var(--type-membership); }
+        .legend-dot.report-generator { background: var(--type-report-generator); }
+        .legend-dot.commons { background: var(--type-commons); }
+
+        /* =================================================================
+           PIPELINE BOARD
+           ================================================================= */
+        .pipeline-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: var(--space-4);
+            overflow-x: auto;
+        }
+
+        .pipeline-board {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(280px, 1fr));
+            gap: var(--space-3);
+            min-width: 1400px;
+        }
+
+        /* =================================================================
+           PIPELINE COLUMNS
+           ================================================================= */
+        .pipeline-column {
+            background: var(--paper);
+            border-radius: 4px;
+            border: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 200px);
+        }
+
+        .column-header {
+            padding: var(--space-2) var(--space-3);
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: var(--paper);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .column-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--ink-900);
+        }
+
+        .column-count {
+            background: var(--paper-alt);
+            color: var(--ink-500);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .column-body {
+            padding: var(--space-2);
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+
+        /* Stage-specific column styling */
+        .pipeline-column[data-stage="discovered"] .column-header {
+            border-top: 3px solid var(--stage-discovered);
+            border-radius: 0;
+        }
+
+        .pipeline-column[data-stage="qualified"] .column-header {
+            border-top: 3px solid var(--stage-qualified);
+            border-radius: 0;
+        }
+
+        .pipeline-column[data-stage="engaged"] .column-header {
+            border-top: 3px solid var(--stage-engaged);
+            border-radius: 0;
+        }
+
+        .pipeline-column[data-stage="proposal_sent"] .column-header {
+            border-top: 3px solid var(--stage-proposal);
+            border-radius: 0;
+        }
+
+        .pipeline-column[data-stage="closed"] .column-header {
+            border-top: 3px solid var(--stage-closed-won);
+            border-radius: 0;
+        }
+
+        /* =================================================================
+           OPPORTUNITY CARDS
+           ================================================================= */
+        .opportunity-card {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: var(--space-2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .opportunity-card:hover {
+            border-color: var(--gold);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+
+        /* Type indicator bar */
+        .opportunity-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .opportunity-card[data-type="consulting"]::before { background: var(--type-consulting); }
+        .opportunity-card[data-type="membership"]::before { background: var(--type-membership); }
+        .opportunity-card[data-type="report_generator"]::before { background: var(--type-report-generator); }
+        .opportunity-card[data-type="commons_partnership"]::before { background: var(--type-commons); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-1);
+            padding-left: 8px;
+        }
+
+        .contact-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--ink-900);
+            line-height: 1.3;
+        }
+
+        .confidence-score {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .confidence-score.high {
+            background: rgba(90, 143, 90, 0.15);
+            color: #5A8F5A;
+        }
+
+        .confidence-score.medium {
+            background: rgba(197, 165, 114, 0.15);
+            color: var(--gold);
+        }
+
+        .confidence-score.low {
+            background: rgba(139, 144, 154, 0.15);
+            color: var(--ink-500);
+        }
+
+        .card-body {
+            padding-left: 8px;
+        }
+
+        .company-name {
+            font-size: 13px;
+            color: var(--ink-500);
+            margin-bottom: 8px;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .meta-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .meta-tag.type {
+            background: var(--paper-alt);
+            color: var(--ink-500);
+        }
+
+        .meta-tag.source {
+            background: rgba(197, 165, 114, 0.1);
+            color: var(--gold);
+        }
+
+        .last-activity {
+            font-size: 11px;
+            color: var(--ink-400);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+        }
+
+        .last-activity.stale {
+            color: var(--vermillion);
+        }
+
+        /* Signal badges */
+        .signal-badges {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .signal-badge {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 2px 6px;
+            border-radius: 2px;
+            background: var(--paper-alt);
+            color: var(--ink-500);
+        }
+
+        .signal-badge.strong {
+            background: rgba(197, 165, 114, 0.15);
+            color: var(--gold);
+        }
+
+        /* =================================================================
+           EMPTY STATE
+           ================================================================= */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-4);
+            color: var(--ink-400);
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: var(--space-2);
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 13px;
+        }
+
+        /* =================================================================
+           ACTION BAR
+           ================================================================= */
+        .action-bar {
+            position: fixed;
+            bottom: var(--space-4);
+            right: var(--space-4);
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--ink-900);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .action-button:hover {
+            background: var(--vermillion);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .action-button.secondary {
+            background: var(--paper);
+            color: var(--ink-700);
+            border: 1px solid var(--line);
+        }
+
+        .action-button.secondary:hover {
+            background: var(--paper-alt);
+            transform: translateY(-2px);
+        }
+
+        /* =================================================================
+           RESPONSIVE
+           ================================================================= */
+        @media (max-width: 1200px) {
+            .pipeline-board {
+                grid-template-columns: repeat(5, 260px);
+            }
+        }
+
+        /* =================================================================
+           PRINT STYLES
+           ================================================================= */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .header {
+                position: static;
+            }
+
+            .pipeline-container {
+                overflow: visible;
+            }
+
+            .pipeline-board {
+                min-width: auto;
+                display: block;
+            }
+
+            .pipeline-column {
+                max-height: none;
+                page-break-inside: avoid;
+                margin-bottom: var(--space-4);
+            }
+
+            .action-bar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-left">
+                <div class="logo-mark">N</div>
+                <div>
+                    <div class="header-title">BizDev Pipeline</div>
+                    <div class="header-subtitle">Next Generation Medicine</div>
+                </div>
+            </div>
+            <div class="header-meta">
+                Generated: {{generated_date}}<br>
+                Lookback: {{lookback_months}} months
+            </div>
+        </div>
+    </header>
+
+    <!-- Summary Stats -->
+    <div class="summary-bar">
+        <div class="summary-inner">
+            <div class="stat-item">
+                <div class="stat-value">{{total_opportunities}}</div>
+                <div class="stat-label">Total Opportunities</div>
+            </div>
+            <div class="stat-item highlight">
+                <div class="stat-value">{{high_priority_count}}</div>
+                <div class="stat-label">High Priority</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{stale_count}}</div>
+                <div class="stat-label">Needs Attention</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{estimated_value}}</div>
+                <div class="stat-label">Est. Pipeline Value</div>
+            </div>
+
+            <!-- Type Legend -->
+            <div class="type-legend">
+                <div class="legend-item">
+                    <div class="legend-dot consulting"></div>
+                    <span>Consulting</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot membership"></div>
+                    <span>Membership</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot report-generator"></div>
+                    <span>Reports</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot commons"></div>
+                    <span>Commons</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pipeline Board -->
+    <div class="pipeline-container">
+        <div class="pipeline-board">
+            <!-- Discovered Column -->
+            <div class="pipeline-column" data-stage="discovered">
+                <div class="column-header">
+                    <div class="column-title">Discovered</div>
+                    <div class="column-count">{{discovered_count}}</div>
+                </div>
+                <div class="column-body">
+                    {{#discovered_opportunities}}
+                    <div class="opportunity-card" data-type="{{opportunity_type}}" data-id="{{id}}">
+                        <div class="card-header">
+                            <div class="contact-name">{{contact_name}}</div>
+                            <div class="confidence-score {{confidence_level}}">{{confidence_score}}</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="company-name">{{company}}</div>
+                            <div class="card-meta">
+                                <span class="meta-tag type">{{opportunity_type_display}}</span>
+                                <span class="meta-tag source">{{source}}</span>
+                            </div>
+                            <div class="signal-badges">
+                                {{#signals}}
+                                <span class="signal-badge {{signal_strength}}">{{signal_type}}</span>
+                                {{/signals}}
+                            </div>
+                            <div class="last-activity {{activity_status}}">
+                                Last activity: {{last_activity}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/discovered_opportunities}}
+                    {{^discovered_opportunities}}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">○</div>
+                        <div class="empty-state-text">No opportunities in this stage</div>
+                    </div>
+                    {{/discovered_opportunities}}
+                </div>
+            </div>
+
+            <!-- Qualified Column -->
+            <div class="pipeline-column" data-stage="qualified">
+                <div class="column-header">
+                    <div class="column-title">Qualified</div>
+                    <div class="column-count">{{qualified_count}}</div>
+                </div>
+                <div class="column-body">
+                    {{#qualified_opportunities}}
+                    <div class="opportunity-card" data-type="{{opportunity_type}}" data-id="{{id}}">
+                        <div class="card-header">
+                            <div class="contact-name">{{contact_name}}</div>
+                            <div class="confidence-score {{confidence_level}}">{{confidence_score}}</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="company-name">{{company}}</div>
+                            <div class="card-meta">
+                                <span class="meta-tag type">{{opportunity_type_display}}</span>
+                                <span class="meta-tag source">{{source}}</span>
+                            </div>
+                            <div class="signal-badges">
+                                {{#signals}}
+                                <span class="signal-badge {{signal_strength}}">{{signal_type}}</span>
+                                {{/signals}}
+                            </div>
+                            <div class="last-activity {{activity_status}}">
+                                Last activity: {{last_activity}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/qualified_opportunities}}
+                    {{^qualified_opportunities}}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">○</div>
+                        <div class="empty-state-text">No opportunities in this stage</div>
+                    </div>
+                    {{/qualified_opportunities}}
+                </div>
+            </div>
+
+            <!-- Engaged Column -->
+            <div class="pipeline-column" data-stage="engaged">
+                <div class="column-header">
+                    <div class="column-title">Engaged</div>
+                    <div class="column-count">{{engaged_count}}</div>
+                </div>
+                <div class="column-body">
+                    {{#engaged_opportunities}}
+                    <div class="opportunity-card" data-type="{{opportunity_type}}" data-id="{{id}}">
+                        <div class="card-header">
+                            <div class="contact-name">{{contact_name}}</div>
+                            <div class="confidence-score {{confidence_level}}">{{confidence_score}}</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="company-name">{{company}}</div>
+                            <div class="card-meta">
+                                <span class="meta-tag type">{{opportunity_type_display}}</span>
+                                <span class="meta-tag source">{{source}}</span>
+                            </div>
+                            <div class="signal-badges">
+                                {{#signals}}
+                                <span class="signal-badge {{signal_strength}}">{{signal_type}}</span>
+                                {{/signals}}
+                            </div>
+                            <div class="last-activity {{activity_status}}">
+                                Last activity: {{last_activity}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/engaged_opportunities}}
+                    {{^engaged_opportunities}}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">○</div>
+                        <div class="empty-state-text">No opportunities in this stage</div>
+                    </div>
+                    {{/engaged_opportunities}}
+                </div>
+            </div>
+
+            <!-- Proposal Sent Column -->
+            <div class="pipeline-column" data-stage="proposal_sent">
+                <div class="column-header">
+                    <div class="column-title">Proposal Sent</div>
+                    <div class="column-count">{{proposal_sent_count}}</div>
+                </div>
+                <div class="column-body">
+                    {{#proposal_sent_opportunities}}
+                    <div class="opportunity-card" data-type="{{opportunity_type}}" data-id="{{id}}">
+                        <div class="card-header">
+                            <div class="contact-name">{{contact_name}}</div>
+                            <div class="confidence-score {{confidence_level}}">{{confidence_score}}</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="company-name">{{company}}</div>
+                            <div class="card-meta">
+                                <span class="meta-tag type">{{opportunity_type_display}}</span>
+                                <span class="meta-tag source">{{source}}</span>
+                            </div>
+                            <div class="signal-badges">
+                                {{#signals}}
+                                <span class="signal-badge {{signal_strength}}">{{signal_type}}</span>
+                                {{/signals}}
+                            </div>
+                            <div class="last-activity {{activity_status}}">
+                                Last activity: {{last_activity}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/proposal_sent_opportunities}}
+                    {{^proposal_sent_opportunities}}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">○</div>
+                        <div class="empty-state-text">No opportunities in this stage</div>
+                    </div>
+                    {{/proposal_sent_opportunities}}
+                </div>
+            </div>
+
+            <!-- Closed Column -->
+            <div class="pipeline-column" data-stage="closed">
+                <div class="column-header">
+                    <div class="column-title">Closed</div>
+                    <div class="column-count">{{closed_count}}</div>
+                </div>
+                <div class="column-body">
+                    {{#closed_opportunities}}
+                    <div class="opportunity-card" data-type="{{opportunity_type}}" data-id="{{id}}">
+                        <div class="card-header">
+                            <div class="contact-name">{{contact_name}}</div>
+                            <div class="confidence-score {{confidence_level}}">{{confidence_score}}</div>
+                        </div>
+                        <div class="card-body">
+                            <div class="company-name">{{company}}</div>
+                            <div class="card-meta">
+                                <span class="meta-tag type">{{opportunity_type_display}}</span>
+                                <span class="meta-tag source">{{source}}</span>
+                            </div>
+                            <div class="last-activity {{activity_status}}">
+                                {{outcome}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/closed_opportunities}}
+                    {{^closed_opportunities}}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">○</div>
+                        <div class="empty-state-text">No closed opportunities</div>
+                    </div>
+                    {{/closed_opportunities}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <button class="action-button secondary" onclick="window.print()">
+            Export PDF
+        </button>
+        <button class="action-button" onclick="alert('Generate Proposal for selected opportunity')">
+            Generate Proposal
+        </button>
+    </div>
+
+    <!-- Template Variables Reference (for dashboard.py) -->
+    <!--
+    TEMPLATE VARIABLES:
+
+    Global:
+    - {{generated_date}}: ISO date string
+    - {{lookback_months}}: Number of months analyzed
+    - {{total_opportunities}}: Total count
+    - {{high_priority_count}}: Score >= 70
+    - {{stale_count}}: Days inactive >= 60
+    - {{estimated_value}}: Formatted currency string
+
+    Per Column:
+    - {{discovered_count}}, {{qualified_count}}, etc.
+    - {{#discovered_opportunities}}: Array of cards
+
+    Per Card:
+    - {{id}}: Unique identifier
+    - {{contact_name}}: Contact's full name
+    - {{company}}: Company name
+    - {{opportunity_type}}: consulting|membership|report_generator|commons_partnership
+    - {{opportunity_type_display}}: Human-readable type
+    - {{confidence_score}}: 0-100
+    - {{confidence_level}}: high|medium|low
+    - {{source}}: transcript|email
+    - {{last_activity}}: Relative date string
+    - {{activity_status}}: normal|stale
+    - {{#signals}}: Array of signal badges
+      - {{signal_type}}: Signal type abbreviation
+      - {{signal_strength}}: strong|normal
+    - {{outcome}}: For closed - "Won" or "Lost"
+    -->
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{page_title}} | NGM Commons</title>
+  <meta name="description" content="{{meta_description}}">
+
+  <!-- REQUIRED: Use these exact Google Fonts for design consistency -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script type="application/ld+json">
+  {{structured_data}}
+  </script>
+
+  <style>
+    /* ============================================
+       NGM COMMONS DESIGN SYSTEM - DO NOT MODIFY
+       All directory pages must use these exact values
+       ============================================ */
+
+    :root {
+      /* Typography - REQUIRED */
+      --font-serif: "Cormorant Garamond", Georgia, serif;
+      --font-sans: "DM Sans", system-ui, sans-serif;
+
+      /* Colors - REQUIRED (warm editorial palette) */
+      --paper: #FFFFFF;
+      --paper-alt: #F5F2EC;
+      --ink-900: #302C27;
+      --ink-700: #4A4540;
+      --ink-500: #706C66;
+      --ink-400: #9C9890;
+      --line: #E3DFD7;
+
+      /* Accent colors - use category-appropriate color as primary */
+      --gold: #C49A6C;    /* Default/Overview */
+      --green: #5C8A6B;   /* Gut microbiome */
+      --blue: #5C7A8A;    /* Oral microbiome */
+      --purple: #7A6C8A;  /* Vaginal microbiome */
+      --orange: #D4845C;  /* SIBO */
+
+      /* Spacing scale - REQUIRED */
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 20px;
+      --space-4: 32px;
+      --space-5: 48px;
+    }
+
+    /* Reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Body - REQUIRED layout */
+    body {
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--ink-700);
+      background: var(--paper);
+      max-width: 860px;
+      margin: 0 auto;
+      padding: var(--space-5) var(--space-3);
+    }
+
+    /* Typography - REQUIRED */
+    h1, h2, h3, h4 {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+    h1 { font-size: 2.25rem; line-height: 1.2; margin-bottom: var(--space-2); }
+    h2 { font-size: 1.4rem; margin: var(--space-5) 0 var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); }
+    h3 { font-size: 1.15rem; margin: var(--space-4) 0 var(--space-2); }
+    h4 { font-size: 1rem; margin: var(--space-3) 0 var(--space-2); }
+    p { margin-bottom: var(--space-3); }
+
+    /* Header elements - REQUIRED */
+    .subtitle {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--ink-500);
+      margin-bottom: var(--space-3);
+    }
+    .meta {
+      font-size: 13px;
+      color: var(--ink-400);
+      margin-bottom: var(--space-4);
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+    .breadcrumb {
+      font-size: 13px;
+      color: var(--ink-400);
+      margin-bottom: var(--space-3);
+    }
+    .breadcrumb a { color: var(--blue); text-decoration: none; }
+
+    /* Badges - REQUIRED */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+    .badge-gold { background: var(--gold); color: white; }
+    .badge-green { background: var(--green); color: white; }
+    .badge-blue { background: var(--blue); color: white; }
+    .badge-purple { background: var(--purple); color: white; }
+    .badge-orange { background: var(--orange); color: white; }
+
+    /* Quick Reference Table - REQUIRED */
+    .quick-reference {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--space-4) 0;
+      font-size: 13px;
+      background: var(--paper-alt);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .quick-reference th, .quick-reference td {
+      padding: var(--space-2);
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+    .quick-reference th {
+      background: var(--ink-900);
+      color: white;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    /* Summary Box - REQUIRED */
+    .summary-box {
+      background: var(--paper-alt);
+      border-left: 3px solid var(--gold); /* Use category color */
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+      border-radius: 0 8px 8px 0;
+    }
+    .summary-box p {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      line-height: 1.75;
+    }
+
+    /* Entity Sections - REQUIRED */
+    .entity-section {
+      margin: var(--space-4) 0;
+      padding: var(--space-3);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .entity-section h2 {
+      border-bottom: none;
+      margin-top: 0;
+      padding-bottom: 0;
+    }
+    .entity-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--gold); /* Use category color */
+      color: white;
+      border-radius: 50%;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 12px;
+      margin-right: var(--space-2);
+    }
+    .entity-tagline {
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      color: var(--ink-500);
+      margin-top: var(--space-1);
+    }
+
+    /* Quick Facts Grid - REQUIRED */
+    .quick-facts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: var(--space-2);
+      background: var(--paper-alt);
+      padding: var(--space-2);
+      border-radius: 8px;
+      margin: var(--space-2) 0;
+    }
+    .quick-fact { font-size: 13px; }
+    .quick-fact .label {
+      font-weight: 600;
+      color: var(--ink-500);
+      font-size: 10px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .quick-fact .value { color: var(--ink-900); }
+
+    /* Notable For List - REQUIRED */
+    .notable-for-list {
+      list-style: none;
+      padding: 0;
+      margin: var(--space-2) 0;
+    }
+    .notable-for-list li {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: var(--space-1);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .notable-for-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 7px;
+      width: 8px;
+      height: 8px;
+      background: var(--gold); /* Use category color */
+      border-radius: 50%;
+    }
+
+    /* Inline Q&A - REQUIRED */
+    .inline-qa {
+      background: linear-gradient(135deg, rgba(197, 165, 114, 0.06) 0%, rgba(197, 165, 114, 0.02) 100%);
+      border-radius: 8px;
+      padding: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+    .inline-qa .qa-question {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      color: var(--ink-900);
+      margin-bottom: var(--space-2);
+    }
+
+    /* KB Insight Callout - REQUIRED for KB integration */
+    .kb-insight {
+      background: linear-gradient(135deg, rgba(92, 138, 107, 0.08) 0%, rgba(92, 138, 107, 0.02) 100%);
+      border-left: 3px solid var(--green);
+      padding: var(--space-3);
+      margin: var(--space-4) 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .kb-insight-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--green);
+      margin-bottom: var(--space-2);
+      font-weight: 600;
+    }
+    .kb-insight p {
+      font-family: var(--font-serif);
+      font-size: 1.02rem;
+      line-height: 1.7;
+    }
+
+    /* Citation styling */
+    .cite { color: var(--blue); }
+
+    /* Evidence Level Indicators - REQUIRED */
+    .evidence-strong { color: #276749; font-weight: 600; }
+    .evidence-moderate { color: #2B6CB0; font-weight: 600; }
+    .evidence-emerging { color: #B7791F; font-weight: 600; }
+    .evidence-preliminary { color: #718096; font-weight: 600; }
+    .evidence-consensus { color: #718096; font-weight: 500; font-style: italic; }
+
+    /* FAQ Section - REQUIRED */
+    .faq-item {
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--line);
+    }
+    .faq-question {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--ink-900);
+      margin-bottom: var(--space-2);
+    }
+    .faq-answer {
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* Sources Section - REQUIRED */
+    .sources {
+      font-size: 13px;
+      color: var(--ink-500);
+      margin-top: var(--space-5);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--line);
+    }
+    .source-item { margin-bottom: var(--space-2); }
+    .source-item a { color: var(--blue); text-decoration: none; }
+
+    /* Framework Badge - REQUIRED */
+    .framework-badge {
+      position: fixed;
+      bottom: var(--space-3);
+      right: var(--space-3);
+      background: var(--ink-900);
+      color: white;
+      padding: var(--space-1) var(--space-2);
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: monospace;
+    }
+
+    /* Claim This Profile - REQUIRED */
+    .claim-profile {
+      margin-top: var(--space-5);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--line);
+    }
+    .claim-profile-box {
+      background: var(--paper-alt);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: var(--space-4);
+      text-align: center;
+    }
+    .claim-profile-box h3 {
+      font-size: 1.1rem;
+      margin-bottom: var(--space-2);
+    }
+    .claim-profile-box p {
+      font-size: 14px;
+      color: var(--ink-500);
+      max-width: 600px;
+      margin: 0 auto var(--space-3);
+      line-height: 1.6;
+    }
+    .claim-profile-cta {
+      display: inline-block;
+      background: var(--ink-900);
+      color: white;
+      padding: 10px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .claim-profile-cta:hover {
+      background: var(--ink-700);
+    }
+
+    /* Conference Badge */
+    .badge-conference { background: var(--ink-900); color: var(--gold); border: 1px solid var(--gold); }
+  </style>
+</head>
+<body>
+  <article>
+    <!-- Breadcrumb navigation - REQUIRED -->
+    <nav class="breadcrumb">
+      <a href="../overview.html">Microbiome Testing</a> → {{category_name}}
+    </nav>
+
+    <header>
+      <h1>{{page_title}}</h1>
+      <p class="subtitle">{{subtitle}}</p>
+      <div class="meta">
+        <span class="badge badge-{{category_color}}">{{category_badge}}</span>
+        <span class="badge badge-gold">Clinical Guide</span>
+        <span>Updated {{date}} • {{entity_count}} Options Evaluated</span>
+      </div>
+    </header>
+
+    <!-- Quick Reference Table - REQUIRED at top -->
+    <section>
+      <table class="quick-reference">
+        <thead>
+          <tr>{{table_headers}}</tr>
+        </thead>
+        <tbody>
+          {{table_rows}}
+        </tbody>
+      </table>
+      <p style="font-size: 13px; color: var(--ink-400);"><em>Tests numbered for reference, not ranked.</em></p>
+    </section>
+
+    <!-- Executive Summary - REQUIRED -->
+    <section>
+      <div class="summary-box">
+        {{executive_summary}}
+      </div>
+    </section>
+
+    <!-- KB Insight - REQUIRED when KB citations available -->
+    <div class="kb-insight">
+      <div class="kb-insight-title">{{kb_insight_title}}</div>
+      <p>{{kb_insight_content}} <span class="cite">({{kb_citation}})</span></p>
+    </div>
+
+    <!-- Entity Sections - use .entity-section class -->
+    {{entity_sections}}
+
+    <!-- Clinical Decision Support - REQUIRED -->
+    <section>
+      <h2>Clinical Decision Support</h2>
+      {{decision_support_content}}
+    </section>
+
+    <!-- FAQ Section - REQUIRED -->
+    <section>
+      <h2>Frequently Asked Questions</h2>
+      {{faq_items}}
+    </section>
+
+    <!-- Sources - REQUIRED with PMIDs/DOIs -->
+    <section class="sources">
+      <h2>Sources</h2>
+      {{sources}}
+    </section>
+
+    <!-- Claim This Profile - REQUIRED -->
+    <section class="claim-profile">
+      <div class="claim-profile-box">
+        <h3>About This Profile</h3>
+        <p>This evaluation was generated from publicly available data, peer-reviewed literature, and the NGM Signaling Knowledge Base. Vendors can request a review of their profile, provide updated technical specifications, or explore partnership options.</p>
+        <a href="mailto:anant@nextgenerationmedicine.co?subject=NGM Commons Profile Review: {{page_title}}" class="claim-profile-cta">Request Profile Review</a>
+      </div>
+    </section>
+  </article>
+
+  <div class="framework-badge">3lens-v1 | {{category_slug}}</div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "session_id": "208efc4f-2b23-4b4b-ba6d-ba1d54c053f9",
+  "timestamp": "2026-06-17T16:01:52.709790+00:00",
+  "exit_reason": "other",
+  "working_directory": "C:/Users/dalig/Desktop/ngm-website-official/.claude/skills/skill-creator",
+  "transcript_path": "C:/Users/dalig/.claude/projects/C--Users-dalig-Desktop-ngm-website-official/208efc4f-2b23-4b4b-ba6d-ba1d54c053f9.jsonl",
+  "cost_data": {
+    "transcript_parse_error": "'charmap' codec can't decode byte 0x8f in position 1252: character maps to <undefined>"
+  }
+}

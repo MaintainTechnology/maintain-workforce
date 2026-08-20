@@ -1,0 +1,18 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" width="3256" height="3344" viewBox="0 0 3256 3344" fill="none">
+<g filter="url(#filter0_f_41506_2630)">
+<path d="M1062.44 2344.16C1076.56 2334.72 1097.72 2339.05 1106.14 2353.8C1499.08 3041.78 1582.19 2330.64 1927.43 2007.91C1931.82 2003.81 1937.71 2001.28 1943.68 2000.58C2782.05 1902.54 2579.49 1373.2 2377.98 1151.97C2175.7 929.911 1628.6 491.605 1272.94 815.57C921.457 1135.74 302.326 2852.48 1062.44 2344.16Z" fill="url(#paint0_linear_41506_2630)"/>
+</g>
+<defs>
+<filter id="filter0_f_41506_2630" x="0.570312" y="0.208984" width="3255.26" height="3343.35" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="350" result="effect1_foregroundBlur_41506_2630"/>
+</filter>
+<linearGradient id="paint0_linear_41506_2630" x1="847.584" y1="2339.86" x2="2059.85" y2="1577.93" gradientUnits="userSpaceOnUse">
+<stop stop-color="#257A86"/>
+<stop offset="1" stop-color="#257A86" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[EVENT_NAME] — Sponsor Packet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #FFFFFF;
+      --paper-alt: #F5F2EC;
+      --ink-900: #302C27;
+      --ink-700: #4A4540;
+      --ink-500: #706C66;
+      --ink-400: #9C9890;
+      --line: #E3DFD7;
+      --gold: #C49A6C;
+      --vermillion: #C07050;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--ink-700);
+      background: var(--paper);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      padding: 0.5in;
+      background: var(--paper);
+      position: relative;
+    }
+
+    @media print {
+      body { background: white; }
+      .page {
+        width: 100%;
+        min-height: auto;
+        padding: 0.4in;
+        page-break-after: always;
+      }
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    h1 { font-size: 32px; line-height: 1.1; }
+    h2 { font-size: 18px; line-height: 1.2; }
+    h3 { font-size: 14px; line-height: 1.3; }
+    h4 { font-size: 12px; line-height: 1.4; }
+
+    .label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* Cover Page */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: calc(11in - 1in);
+    }
+
+    .cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--ink-900);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 500;
+      color: white;
+    }
+
+    .logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    .logo-subtitle {
+      font-size: 9px;
+      color: var(--ink-500);
+      letter-spacing: 0.02em;
+    }
+
+    .cover-hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 0;
+    }
+
+    .cover-hero .label {
+      margin-bottom: 16px;
+    }
+
+    .cover-hero h1 {
+      font-size: 42px;
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+
+    .cover-hero .subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-style: italic;
+      color: var(--ink-500);
+      margin-bottom: 32px;
+    }
+
+    .cover-meta {
+      display: flex;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .cover-meta-item .value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    .cover-meta-item .label-small {
+      font-size: 9px;
+      color: var(--ink-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+
+    .cover-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .partners-label {
+      font-size: 9px;
+      color: var(--ink-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .partner-logos {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .partner-logo-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-500);
+    }
+
+    .document-type .type {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-900);
+    }
+
+    .document-type .date {
+      font-size: 10px;
+      color: var(--ink-400);
+    }
+
+    /* Interior Pages */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+    }
+
+    .page-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page-header .logo-mark {
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+    }
+
+    .page-header .logo-text {
+      font-size: 12px;
+    }
+
+    .page-number {
+      font-size: 10px;
+      color: var(--ink-400);
+    }
+
+    /* Content Sections */
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section-header {
+      margin-bottom: 14px;
+    }
+
+    .section-header .label {
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .section p {
+      font-size: 11px;
+      color: var(--ink-500);
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .section p.lead {
+      font-size: 13px;
+      color: var(--ink-700);
+    }
+
+    .section p strong {
+      color: var(--ink-700);
+      font-weight: 600;
+    }
+
+    /* Highlight Box */
+    .highlight-box {
+      background: var(--ink-900);
+      color: white;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .highlight-box h2 {
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .highlight-box p {
+      color: var(--ink-400);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .highlight-box .label {
+      color: var(--gold);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--ink-900);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: var(--ink-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 6px;
+    }
+
+    /* Sponsorship Tiers */
+    .tiers-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .tier-card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .tier-card.featured {
+      background: var(--ink-900);
+      color: white;
+      border-color: var(--gold);
+      border-width: 2px;
+    }
+
+    .tier-card.featured h3,
+    .tier-card.featured .price {
+      color: white;
+    }
+
+    .tier-card.featured p,
+    .tier-card.featured li {
+      color: var(--ink-400);
+    }
+
+    .tier-card.featured .label {
+      color: var(--gold);
+    }
+
+    .tier-badge {
+      position: absolute;
+      top: -10px;
+      left: 20px;
+      background: var(--gold);
+      color: white;
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+    }
+
+    .tier-card .label {
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .tier-card h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--ink-900);
+      margin-bottom: 12px;
+    }
+
+    .tier-features {
+      list-style: none;
+    }
+
+    .tier-features li {
+      font-size: 10px;
+      color: var(--ink-500);
+      padding-left: 14px;
+      position: relative;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .tier-features li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+    }
+
+    /* Benefits List */
+    .benefits-list {
+      list-style: none;
+      margin-bottom: 20px;
+    }
+
+    .benefits-list li {
+      font-size: 11px;
+      color: var(--ink-700);
+      padding: 10px 0;
+      padding-left: 24px;
+      position: relative;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .benefits-list li:last-child {
+      border-bottom: none;
+    }
+
+    .benefits-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* Topic Tags */
+    .topics-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .topic-tag {
+      font-size: 9px;
+      padding: 6px 12px;
+      background: var(--paper-alt);
+      border: 1px solid var(--line);
+      color: var(--ink-500);
+    }
+
+    /* Credential Card */
+    .credentials-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .credential-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: var(--paper-alt);
+    }
+
+    .credential-card h4 {
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .credential-list {
+      list-style: none;
+    }
+
+    .credential-list li {
+      font-size: 9px;
+      color: var(--ink-500);
+      padding-left: 12px;
+      position: relative;
+      margin-bottom: 4px;
+    }
+
+    .credential-list li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+    }
+
+    .credential-list li strong {
+      color: var(--ink-700);
+    }
+
+    /* Contact Section */
+    .contact-section {
+      background: var(--ink-900);
+      color: white;
+      padding: 24px;
+    }
+
+    .contact-section h3 {
+      color: white;
+      margin-bottom: 16px;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .contact-item .name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: white;
+      margin-bottom: 2px;
+    }
+
+    .contact-item .title {
+      font-size: 9px;
+      color: var(--ink-400);
+      margin-bottom: 6px;
+    }
+
+    .contact-item .email {
+      font-size: 10px;
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    /* Page Footer */
+    .page-footer {
+      position: absolute;
+      bottom: 0.5in;
+      left: 0.5in;
+      right: 0.5in;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--ink-400);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1: COVER -->
+  <div class="page">
+    <div class="cover">
+      <div class="cover-header">
+        <div class="logo-area">
+          <div class="logo-mark">N</div>
+          <div>
+            <div class="logo-text">Next Generation Medicine</div>
+            <div class="logo-subtitle">Shaping the Future of Healthcare</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover-hero">
+        <span class="label">[COVER_LABEL]</span>
+        <h1>[EVENT_NAME]</h1>
+        <p class="subtitle">[EVENT_TAGLINE]</p>
+        
+        <div class="cover-meta">
+          <div class="cover-meta-item">
+            <span class="value">[DATE]</span>
+            <span class="label-small">Date</span>
+          </div>
+          <div class="cover-meta-item">
+            <span class="value">[LOCATION]</span>
+            <span class="label-small">Location</span>
+          </div>
+          <div class="cover-meta-item">
+            <span class="value">[ATTENDANCE]</span>
+            <span class="label-small">Attendance</span>
+          </div>
+          <div class="cover-meta-item">
+            <span class="value">[VENUE]</span>
+            <span class="label-small">Venue</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover-footer">
+        <div>
+          <div class="partners-label">In Partnership With</div>
+          <div class="partner-logos">
+            <span class="partner-logo-text">[PARTNER_1]</span>
+            <span class="partner-logo-text" style="opacity: 0.5;">|</span>
+            <span class="partner-logo-text">[PARTNER_2]</span>
+          </div>
+        </div>
+        <div class="document-type">
+          <div class="type">Sponsor Packet</div>
+          <div class="date">[YEAR]</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: THE OPPORTUNITY -->
+  <div class="page">
+    <header class="page-header">
+      <div class="page-header-left">
+        <div class="logo-mark">N</div>
+        <span class="logo-text">[EVENT_SHORT_NAME]</span>
+      </div>
+      <span class="page-number">02</span>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <span class="label">The Opportunity</span>
+        <h2>[OPPORTUNITY_HEADLINE]</h2>
+      </div>
+      <p class="lead">
+        [OPPORTUNITY_LEAD]
+      </p>
+      <p>
+        [OPPORTUNITY_BODY]
+      </p>
+    </section>
+
+    <div class="highlight-box">
+      <span class="label">[HIGHLIGHT_LABEL]</span>
+      <h2>[HIGHLIGHT_HEADLINE]</h2>
+      <p>
+        [HIGHLIGHT_BODY]
+      </p>
+    </div>
+
+    <section class="section">
+      <div class="section-header">
+        <span class="label">Focus Areas</span>
+      </div>
+      <div class="topics-grid">
+        <span class="topic-tag">[TOPIC_1]</span>
+        <span class="topic-tag">[TOPIC_2]</span>
+        <span class="topic-tag">[TOPIC_3]</span>
+        <span class="topic-tag">[TOPIC_4]</span>
+        <span class="topic-tag">[TOPIC_5]</span>
+        <span class="topic-tag">[TOPIC_6]</span>
+      </div>
+    </section>
+
+    <div class="page-footer">
+      <span>[EVENT_NAME]</span>
+      <span>Sponsor Packet — Confidential</span>
+    </div>
+  </div>
+
+  <!-- PAGE 3: WHY SPONSOR -->
+  <div class="page">
+    <header class="page-header">
+      <div class="page-header-left">
+        <div class="logo-mark">N</div>
+        <span class="logo-text">[EVENT_SHORT_NAME]</span>
+      </div>
+      <span class="page-number">03</span>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <span class="label">Why Sponsor</span>
+        <h2>[WHY_SPONSOR_HEADLINE]</h2>
+      </div>
+      <p class="lead">
+        [WHY_SPONSOR_LEAD]
+      </p>
+    </section>
+
+    <section class="section">
+      <h3 style="margin-bottom: 16px;">What Sponsors Gain</h3>
+      <ul class="benefits-list">
+        <li><strong>[BENEFIT_1_TITLE]</strong> — [BENEFIT_1_DESC]</li>
+        <li><strong>[BENEFIT_2_TITLE]</strong> — [BENEFIT_2_DESC]</li>
+        <li><strong>[BENEFIT_3_TITLE]</strong> — [BENEFIT_3_DESC]</li>
+        <li><strong>[BENEFIT_4_TITLE]</strong> — [BENEFIT_4_DESC]</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <span class="label">Expected Attendee Profile</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">[STAT_1_NUMBER]</div>
+          <div class="stat-label">[STAT_1_LABEL]</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">[STAT_2_NUMBER]</div>
+          <div class="stat-label">[STAT_2_LABEL]</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">[STAT_3_NUMBER]</div>
+          <div class="stat-label">[STAT_3_LABEL]</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="page-footer">
+      <span>[EVENT_NAME]</span>
+      <span>Sponsor Packet — Confidential</span>
+    </div>
+  </div>
+
+  <!-- PAGE 4: SPONSORSHIP TIERS -->
+  <div class="page">
+    <header class="page-header">
+      <div class="page-header-left">
+        <div class="logo-mark">N</div>
+        <span class="logo-text">[EVENT_SHORT_NAME]</span>
+      </div>
+      <span class="page-number">04</span>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <span class="label">Sponsorship Tiers</span>
+        <h2>Partner With Us</h2>
+      </div>
+    </section>
+
+    <div class="tiers-grid">
+      <!-- Title Sponsor -->
+      <div class="tier-card featured">
+        <span class="tier-badge">[TIER_1_BADGE]</span>
+        <span class="label">[TIER_1_LABEL]</span>
+        <h3>[TIER_1_NAME]</h3>
+        <div class="price">[TIER_1_PRICE]</div>
+        <ul class="tier-features">
+          <li>[TIER_1_FEATURE_1]</li>
+          <li>[TIER_1_FEATURE_2]</li>
+          <li>[TIER_1_FEATURE_3]</li>
+          <li>[TIER_1_FEATURE_4]</li>
+        </ul>
+      </div>
+
+      <!-- Strategic Partner -->
+      <div class="tier-card">
+        <span class="label">[TIER_2_LABEL]</span>
+        <h3>[TIER_2_NAME]</h3>
+        <div class="price">[TIER_2_PRICE]</div>
+        <ul class="tier-features">
+          <li>[TIER_2_FEATURE_1]</li>
+          <li>[TIER_2_FEATURE_2]</li>
+          <li>[TIER_2_FEATURE_3]</li>
+        </ul>
+      </div>
+
+      <!-- Innovation Supporter -->
+      <div class="tier-card">
+        <span class="label">[TIER_3_LABEL]</span>
+        <h3>[TIER_3_NAME]</h3>
+        <div class="price">[TIER_3_PRICE]</div>
+        <ul class="tier-features">
+          <li>[TIER_3_FEATURE_1]</li>
+          <li>[TIER_3_FEATURE_2]</li>
+          <li>[TIER_3_FEATURE_3]</li>
+        </ul>
+      </div>
+
+      <!-- Community Sponsor -->
+      <div class="tier-card">
+        <span class="label">[TIER_4_LABEL]</span>
+        <h3>[TIER_4_NAME]</h3>
+        <div class="price">[TIER_4_PRICE]</div>
+        <ul class="tier-features">
+          <li>[TIER_4_FEATURE_1]</li>
+          <li>[TIER_4_FEATURE_2]</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="highlight-box" style="margin-top: 20px;">
+      <span class="label">Custom Packages</span>
+      <h2>Bespoke Sponsorship Opportunities</h2>
+      <p>
+        [CUSTOM_PACKAGES_TEXT]
+      </p>
+    </div>
+
+    <div class="page-footer">
+      <span>[EVENT_NAME]</span>
+      <span>Sponsor Packet — Confidential</span>
+    </div>
+  </div>
+
+  <!-- PAGE 5: LEADERSHIP & CONTACT -->
+  <div class="page">
+    <header class="page-header">
+      <div class="page-header-left">
+        <div class="logo-mark">N</div>
+        <span class="logo-text">[EVENT_SHORT_NAME]</span>
+      </div>
+      <span class="page-number">05</span>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <span class="label">Leadership</span>
+        <h2>[LEADERSHIP_HEADLINE]</h2>
+      </div>
+    </section>
+
+    <div class="credentials-grid">
+      <div class="credential-card">
+        <h4>Dr. Anant Vinjamoori, MD, MBA</h4>
+        <ul class="credential-list">
+          <li><strong>Harvard Medical School</strong> graduate</li>
+          <li>Chief Longevity Officer at <strong>Superpower</strong></li>
+          <li>Head of Longevity Medicine at <strong>Midi Health</strong></li>
+          <li>Former CMO at <strong>Modern Age</strong></li>
+          <li>Former leader at Virta Health (<strong>$3B+ valuation</strong>)</li>
+          <li>Advisor to companies valued at <strong>$1B+ combined</strong></li>
+          <li>Featured in <strong>WSJ, Forbes, Fortune</strong></li>
+          <li>Founder, <strong>Next Generation Medicine</strong></li>
+        </ul>
+      </div>
+
+      <div class="credential-card">
+        <h4>[LEADER_2_NAME]</h4>
+        <ul class="credential-list">
+          <li>[LEADER_2_CREDENTIAL_1]</li>
+          <li>[LEADER_2_CREDENTIAL_2]</li>
+          <li>[LEADER_2_CREDENTIAL_3]</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="contact-section">
+      <span class="label" style="color: var(--gold); margin-bottom: 8px; display: block;">Next Steps</span>
+      <h3>[CONTACT_HEADLINE]</h3>
+      <p style="color: var(--ink-400); font-size: 11px; margin-bottom: 20px; max-width: 80%;">
+        [CONTACT_SUBTEXT]
+      </p>
+      <div class="contact-grid">
+        <div class="contact-item">
+          <div class="name">Dr. Anant Vinjamoori</div>
+          <div class="title">[CONTACT_1_TITLE]</div>
+          <a href="mailto:anant@nextgenerationmedicine.co" class="email">anant@nextgenerationmedicine.co</a>
+        </div>
+        <div class="contact-item">
+          <div class="name">[CONTACT_2_NAME]</div>
+          <div class="title">[CONTACT_2_TITLE]</div>
+          <a href="mailto:[CONTACT_2_EMAIL]" class="email">[CONTACT_2_EMAIL]</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>[EVENT_NAME]</span>
+      <span>Sponsor Packet — Confidential</span>
+    </div>
+  </div>
+
+</body>
+</html>
+

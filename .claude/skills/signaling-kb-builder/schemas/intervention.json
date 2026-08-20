@@ -1,0 +1,222 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "intervention.schema.json",
+  "title": "Intervention Node",
+  "description": "Schema for intervention nodes (compounds, peptides, biologics, devices, modalities)",
+  "type": "object",
+  "required": ["intervention_id", "category", "dosing_protocols"],
+  "properties": {
+    "intervention_id": {
+      "type": "string",
+      "description": "Canonical identifier (lowercase, hyphenated)",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Alternative names (trade names, abbreviations, synonyms)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "small_molecule",
+        "peptide",
+        "biologic",
+        "hormone",
+        "vitamin_mineral",
+        "device",
+        "modality",
+        "lifestyle",
+        "dietary"
+      ],
+      "description": "Intervention category"
+    },
+    "primary_pathways": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Primary pathway nodes this intervention targets (e.g., 'axis-1-nutrient-sensing/mtor-signaling')"
+    },
+    "dosing_protocols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["protocol_id", "indication", "dose", "evidence_grade", "source_type"],
+        "properties": {
+          "protocol_id": {
+            "type": "string",
+            "description": "Unique protocol identifier"
+          },
+          "indication": {
+            "type": "string",
+            "description": "Clinical indication or use case"
+          },
+          "dose": {
+            "type": "string",
+            "description": "Dose amount with units"
+          },
+          "frequency": {
+            "type": "string",
+            "description": "Dosing frequency (e.g., 'daily', 'weekly', 'BID')"
+          },
+          "duration": {
+            "type": "string",
+            "description": "Treatment duration or 'indefinite'"
+          },
+          "route": {
+            "type": "string",
+            "enum": ["oral", "subcutaneous", "intramuscular", "intravenous", "topical", "sublingual", "intranasal", "other"],
+            "description": "Administration route"
+          },
+          "context": {
+            "type": "string",
+            "description": "Additional context (patient population, precautions)"
+          },
+          "evidence_grade": {
+            "type": "string",
+            "enum": ["high", "moderate", "low", "anecdotal"],
+            "description": "Evidence quality grade"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion", "case_report"],
+            "description": "Source type (not specific source name)"
+          },
+          "peer_reviewed_citations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "citation": { "type": "string" },
+                "doi": { "type": "string" },
+                "pmid": { "type": "string" },
+                "relevance": { "type": "string" }
+              }
+            },
+            "description": "Peer-reviewed literature supporting this protocol"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "moderate", "low"],
+            "description": "Confidence in this protocol"
+          },
+          "timecode": {
+            "type": "string",
+            "description": "Source timecode reference if available"
+          }
+        }
+      }
+    },
+    "mechanism_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "target", "effect"],
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "description": "Unique claim identifier"
+          },
+          "target": {
+            "type": "string",
+            "description": "Target gene, protein, or pathway"
+          },
+          "effect": {
+            "type": "string",
+            "description": "Effect on target (inhibit, activate, modulate, etc.)"
+          },
+          "specificity": {
+            "type": "string",
+            "description": "Specificity notes (e.g., 'mTORC1 selective')"
+          },
+          "context": {
+            "type": "string",
+            "description": "Mechanistic context"
+          },
+          "evidence_type": {
+            "type": "string",
+            "enum": ["EXPLICIT", "STRONGLY_INFERRED", "LOOSELY_INFERRED"],
+            "description": "How explicitly stated in source"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": ["peer_reviewed", "expert_lecture", "clinical_discussion", "case_report"]
+          },
+          "peer_reviewed_citations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "citation": { "type": "string" },
+                "doi": { "type": "string" },
+                "relevance": { "type": "string" }
+              }
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "moderate", "low"]
+          }
+        }
+      }
+    },
+    "regulatory_status": {
+      "type": "object",
+      "properties": {
+        "fda": {
+          "type": "string",
+          "description": "FDA status (Approved, Off-label, Not approved, etc.)"
+        },
+        "wada": {
+          "type": "string",
+          "description": "WADA status (Not prohibited, S0, S1, S2, etc.)"
+        },
+        "dea": {
+          "type": "string",
+          "description": "DEA schedule if applicable"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional regulatory notes"
+        }
+      }
+    },
+    "contraindications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Known contraindications"
+    },
+    "monitoring": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Recommended monitoring (labs, vitals, etc.)"
+    },
+    "interactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "interacting_with": { "type": "string" },
+          "effect": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["major", "moderate", "minor"]
+          },
+          "recommendation": { "type": "string" }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "conflict.json" },
+      "description": "Active conflicts with other claims"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

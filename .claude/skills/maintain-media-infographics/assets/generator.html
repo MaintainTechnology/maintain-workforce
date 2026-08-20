@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Maintain Media — Infographics Engine</title>
+<style>
+/* ---- brand fonts (core weights from assets/fonts, extra weights from the full toolkit) ---- */
+@font-face{font-family:'Albert Sans';font-weight:400;src:url('fonts/AlbertSans-Regular.ttf') format('truetype');font-display:block}
+@font-face{font-family:'Albert Sans';font-weight:500;src:url('fonts/AlbertSans-Medium.ttf') format('truetype');font-display:block}
+@font-face{font-family:'Albert Sans';font-weight:600;src:url('fonts/AlbertSans-SemiBold.ttf') format('truetype');font-display:block}
+@font-face{font-family:'Albert Sans';font-weight:700;src:url('fonts/AlbertSans-Bold.ttf') format('truetype');font-display:block}
+@font-face{font-family:'Albert Sans';font-weight:800;src:url('fonts/AlbertSans-ExtraBold.ttf') format('truetype');font-display:block}
+@font-face{font-family:'Albert Sans';font-weight:900;src:url('complete-toolkit/01%20Visual%20Identity/Typography/Albert%20Sans/static/AlbertSans-Black.ttf') format('truetype');font-display:block}
+@font-face{font-family:'Vela Sans';font-weight:500;src:url('complete-toolkit/01%20Visual%20Identity/Typography/Vela%20Sans/VelaSans-Medium.otf') format('opentype');font-display:block}
+@font-face{font-family:'Vela Sans';font-weight:600;src:url('complete-toolkit/01%20Visual%20Identity/Typography/Vela%20Sans/VelaSans-SemiBold.otf') format('opentype');font-display:block}
+@font-face{font-family:'Vela Sans';font-weight:700;src:url('fonts/VelaSans-Bold.otf') format('opentype');font-display:block}
+@font-face{font-family:'Vela Sans';font-weight:800;src:url('fonts/VelaSans-ExtraBold.otf') format('opentype');font-display:block}
+
+:root{
+  --bg:#08282d; --bg-2:#061518; --accent:#a04dff; --accent-soft:#c79bff;
+  --ink:#fff; --ink-2:#cdd9db; --muted:#8fa4a7; --line:rgba(255,255,255,.12); --card:rgba(255,255,255,.04);
+  --pad:88px; --r:20px;
+  --font:'Albert Sans',system-ui,sans-serif; --display:'Vela Sans','Albert Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#02090b;font-family:var(--font)}
+#deck{display:flex;flex-direction:column;align-items:center}
+
+.slide{width:var(--w,1080px);height:var(--h,1350px);position:relative;overflow:hidden;color:var(--ink);
+  padding:var(--pad);display:flex;flex-direction:column;
+  background:radial-gradient(120% 80% at 100% 0,#123a42 0%,var(--bg) 42%,var(--bg-2) 100%)}
+/* optional brand image backdrop (opt-in via slide.bg) with a legibility scrim */
+.slide[data-bg]{background-image:
+  linear-gradient(180deg,rgba(6,21,24,.72),rgba(6,21,24,.9)),
+  radial-gradient(120% 80% at 100% 0,rgba(18,58,66,.6),transparent 55%),
+  var(--bgimg);background-size:cover,cover,cover;background-position:center}
+/* faint wireframe grid — brand tech texture, suppressed when an image backdrop is used */
+.slide::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(transparent 0 63px,rgba(160,77,255,.05) 63px 64px),
+                   linear-gradient(90deg,transparent 0 63px,rgba(160,77,255,.05) 63px 64px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(115% 90% at 100% -6%,#000,transparent 70%)}
+.slide[data-bg]::before{opacity:0}
+.slide > *{position:relative;z-index:1}
+
+.brandbar{display:flex;justify-content:space-between;align-items:center}
+.brandbar img{height:34px;width:auto}
+.page{font-size:20px;font-weight:600;color:var(--muted);letter-spacing:.16em;font-variant-numeric:tabular-nums}
+.content{flex:1;display:flex;flex-direction:column;justify-content:center;padding:44px 0}
+.footer{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:22px;font-weight:500}
+.footer .tick{width:26px;height:3px;background:var(--accent);border-radius:2px}
+
+.kicker{font-size:24px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-soft);margin-bottom:26px}
+.title{font-family:var(--display);font-weight:800;font-size:72px;line-height:1.03;letter-spacing:-.02em;margin-bottom:40px;max-width:16ch}
+
+/* icons: rendered as a mask so ANY monochrome icon in the library shows in the brand accent */
+/* recolour ANY monochrome icon (dark line or purple) to exact brand purple, by alpha */
+.ico{display:inline-block;object-fit:contain;filter:url(#brandtint)}
+
+/* ---- cover / hero ---- */
+.cover{justify-content:center}
+.cover .cover-head{font-family:var(--display);font-weight:800;font-size:96px;line-height:1.0;letter-spacing:-.03em;max-width:15ch}
+.cover .cover-sub{font-size:34px;color:var(--ink-2);margin-top:30px;max-width:26ch;line-height:1.45}
+
+/* ---- stat ---- */
+.stat .value{font-family:var(--display);font-weight:800;color:var(--accent);line-height:.9;
+  font-size:300px;letter-spacing:-.03em;display:flex;align-items:baseline;gap:6px}
+.stat .value .unit{font-size:140px;color:var(--ink)}
+.stat .label{font-family:var(--display);font-weight:700;font-size:64px;line-height:1.08;letter-spacing:-.02em;margin-top:28px;max-width:17ch}
+.stat .support{font-size:30px;line-height:1.5;color:var(--ink-2);margin-top:30px;max-width:30ch}
+
+/* ---- list ---- */
+.items{display:flex;flex-direction:column;gap:22px}
+.item{display:flex;gap:26px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:34px 36px}
+.item .ico{width:54px;height:54px;flex:none;margin-top:2px}
+.item .it-title{font-weight:700;font-size:38px;line-height:1.15;color:var(--ink)}
+.item .it-text{font-size:28px;line-height:1.45;color:var(--ink-2);margin-top:8px}
+
+/* ---- steps ---- */
+.steplist{list-style:none;display:flex;flex-direction:column;gap:30px}
+.steplist li{display:flex;gap:30px;align-items:flex-start}
+.stepnum{flex:none;width:74px;height:74px;border-radius:50%;background:var(--accent);color:#0c0716;
+  font-family:var(--display);font-weight:800;font-size:38px;display:flex;align-items:center;justify-content:center}
+.st-title{font-weight:700;font-size:40px;line-height:1.12;color:var(--ink)}
+.st-text{font-size:29px;line-height:1.45;color:var(--ink-2);margin-top:8px;max-width:24ch}
+
+/* ---- quote ---- */
+.quote .qmark{font-family:var(--display);font-weight:800;font-size:200px;color:var(--accent);line-height:.6;height:96px}
+.quote .qtext{font-family:var(--display);font-weight:700;font-size:58px;line-height:1.24;letter-spacing:-.01em;color:var(--ink);margin:20px 0 44px;max-width:20ch}
+.quote .attrib{display:flex;flex-direction:column;gap:4px}
+.quote .qname{font-weight:700;font-size:34px;color:var(--ink)}
+.quote .qrole{font-size:27px;color:var(--muted)}
+
+/* ---- cta ---- */
+.cta .cta-head{font-family:var(--display);font-weight:800;font-size:92px;line-height:1.02;letter-spacing:-.025em;max-width:15ch}
+.cta .cta-sub{font-size:32px;line-height:1.5;color:var(--ink-2);margin-top:28px;max-width:26ch}
+.cta .cta-action{display:inline-flex;align-items:center;gap:16px;align-self:flex-start;margin-top:52px;
+  background:var(--accent);color:#0c0716;font-weight:700;font-size:34px;padding:26px 44px;border-radius:999px}
+.cta .cta-url{font-size:30px;color:var(--muted);margin-top:34px;font-weight:500}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="brandtint" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feFlood flood-color="#a04dff" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in"/></filter></svg>
+<div id="deck"></div>
+<script>
+/* ---------- asset resolution: prefer the injected manifest of the FULL assets/ library,
+   fall back to the bundled subset so direct-in-browser preview still works ---------- */
+function norm(s){ return String(s==null?'':s).toLowerCase().replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)$/,'').replace(/[^a-z0-9]/g,''); }
+function encPath(p){ return String(p).split('/').map(encodeURIComponent).join('/'); }
+const A = () => window.__ASSETS || {};
+
+const ALIASES = {
+  chart:'chartbar', bar:'chartbar', trend:'chartline', line:'chartline', analytics:'analyticspie',
+  team:'usersthree', people:'usersthree', users:'usersthree', mail:'envelopesimple', email:'envelopesimple',
+  envelope:'envelopesimple', message:'message', chat:'chats', clock:'clockclockwise', time:'clockclockwise',
+  calendar:'calendarcheck', schedule:'calendarcheck', goal:'target', globe:'globe', web:'globe',
+  flag:'flagbanner', shield:'shieldwarning', security:'shieldwarning', protect:'shieldwarning',
+  warning:'warningdiamond', puzzle:'puzzlepiece', integrate:'puzzlepiece', tree:'treestructure',
+  structure:'treestructure', network:'treestructure', fast:'fastforward', speed:'fastforward',
+  book:'bookopen', learn:'bookopen', linkedin:'linkedinlogo', graph:'graph', check:'check', tick:'check',
+  done:'circlecheck', success:'circlecheck', money:'dollar', dollar:'dollar', coin:'coin', wallet:'wallet',
+  card:'creditcard', search:'search', find:'search', data:'database', database:'database', lock:'password',
+  password:'password', report:'report', document:'report', settings:'settings', cog:'cog', gear:'cog',
+  tool:'tool', star:'star', heart:'heart', eye:'eye', bell:'bell', badge:'badge', mark:'mark',
+  megaphone:'megaphone', announce:'megaphone', lightning:'lightning', bolt:'lightning', share:'share',
+  link:'link', tag:'tag', home:'home', phone:'phone', mobile:'mobile', laptop:'laptop', desktop:'desktop',
+  wifi:'wifi', code:'code', filter:'filter', folder:'folder', support:'support', sync:'sync', test:'test',
+  care:'care', stack:'stack', list:'listchecks', checklist:'listchecks', sun:'sun'
+};
+const FALLBACK_ICONS = { bookopen:'icons/BookOpen.svg', calendarcheck:'icons/CalendarCheck.svg',
+  chartbar:'icons/ChartBar.svg', chartline:'icons/ChartLine.svg', clockclockwise:'icons/ClockClockwise.svg',
+  envelopesimple:'icons/EnvelopeSimple.svg', fastforward:'icons/FastForward.svg', flagbanner:'icons/FlagBanner.svg',
+  globe:'icons/Globe.svg', graph:'icons/Graph.svg', linkedinlogo:'icons/LinkedinLogo.svg',
+  puzzlepiece:'icons/PuzzlePiece.svg', shieldwarning:'icons/ShieldWarning.svg', target:'icons/Target.svg',
+  treestructure:'icons/TreeStructure.svg', usersthree:'icons/UsersThree.svg' };
+const BG_ALIASES = { gradient:'maintainmediagradientbg', hero:'maintainmediagradientbg', purple:'maintainmediagradientbg',
+  wireframe:'mountainforms2', mountain:'mountainforms2', grid:'mountainforms2', mesh:'mountainforms2',
+  cover:'cover', dark:'cover', section:'section' };
+
+function lookup(map, name, aliases){
+  const k = norm(name);
+  if(map[k]) return map[k];
+  const a = aliases[k];
+  if(a && map[a]) return map[a];
+  return null;
+}
+function resolveIcon(name){
+  if(!name) return null;
+  const hit = lookup(A().icons || {}, name, ALIASES) || lookup(FALLBACK_ICONS, name, ALIASES);
+  return hit ? encPath(hit) : null;
+}
+function resolveBg(name){
+  if(!name) return null;
+  const hit = lookup(A().backgrounds || {}, name, BG_ALIASES);
+  return hit ? encPath(hit) : null;
+}
+function resolveLogo(variant){
+  const want = variant === 'light' ? 'maintainmedialogolightbg' : 'maintainmedialogodarkbg';
+  const logos = A().logos || {};
+  if(logos[want]) return encPath(logos[want]);
+  return variant === 'light' ? 'logos/maintain-media-logo-lightbg.svg' : 'logos/maintain-media-logo-darkbg.svg';
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function ico(name){ const s = resolveIcon(name); return s ? `<img class="ico" src="${s}" alt="">` : ''; }
+
+function frame(inner, i, total, s, opts){
+  const logo = resolveLogo(s.logo || opts.logo);
+  return `<div class="brandbar"><img src="${logo}" alt="Maintain Media">
+    <span class="page">${String(i+1).padStart(2,'0')} / ${String(total).padStart(2,'0')}</span></div>
+    <div class="content">${inner}</div>
+    <div class="footer"><span class="tick"></span><span>${esc(s.footer||opts.footer||'maintainmedia.com')}</span></div>`;
+}
+
+function panel(s){
+  switch(s.type){
+    case 'cover': return `<div class="cover">
+      ${s.kicker?`<div class="kicker">${esc(s.kicker)}</div>`:''}
+      <h1 class="cover-head fit">${esc(s.headline)}</h1>
+      ${s.sub?`<p class="cover-sub">${esc(s.sub)}</p>`:''}</div>`;
+    case 'stat': return `<div class="stat">
+      ${s.kicker?`<div class="kicker">${esc(s.kicker)}</div>`:''}
+      <div class="value fit"><span class="num">${esc(s.value)}</span>${s.unit?`<span class="unit">${esc(s.unit)}</span>`:''}</div>
+      ${s.label?`<div class="label fit">${esc(s.label)}</div>`:''}
+      ${s.support?`<div class="support">${esc(s.support)}</div>`:''}</div>`;
+    case 'list': return `<div class="list">
+      <h2 class="title fit">${esc(s.title)}</h2>
+      <div class="items">${(s.items||[]).map(it=>`<div class="item">${ico(it.icon)}
+        <div><div class="it-title">${esc(it.title)}</div>${it.text?`<div class="it-text">${esc(it.text)}</div>`:''}</div>
+      </div>`).join('')}</div></div>`;
+    case 'steps': return `<div class="steps">
+      <h2 class="title fit">${esc(s.title)}</h2>
+      <ol class="steplist">${(s.steps||[]).map((st,n)=>`<li><span class="stepnum">${n+1}</span>
+        <div><div class="st-title">${esc(st.title)}</div>${st.text?`<div class="st-text">${esc(st.text)}</div>`:''}</div></li>`).join('')}</ol></div>`;
+    case 'quote': return `<div class="quote">
+      <div class="qmark">&ldquo;</div>
+      <blockquote class="qtext fit">${esc(s.quote)}</blockquote>
+      <div class="attrib"><span class="qname">${esc(s.name)}</span>${s.role?`<span class="qrole">${esc(s.role)}</span>`:''}</div></div>`;
+    case 'cta': return `<div class="cta">
+      <h2 class="cta-head fit">${esc(s.headline)}</h2>
+      ${s.sub?`<p class="cta-sub">${esc(s.sub)}</p>`:''}
+      ${s.action?`<div class="cta-action">${esc(s.action)}<span class="arrow">&rarr;</span></div>`:''}
+      ${s.url?`<div class="cta-url">${esc(s.url)}</div>`:''}</div>`;
+    default: return `<div class="stat"><div class="label">Unknown panel type: ${esc(s.type)}</div></div>`;
+  }
+}
+
+function fit(slide){
+  const content = slide.querySelector('.content');
+  if(!content) return;
+  // Shrink only elements whose text is WIDER than its box (long words, big numbers).
+  // Per-element HEIGHT checks are unreliable — tight display line-heights let descenders
+  // (y, g, p) overhang the content box, which reads as permanent overflow.
+  slide.querySelectorAll('.fit').forEach(el=>{
+    let size = parseFloat(getComputedStyle(el).fontSize), guard = 0;
+    while(el.scrollWidth > el.clientWidth + 1 && size > 24 && guard < 40){ size -= 3; el.style.fontSize = size + 'px'; guard++; }
+  });
+  // If the whole content column genuinely overflows the slide, scale it down uniformly.
+  // Tolerance absorbs descender overhang; the floor stops any runaway.
+  let guard = 0;
+  while(content.scrollHeight > content.clientHeight + 24 && guard < 18){
+    const cur = parseFloat(content.dataset.scale || '1') - 0.04;
+    if(cur < 0.62) break;
+    content.dataset.scale = cur; content.style.transform = `scale(${cur})`; content.style.transformOrigin = 'left center'; guard++;
+  }
+}
+
+function renderSlides(slides, opts){
+  opts = opts || {};
+  const w = opts.width || 1080, h = opts.height || 1350;
+  const deck = document.getElementById('deck'); deck.innerHTML = '';
+  slides.forEach((s,i)=>{
+    const el = document.createElement('section'); el.className = 'slide';
+    el.style.setProperty('--w', w+'px'); el.style.setProperty('--h', h+'px');
+    const bg = resolveBg(s.bg);
+    if(bg){ el.setAttribute('data-bg',''); el.style.setProperty('--bgimg', `url('${bg}')`); }
+    el.innerHTML = frame(panel(s), i, slides.length, s, opts);
+    deck.appendChild(el);
+  });
+  // Preload CSS-referenced images (icon masks + background images). These are NOT <img>
+  // elements, so an external waiter that only watches document.images misses them — and a
+  // screenshot fired before a mask decodes renders the element blank.
+  const urls = new Set();
+  deck.querySelectorAll('.ico').forEach(el=>{ const mm = /url\(["']?(.*?)["']?\)/.exec(el.style.maskImage || el.style.webkitMaskImage || ''); if(mm) urls.add(mm[1]); });
+  deck.querySelectorAll('.slide[data-bg]').forEach(el=>{ const mm = /url\(["']?(.*?)["']?\)/.exec(el.style.getPropertyValue('--bgimg') || ''); if(mm) urls.add(mm[1]); });
+  const preload = Promise.all([...urls].map(u => new Promise(r => { const im = new Image(); im.onload = im.onerror = r; im.src = u; })));
+  const fonts = document.fonts ? document.fonts.ready : Promise.resolve();
+  return Promise.all([fonts, preload]).then(()=>{
+    deck.querySelectorAll('.slide').forEach(fit); return true;
+  });
+}
+window.renderSlides = renderSlides;
+
+/* default example (shows the engine when the file is opened directly) */
+window.SLIDES = window.SLIDES || [
+  {type:'stat', kicker:'The problem', value:'40', unit:'%', label:'of marketing time is lost re-making the same graphic', support:'Every post rebuilt from scratch is time not spent on the message.'},
+  {type:'list', title:'One system, every asset', items:[
+    {icon:'target', title:'On-brand by default', text:'Real logo, real purple, real fonts, every time.'},
+    {icon:'database', title:'Built from your numbers', text:'Cards straight from the data you give it.'},
+    {icon:'fast', title:'Minutes, not hours', text:'Edit the copy, render the deck, post it.'}]},
+  {type:'steps', title:'How it works', steps:[
+    {title:'Write the copy', text:'Headlines, numbers, and a real quote.'},
+    {title:'Render the deck', text:'The engine styles every panel to spec.'},
+    {title:'Post it', text:'PNG slides plus a ready carousel PDF.'}]},
+  {type:'quote', quote:'It finally all looks like the same company.', name:'Add a real name', role:'Real role, real company'},
+  {type:'cta', headline:'Make it look like Maintain Media.', sub:'Give it the copy. It handles the design.', action:'Start a carousel', url:'maintainmedia.com'}
+];
+if(!window.__NO_AUTORENDER) renderSlides(window.SLIDES);
+</script>
+</body>
+</html>

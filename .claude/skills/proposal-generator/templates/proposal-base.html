@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposal for {{CLIENT_NAME}} | Next Generation Medicine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600&family=Noto+Serif+JP:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #FFFFFF;
+      --paper-alt: #F5F2EC;
+      --ink-900: #302C27;
+      --ink-700: #4A4540;
+      --ink-500: #706C66;
+      --ink-400: #9C9890;
+      --line: #E3DFD7;
+      --gold: #C49A6C;
+      --vermillion: #C07050;
+
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 20px;
+      --space-4: 32px;
+      --space-5: 48px;
+      --space-6: 72px;
+      --space-7: 96px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink-700);
+      background-color: var(--paper);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: clamp(20px, 5vw, 48px);
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', 'Noto Serif JP', serif;
+      color: var(--ink-900);
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: clamp(32px, 4vw, 42px);
+      line-height: 1.2;
+      margin-bottom: var(--space-4);
+    }
+
+    h2 {
+      font-size: clamp(24px, 3vw, 32px);
+      line-height: 1.2;
+      margin-bottom: var(--space-3);
+    }
+
+    h3 {
+      font-size: clamp(18px, 2.5vw, 24px);
+      line-height: 1.3;
+      margin-bottom: var(--space-2);
+    }
+
+    h4 {
+      font-size: 17px;
+      line-height: 1.4;
+      margin-bottom: var(--space-2);
+    }
+
+    p {
+      margin-bottom: var(--space-3);
+    }
+
+    strong {
+      font-weight: 600;
+      color: var(--ink-900);
+    }
+
+    em {
+      font-style: italic;
+      color: var(--ink-500);
+    }
+
+    a {
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Header */
+    .header {
+      background: var(--paper-alt);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: var(--space-6);
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 clamp(20px, 5vw, 48px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .wordmark {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+    }
+
+    .header-meta {
+      font-size: 13px;
+      color: var(--ink-500);
+      text-align: right;
+    }
+
+    /* Hero Section */
+    .hero {
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-5);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      margin-bottom: var(--space-2);
+    }
+
+    .hero h1 {
+      margin-bottom: var(--space-3);
+    }
+
+    .hero-subtitle {
+      font-size: 17px;
+      color: var(--ink-500);
+      font-style: italic;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: var(--space-6);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--ink-900);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .section-title-group {
+      flex: 1;
+    }
+
+    .section-title-group h2 {
+      margin-bottom: var(--space-1);
+    }
+
+    .section-subtitle {
+      font-style: italic;
+      color: var(--ink-500);
+      font-size: 15px;
+    }
+
+    /* Lists */
+    ul, ol {
+      margin-bottom: var(--space-3);
+      padding-left: var(--space-4);
+    }
+
+    li {
+      margin-bottom: var(--space-1);
+    }
+
+    li::marker {
+      color: var(--gold);
+    }
+
+    /* Highlight Box */
+    .highlight-box {
+      background: var(--paper-alt);
+      padding: var(--space-4);
+      border-left: 4px solid var(--gold);
+      margin: var(--space-4) 0;
+    }
+
+    .highlight-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Quote Box */
+    .quote-box {
+      padding: var(--space-4);
+      border: 1px solid var(--line);
+      margin: var(--space-4) 0;
+      position: relative;
+    }
+
+    .quote-box::before {
+      content: '"';
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 48px;
+      color: var(--gold);
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      line-height: 1;
+    }
+
+    .quote-box p {
+      padding-left: var(--space-5);
+      font-style: italic;
+    }
+
+    .quote-attribution {
+      padding-left: var(--space-5);
+      font-size: 13px;
+      color: var(--ink-500);
+      margin-top: var(--space-2);
+    }
+
+    /* Pricing Table */
+    .pricing-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--space-4) 0;
+    }
+
+    .pricing-table th {
+      text-align: left;
+      padding: var(--space-2) var(--space-3);
+      background: var(--paper-alt);
+      border-bottom: 2px solid var(--line);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-500);
+    }
+
+    .pricing-table td {
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    .pricing-table .option-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--ink-900);
+      margin-bottom: var(--space-1);
+    }
+
+    .pricing-table .option-desc {
+      font-size: 14px;
+      color: var(--ink-500);
+    }
+
+    .pricing-table .price {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--ink-900);
+      white-space: nowrap;
+    }
+
+    .pricing-table .price-note {
+      font-size: 13px;
+      color: var(--ink-500);
+      font-weight: 400;
+    }
+
+    .pricing-table tr.recommended {
+      background: rgba(197, 165, 114, 0.08);
+    }
+
+    .pricing-table tr.recommended td {
+      border-bottom-color: var(--gold);
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--gold);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      margin-left: var(--space-2);
+      vertical-align: middle;
+    }
+
+    /* Deliverables List */
+    .deliverables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    .deliverable-item {
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      background: var(--paper-alt);
+      border-radius: 2px;
+    }
+
+    .deliverable-icon {
+      color: var(--gold);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .deliverable-content h4 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .deliverable-content p {
+      font-size: 13px;
+      color: var(--ink-500);
+      margin-bottom: 0;
+    }
+
+    /* Credentials */
+    .credentials-list {
+      list-style: none;
+      padding: 0;
+      margin: var(--space-3) 0;
+    }
+
+    .credentials-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+      padding: var(--space-2) 0;
+    }
+
+    .credential-icon {
+      color: var(--gold);
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    /* Timeline */
+    .timeline {
+      border-left: 2px solid var(--line);
+      padding-left: var(--space-4);
+      margin: var(--space-4) 0;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: var(--space-4);
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: calc(-1 * var(--space-4) - 5px);
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      background: var(--gold);
+      border-radius: 50%;
+    }
+
+    .timeline-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin-bottom: var(--space-1);
+    }
+
+    .timeline-content h4 {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+    }
+
+    .timeline-content p {
+      font-size: 14px;
+      color: var(--ink-500);
+      margin-bottom: 0;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      background: var(--paper-alt);
+      padding: var(--space-5);
+      text-align: center;
+      margin-top: var(--space-6);
+      border-top: 1px solid var(--line);
+    }
+
+    .cta-section h3 {
+      margin-bottom: var(--space-3);
+    }
+
+    .cta-section p {
+      color: var(--ink-500);
+      max-width: 500px;
+      margin: 0 auto var(--space-4) auto;
+    }
+
+    .cta-button {
+      display: inline-block;
+      padding: 14px 32px;
+      background: var(--ink-900);
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      transition: all 0.3s ease;
+    }
+
+    .cta-button:hover {
+      background: var(--vermillion);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .cta-button::after {
+      content: ' →';
+      transition: margin-left 0.2s ease;
+    }
+
+    .cta-button:hover::after {
+      margin-left: 4px;
+    }
+
+    .cta-note {
+      margin-top: var(--space-3);
+      font-size: 13px;
+      color: var(--ink-400);
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: var(--space-5) 0;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: var(--space-5) 0;
+      margin-top: var(--space-6);
+      border-top: 1px solid var(--line);
+    }
+
+    .footer-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      color: var(--ink-900);
+      margin-bottom: var(--space-1);
+    }
+
+    .footer-contact {
+      font-size: 13px;
+      color: var(--ink-400);
+    }
+
+    .footer-contact a {
+      color: var(--ink-500);
+    }
+
+    /* Utility Classes */
+    .text-gold {
+      color: var(--gold);
+    }
+
+    .text-muted {
+      color: var(--ink-500);
+    }
+
+    .text-small {
+      font-size: 13px;
+    }
+
+    .mt-0 { margin-top: 0; }
+    .mb-0 { margin-bottom: 0; }
+    .mb-4 { margin-bottom: var(--space-4); }
+
+    /* Print Styles */
+    @media print {
+      body {
+        font-size: 12pt;
+      }
+
+      .container {
+        padding: 0;
+        max-width: none;
+      }
+
+      .header {
+        padding: 20px 0;
+      }
+
+      .section {
+        page-break-inside: avoid;
+      }
+
+      .cta-section {
+        background: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .cta-button {
+        background: #302C27 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .section-number {
+        background: #302C27 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .badge {
+        background: #C49A6C !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+
+    @page {
+      margin: 1in;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="wordmark">Next Generation Medicine</div>
+      <div class="header-meta">
+        {{DATE}}<br>
+        Prepared for {{CLIENT_NAME}}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-label">Proposal</div>
+      <h1>{{PROPOSAL_TITLE}}</h1>
+      <p class="hero-subtitle">{{PROPOSAL_SUBTITLE}}</p>
+    </section>
+
+    <!-- Section 1: Executive Summary -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <div class="section-title-group">
+          <h2>Executive Summary</h2>
+        </div>
+      </div>
+      <div class="highlight-box">
+        <p>{{EXECUTIVE_SUMMARY}}</p>
+      </div>
+    </section>
+
+    <!-- Section 2: Understanding Your Situation -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">2</div>
+        <div class="section-title-group">
+          <h2>Understanding Your Situation</h2>
+          <p class="section-subtitle">What we heard in our conversation</p>
+        </div>
+      </div>
+      {{SITUATION_CONTENT}}
+    </section>
+
+    <!-- Section 3: Proposed Solution -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">3</div>
+        <div class="section-title-group">
+          <h2>Proposed Solution</h2>
+          <p class="section-subtitle">How we'll help you achieve your goals</p>
+        </div>
+      </div>
+      {{SOLUTION_CONTENT}}
+    </section>
+
+    <!-- Section 4: Why NGM -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">4</div>
+        <div class="section-title-group">
+          <h2>Why Next Generation Medicine</h2>
+          <p class="section-subtitle">The experience and tools to deliver results</p>
+        </div>
+      </div>
+      {{WHY_NGM_CONTENT}}
+    </section>
+
+    <!-- Section 5: Investment -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">5</div>
+        <div class="section-title-group">
+          <h2>Investment</h2>
+          <p class="section-subtitle">Options tailored to your needs</p>
+        </div>
+      </div>
+      {{INVESTMENT_CONTENT}}
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <h3>Ready to Move Forward?</h3>
+      <p>{{CTA_TEXT}}</p>
+      <a href="mailto:anant@nextgenerationmedicine.co?subject={{EMAIL_SUBJECT}}" class="cta-button">{{CTA_BUTTON_TEXT}}</a>
+      <p class="cta-note">{{CTA_NOTE}}</p>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p class="footer-brand">Next Generation Medicine</p>
+    <p class="footer-contact">
+      <a href="https://nextgenerationmedicine.co">nextgenerationmedicine.co</a> ·
+      <a href="mailto:anant@nextgenerationmedicine.co">anant@nextgenerationmedicine.co</a>
+    </p>
+  </footer>
+
+</body>
+</html>

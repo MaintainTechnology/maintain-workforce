@@ -1,0 +1,26 @@
+{
+  "name": "<slug>",
+  "version": "1.0.0",
+  "description": "Express API cloning the VectorShift <pipeline-name> pipeline as a standalone service, deployable to Railway",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test tests/",
+    "preflight": "node scripts/preflight.js",
+    "railway:check": "node scripts/preflight.js && echo 'Ready for Railway deploy.'"
+  },
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.24.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0"
+  }
+}

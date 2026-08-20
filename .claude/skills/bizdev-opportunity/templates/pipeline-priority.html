@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizDev Pipeline - Priority View - {{generated_date}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* =================================================================
+           NGM DESIGN SYSTEM - CSS Variables
+           ================================================================= */
+        :root {
+            --paper: #FFFFFF;
+            --paper-alt: #F5F2EC;
+            --ink-900: #302C27;
+            --ink-700: #4A4540;
+            --ink-500: #706C66;
+            --ink-400: #9C9890;
+            --line: #E3DFD7;
+            --gold: #C49A6C;
+            --vermillion: #C07050;
+            
+            /* Urgency Colors */
+            --urgency-critical: #C07050;
+            --urgency-high: #D4A017;
+            --urgency-medium: #5A8F5A;
+            --urgency-low: #9C9890;
+            
+            /* Status Colors */
+            --status-active: #5A8F5A;
+            --status-stale: #C07050;
+            --status-followup: #D4A017;
+            --status-awaiting: #4A90A4;
+            
+            /* Opportunity Types */
+            --type-consulting: #C49A6C;
+            --type-membership: #4A90A4;
+            --type-enterprise: #7B68A6;
+            --type-commons: #5A8F5A;
+            
+            --space-1: 8px;
+            --space-2: 12px;
+            --space-3: 20px;
+            --space-4: 32px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--ink-700);
+            background: var(--paper-alt);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        .header {
+            background: var(--paper);
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--line);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            background: var(--ink-900);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 500;
+            color: white;
+        }
+
+        .header-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            color: var(--ink-500);
+        }
+
+        /* Summary Stats */
+        .summary-bar {
+            background: var(--paper);
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .summary-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--ink-900);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--ink-500);
+            margin-top: 4px;
+        }
+
+        .stat-item.critical .stat-value { color: var(--vermillion); }
+        .stat-item.highlight .stat-value { color: var(--gold); }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-4);
+        }
+
+        /* Priority List */
+        .priority-list {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .priority-header {
+            display: grid;
+            grid-template-columns: 55px 1fr 90px 85px 90px 115px 170px;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background: var(--paper-alt);
+            border-bottom: 1px solid var(--line);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--ink-500);
+            font-weight: 600;
+        }
+
+        .priority-row {
+            display: grid;
+            grid-template-columns: 55px 1fr 90px 85px 90px 115px 170px;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            border-bottom: 1px solid var(--line);
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .priority-row:hover {
+            background: var(--paper-alt);
+        }
+
+        .priority-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Priority Score Cell */
+        .priority-score-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .priority-score {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .priority-score.critical { color: var(--urgency-critical); }
+        .priority-score.high { color: var(--urgency-high); }
+        .priority-score.medium { color: var(--urgency-medium); }
+        .priority-score.low { color: var(--ink-400); }
+
+        /* Contact Cell */
+        .contact-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .contact-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--ink-900);
+        }
+
+        .contact-company {
+            font-size: 12px;
+            color: var(--ink-500);
+        }
+
+        .contact-email {
+            font-size: 11px;
+            color: var(--ink-400);
+        }
+
+        /* Type Badge */
+        .type-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            background: var(--paper-alt);
+            color: var(--ink-500);
+        }
+
+        .type-badge.consulting { background: rgba(197, 165, 114, 0.15); color: var(--type-consulting); }
+        .type-badge.membership { background: rgba(74, 144, 164, 0.15); color: var(--type-membership); }
+        .type-badge.enterprise { background: rgba(123, 104, 166, 0.15); color: var(--type-enterprise); }
+        .type-badge.commons { background: rgba(90, 143, 90, 0.15); color: var(--type-commons); }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .status-badge.active { background: rgba(90, 143, 90, 0.15); color: var(--status-active); }
+        .status-badge.stale { background: rgba(224, 62, 47, 0.15); color: var(--status-stale); }
+        .status-badge.followup { background: rgba(212, 160, 23, 0.15); color: var(--status-followup); }
+        .status-badge.awaiting { background: rgba(74, 144, 164, 0.15); color: var(--status-awaiting); }
+
+        /* Last Contact */
+        .last-contact-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 12px;
+        }
+
+        .last-contact-date {
+            color: var(--ink-700);
+        }
+
+        .last-contact-days {
+            color: var(--ink-400);
+            font-size: 11px;
+        }
+
+        .last-contact-days.urgent {
+            color: var(--vermillion);
+            font-weight: 600;
+        }
+
+        /* Action Cell */
+        .action-cell {
+            font-size: 12px;
+            color: var(--ink-700);
+        }
+
+        /* Drafts Cell */
+        .drafts-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .draft-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--type-membership);
+            text-decoration: none;
+            padding: 2px 6px;
+            background: rgba(74, 144, 164, 0.1);
+            border-radius: 3px;
+        }
+
+        .draft-link:hover {
+            background: rgba(74, 144, 164, 0.2);
+        }
+
+        .draft-link.proposal {
+            color: var(--type-consulting);
+            background: rgba(197, 165, 114, 0.1);
+        }
+
+        .draft-link.proposal:hover {
+            background: rgba(197, 165, 114, 0.2);
+        }
+
+        /* Section Dividers */
+        .section-divider {
+            grid-column: 1 / -1;
+            padding: var(--space-2) var(--space-3);
+            background: var(--paper-alt);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--ink-500);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section-divider.critical {
+            background: rgba(224, 62, 47, 0.1);
+            color: var(--vermillion);
+        }
+
+        .section-divider.high {
+            background: rgba(212, 160, 23, 0.1);
+            color: #B8860B;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: var(--space-4);
+            color: var(--ink-400);
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .priority-header, .priority-row {
+                grid-template-columns: 50px 1fr 100px 80px 120px 180px;
+            }
+            .priority-header > *:nth-child(5),
+            .priority-row > *:nth-child(5) {
+                display: none;
+            }
+        }
+
+        @media print {
+            body { background: white; }
+            .header { position: static; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-left">
+                <div class="logo-mark">N</div>
+                <div>
+                    <div class="header-title">BizDev Pipeline - Priority View</div>
+                    <div class="header-subtitle">Next Generation Medicine</div>
+                </div>
+            </div>
+            <div style="text-align: right; font-size: 13px; color: var(--ink-500);">
+                Generated: {{generated_date}}<br>
+                Lookback: {{lookback_months}} months
+            </div>
+        </div>
+    </header>
+
+    <div class="summary-bar">
+        <div class="summary-inner">
+            <div class="stat-item">
+                <div class="stat-value">{{total_opportunities}}</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item critical">
+                <div class="stat-value">{{critical_count}}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat-item highlight">
+                <div class="stat-value">{{high_priority_count}}</div>
+                <div class="stat-label">High Priority</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{awaiting_response_count}}</div>
+                <div class="stat-label">Awaiting Response</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{needs_followup_count}}</div>
+                <div class="stat-label">Needs Follow-up</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{stale_count}}</div>
+                <div class="stat-label">Stale</div>
+            </div>
+            <div class="stat-item highlight">
+                <div class="stat-value">{{estimated_value}}</div>
+                <div class="stat-label">Pipeline Value</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="priority-list">
+            <div class="priority-header">
+                <div>Score</div>
+                <div>Contact</div>
+                <div>Type</div>
+                <div>Status</div>
+                <div>Drafts</div>
+                <div>Last Contact</div>
+                <div>Recommended Action</div>
+            </div>
+
+            {{#critical_opportunities}}
+            {{#first}}
+            <div class="section-divider critical">🔴 Critical - Action Required Today</div>
+            {{/first}}
+            <div class="priority-row">
+                <div class="priority-score-cell">
+                    <div class="priority-score critical">{{priority_score}}</div>
+                </div>
+                <div class="contact-cell">
+                    <div class="contact-name">{{contact_name}}</div>
+                    <div class="contact-company">{{company}}</div>
+                    <div class="contact-email">{{contact_email}}</div>
+                </div>
+                <div><span class="type-badge {{opportunity_type}}">{{opportunity_type_display}}</span></div>
+                <div><span class="status-badge {{status_class}}">{{status_label}}</span></div>
+                <div class="drafts-cell">
+                    {{#draft_emails}}<a href="{{.}}" class="draft-link" target="_blank">📧 Email</a>{{/draft_emails}}
+                    {{#draft_proposals}}<a href="{{.}}" class="draft-link proposal" target="_blank">📄 Proposal</a>{{/draft_proposals}}
+                    {{^has_drafts}}<span style="color: var(--ink-400); font-size: 11px;">—</span>{{/has_drafts}}
+                </div>
+                <div class="last-contact-cell">
+                    <div class="last-contact-date">{{last_contact}}</div>
+                    <div class="last-contact-days {{#awaiting_response_days}}urgent{{/awaiting_response_days}}">
+                        {{#awaiting_response_days}}⏳ {{awaiting_response_days}}d waiting{{/awaiting_response_days}}
+                    </div>
+                </div>
+                <div class="action-cell">{{recommended_action}}</div>
+            </div>
+            {{/critical_opportunities}}
+
+            {{#high_opportunities}}
+            {{#first}}
+            <div class="section-divider high">🟡 High Priority - This Week</div>
+            {{/first}}
+            <div class="priority-row">
+                <div class="priority-score-cell">
+                    <div class="priority-score high">{{priority_score}}</div>
+                </div>
+                <div class="contact-cell">
+                    <div class="contact-name">{{contact_name}}</div>
+                    <div class="contact-company">{{company}}</div>
+                    <div class="contact-email">{{contact_email}}</div>
+                </div>
+                <div><span class="type-badge {{opportunity_type}}">{{opportunity_type_display}}</span></div>
+                <div><span class="status-badge {{status_class}}">{{status_label}}</span></div>
+                <div class="drafts-cell">
+                    {{#draft_emails}}<a href="{{.}}" class="draft-link" target="_blank">📧 Email</a>{{/draft_emails}}
+                    {{#draft_proposals}}<a href="{{.}}" class="draft-link proposal" target="_blank">📄 Proposal</a>{{/draft_proposals}}
+                    {{^has_drafts}}<span style="color: var(--ink-400); font-size: 11px;">—</span>{{/has_drafts}}
+                </div>
+                <div class="last-contact-cell">
+                    <div class="last-contact-date">{{last_contact}}</div>
+                    <div class="last-contact-days">{{days_since_contact}}d ago</div>
+                </div>
+                <div class="action-cell">{{recommended_action}}</div>
+            </div>
+            {{/high_opportunities}}
+
+            {{#medium_opportunities}}
+            {{#first}}
+            <div class="section-divider">🟢 Medium Priority</div>
+            {{/first}}
+            <div class="priority-row">
+                <div class="priority-score-cell">
+                    <div class="priority-score medium">{{priority_score}}</div>
+                </div>
+                <div class="contact-cell">
+                    <div class="contact-name">{{contact_name}}</div>
+                    <div class="contact-company">{{company}}</div>
+                </div>
+                <div><span class="type-badge {{opportunity_type}}">{{opportunity_type_display}}</span></div>
+                <div><span class="status-badge {{status_class}}">{{status_label}}</span></div>
+                <div class="drafts-cell">
+                    {{#draft_emails}}<a href="{{.}}" class="draft-link" target="_blank">📧 Email</a>{{/draft_emails}}
+                    {{#draft_proposals}}<a href="{{.}}" class="draft-link proposal" target="_blank">📄 Proposal</a>{{/draft_proposals}}
+                    {{^has_drafts}}<span style="color: var(--ink-400); font-size: 11px;">—</span>{{/has_drafts}}
+                </div>
+                <div class="last-contact-cell">
+                    <div class="last-contact-date">{{last_contact}}</div>
+                </div>
+                <div class="action-cell">{{recommended_action}}</div>
+            </div>
+            {{/medium_opportunities}}
+
+            {{#low_opportunities}}
+            {{#first}}
+            <div class="section-divider">⚪ Lower Priority</div>
+            {{/first}}
+            <div class="priority-row">
+                <div class="priority-score-cell">
+                    <div class="priority-score low">{{priority_score}}</div>
+                </div>
+                <div class="contact-cell">
+                    <div class="contact-name">{{contact_name}}</div>
+                    <div class="contact-company">{{company}}</div>
+                </div>
+                <div><span class="type-badge {{opportunity_type}}">{{opportunity_type_display}}</span></div>
+                <div><span class="status-badge {{status_class}}">{{status_label}}</span></div>
+                <div class="drafts-cell">
+                    {{#draft_emails}}<a href="{{.}}" class="draft-link" target="_blank">📧 Email</a>{{/draft_emails}}
+                    {{#draft_proposals}}<a href="{{.}}" class="draft-link proposal" target="_blank">📄 Proposal</a>{{/draft_proposals}}
+                    {{^has_drafts}}<span style="color: var(--ink-400); font-size: 11px;">—</span>{{/has_drafts}}
+                </div>
+                <div class="last-contact-cell">
+                    <div class="last-contact-date">{{last_contact}}</div>
+                </div>
+                <div class="action-cell">{{recommended_action}}</div>
+            </div>
+            {{/low_opportunities}}
+        </div>
+    </div>
+
+    <div class="footer">
+        Next Generation Medicine &mdash; BizDev Pipeline Dashboard<br>
+        Generated {{generated_date}}
+    </div>
+</body>
+</html>
