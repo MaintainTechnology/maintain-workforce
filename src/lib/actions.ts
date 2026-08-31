@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { site } from "@/lib/site";
+import { captureLead } from "@/lib/lead-capture";
 
 // Both site forms land here. Plain server actions so the forms still submit
 // with JavaScript unavailable or half-loaded — PRODUCT.md assumes an older
@@ -148,6 +149,22 @@ export async function registerCompany(
   }
 
   const r = parsed.data;
+
+  // 0.2 route (a): the public capture form is one of the three ways a lead enters
+  // the platform. Recorded before the email so the Leads queue is the system of
+  // record even when delivery later fails.
+  await captureLead({
+    source: "website:register",
+    posture: r.posture,
+    businessName: r.company,
+    contactName: r.contact,
+    email: r.email,
+    phone: r.phone,
+    abn: r.abn,
+    tradeInterest: r.trades,
+    notes: [r.location ? `Operates in: ${r.location}` : null, r.notes].filter(Boolean).join(String.fromCharCode(10)),
+  });
+
   const result = await deliver(
     `Company registration: ${r.company} (${r.trades})`,
     [

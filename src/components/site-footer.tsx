@@ -27,8 +27,8 @@ const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] =
   {
     heading: "Access",
     links: [
-      { href: ctas.register.href, label: ctas.register.label },
-      { href: ctas.login.href, label: ctas.login.label },
+      { href: ctas.signUp.href, label: ctas.signUp.label },
+      { href: ctas.signIn.href, label: ctas.signIn.label },
       { href: "/forgot-password", label: "Forgot password" },
     ],
   },

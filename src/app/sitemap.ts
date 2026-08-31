@@ -5,10 +5,10 @@ import { site } from "@/lib/site";
 // noindex when they arrive (build spec §13.9).
 const ROUTES: { path: string; priority: number }[] = [
   { path: "", priority: 1 },
-  { path: "/register", priority: 0.9 },
+  { path: "/signup", priority: 0.9 },
   { path: "/about", priority: 0.7 },
   { path: "/contact", priority: 0.6 },
-  { path: "/login", priority: 0.3 },
+  { path: "/signin", priority: 0.3 },
   { path: "/forgot-password", priority: 0.1 },
   { path: "/legal/privacy", priority: 0.2 },
   { path: "/legal/terms", priority: 0.2 },

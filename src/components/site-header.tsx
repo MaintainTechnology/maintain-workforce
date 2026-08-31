@@ -44,22 +44,22 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-(--space-3)">
           <Link
-            href={ctas.login.href}
+            href={ctas.signIn.href}
             className="hidden min-h-11 items-center px-(--space-3) text-sm font-semibold text-on-dark-muted transition-colors duration-(--dur-base) ease-(--ease-out) hover:text-on-dark sm:inline-flex"
           >
-            {ctas.login.label}
+            {ctas.signIn.label}
           </Link>
           {/* One button, responsive label: BTN_PRIMARY carries inline-flex, so
               a second hidden/sm:inline-flex copy would fight it for display
               and both would render. The CTA persists at every width (spec). */}
           <Link
-            href={ctas.register.href}
+            href={ctas.signUp.href}
             className={cn(
               BTN_PRIMARY,
               "whitespace-nowrap px-(--space-4) text-sm max-[389px]:px-(--space-3)",
             )}
           >
-            <span className="hidden sm:inline">{ctas.register.label}</span>
+            <span className="hidden sm:inline">{ctas.signUp.label}</span>
             <span className="sm:hidden">Register</span>
           </Link>
           <MobileMenu />

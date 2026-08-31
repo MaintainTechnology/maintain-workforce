@@ -1,0 +1,197 @@
+# CI evidence and an explicitly acknowledged, coordinated production cutover.
+# GitHub environment/branch protections and Vercel promotion controls must be
+# enforced externally; this YAML neither configures them nor promotes the app.
+# See seed-data/PRODUCTION-CUTOVER.md before requesting production approval.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      coordinated_cutover:
+        description: I have prepared the coordinated cutover and recovery prerequisites in seed-data/PRODUCTION-CUTOVER.md
+        type: boolean
+        required: true
+        default: false
+      reviewed_sha:
+        description: Exact 40-character main commit SHA reviewed for this cutover
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  # New pushes/PRs may replace obsolete CI, but cannot cancel a manual cutover.
+  # Manual runs share a separate group and never cancel its running workflow.
+  group: maintain-workforce-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Structurally valid, non-production build fixtures. The service-role sentinel
+      # is deliberately scanned out of every browser-addressable build artifact.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA
+      CLERK_SECRET_KEY: sk_test_ci_build_only
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-build-only
+      SUPABASE_SERVICE_ROLE_KEY: ci-service-role-secret-sentinel
+      CLIENT_SECRET_SENTINEL: ci-service-role-secret-sentinel
+      APP_BASE_URL: http://127.0.0.1:3000
+    steps:
+      - name: Validate coordinated cutover request
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.coordinated_cutover == true }}
+        env:
+          REVIEWED_SHA: ${{ inputs.reviewed_sha }}
+          WORKFLOW_SHA: ${{ github.sha }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          node --input-type=module <<'NODE'
+          const { REVIEWED_SHA, WORKFLOW_SHA, WORKFLOW_REF } = process.env;
+          if (WORKFLOW_REF !== "refs/heads/main" ||
+              !/^[a-f0-9]{40}$/.test(REVIEWED_SHA ?? "") ||
+              REVIEWED_SHA !== WORKFLOW_SHA) {
+            console.error("Coordinated cutover requires main and its exact reviewed 40-character commit SHA.");
+            process.exit(1);
+          }
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # typecheck && eslint && vitest && vocab lint (22.1) — all blocking.
+      - run: npm run verify
+      - run: npm run build
+      - run: npm run check:client-secrets
+
+  local-database:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+      # A clean reset proves every committed migration is executable in order. This
+      # never links to or mutates the preview/production projects.
+      - run: supabase start
+      - run: supabase db reset --local
+      - run: supabase db lint --local --fail-on error
+
+  starred-flows:
+    needs: [verify, local-database]
+    runs-on: ubuntu-latest
+    # The starred flows need a live preview deployment plus a migrated, seeded preview
+    # database branch. Untrusted PRs never reach this deployment job. Main pushes and
+    # acknowledged manual main cutovers require complete E2E/RLS fixture evidence.
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.coordinated_cutover == true && inputs.reviewed_sha == github.sha)) }}
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_PREVIEW_DB_URL }}
+      APP_BASE_URL: ${{ secrets.PREVIEW_BASE_URL }}
+      E2E_REQUIRED: "1"
+      E2E_ALLOW_TEST_WRITES: "1"
+      E2E_TARGET: isolated-preview
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.E2E_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
+      RLS_TEST_REQUIRED: "1"
+      RLS_TEST_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      RLS_TEST_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      RLS_TEST_SERVICE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
+      # A development instance only. The suite creates and revokes its own Clerk
+      # fixture sessions; it never signs in through Supabase Auth.
+      RLS_TEST_CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+      RLS_TEST_COMPANY_A_CLERK_USER_ID: ${{ secrets.RLS_TEST_COMPANY_A_CLERK_USER_ID }}
+      RLS_TEST_COMPANY_A_WORKER_ID: ${{ secrets.RLS_TEST_COMPANY_A_WORKER_ID }}
+      RLS_TEST_COMPANY_B_CLERK_USER_ID: ${{ secrets.RLS_TEST_COMPANY_B_CLERK_USER_ID }}
+      RLS_TEST_COMPANY_B_WORKER_ID: ${{ secrets.RLS_TEST_COMPANY_B_WORKER_ID }}
+      RLS_TEST_COMPANY_B_CAPACITY_LINE_ID: ${{ secrets.RLS_TEST_COMPANY_B_CAPACITY_LINE_ID }}
+      RLS_TEST_COMPANY_B_DEMAND_LINE_ID: ${{ secrets.RLS_TEST_COMPANY_B_DEMAND_LINE_ID }}
+      RLS_TEST_COMPANY_B_DOCUMENT_ID: ${{ secrets.RLS_TEST_COMPANY_B_DOCUMENT_ID }}
+      RLS_TEST_BUYER_CLERK_USER_ID: ${{ secrets.RLS_TEST_BUYER_CLERK_USER_ID }}
+      RLS_TEST_SUPPLIER_CLERK_USER_ID: ${{ secrets.RLS_TEST_SUPPLIER_CLERK_USER_ID }}
+      RLS_TEST_BUYER_MATCH_ID: ${{ secrets.RLS_TEST_BUYER_MATCH_ID }}
+      RLS_TEST_SUPPLIER_MATCH_ID: ${{ secrets.RLS_TEST_SUPPLIER_MATCH_ID }}
+      RLS_TEST_BUYER_ENGAGEMENT_ID: ${{ secrets.RLS_TEST_BUYER_ENGAGEMENT_ID }}
+      RLS_TEST_SUPPLIER_ENGAGEMENT_ID: ${{ secrets.RLS_TEST_SUPPLIER_ENGAGEMENT_ID }}
+      RLS_TEST_TRANSFER_ID: ${{ secrets.RLS_TEST_TRANSFER_ID }}
+      RLS_TEST_CANCELLED_BUYER_ENGAGEMENT_ID: ${{ secrets.RLS_TEST_CANCELLED_BUYER_ENGAGEMENT_ID }}
+      RLS_TEST_CANCELLED_SUPPLIER_ENGAGEMENT_ID: ${{ secrets.RLS_TEST_CANCELLED_SUPPLIER_ENGAGEMENT_ID }}
+      RLS_TEST_PENDING_CLERK_USER_ID: ${{ secrets.RLS_TEST_PENDING_CLERK_USER_ID }}
+      RLS_TEST_PENDING_WORKER_ID: ${{ secrets.RLS_TEST_PENDING_WORKER_ID }}
+      RLS_TEST_SUSPENDED_CLERK_USER_ID: ${{ secrets.RLS_TEST_SUSPENDED_CLERK_USER_ID }}
+      RLS_TEST_SUSPENDED_WORKER_ID: ${{ secrets.RLS_TEST_SUSPENDED_WORKER_ID }}
+      RLS_TEST_CLOSED_CLERK_USER_ID: ${{ secrets.RLS_TEST_CLOSED_CLERK_USER_ID }}
+      RLS_TEST_CLOSED_WORKER_ID: ${{ secrets.RLS_TEST_CLOSED_WORKER_ID }}
+      RLS_TEST_COMPANY_DOCUMENT_PATH: ${{ secrets.RLS_TEST_COMPANY_DOCUMENT_PATH }}
+      RLS_TEST_WORKER_QUALIFICATION_PATH: ${{ secrets.RLS_TEST_WORKER_QUALIFICATION_PATH }}
+      RLS_TEST_COMMITTING_ENGAGEMENT_WORKER_ID: ${{ secrets.RLS_TEST_COMMITTING_ENGAGEMENT_WORKER_ID }}
+      RLS_TEST_OVERLAP_ENGAGEMENT_ID: ${{ secrets.RLS_TEST_OVERLAP_ENGAGEMENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Genuine pre-verified Clerk states are operator-provided bearer secrets, not
+      # minted by a test login bypass. Validate the complete manifest BEFORE any
+      # preview migration, and remove the private temporary files even on failure.
+      - name: Prepare isolated browser fixtures
+        run: node scripts/prepare-e2e-fixtures.mjs
+        env:
+          E2E_FIXTURE_BUNDLE_JSON: ${{ secrets.E2E_FIXTURE_BUNDLE_JSON }}
+      - run: npx playwright test --list
+      # Configuration only: reject missing rows/IDs and production Clerk keys
+      # before migrations. Real fixture sessions are created by the live suite below.
+      - run: node scripts/validate-rls-fixtures.mjs
+      # Migrations run against the preview branch before the flows exercise it.
+      - uses: supabase/setup-cli@v1
+      # Remote history intentionally contains 007 before the pending 006 lifecycle
+      # migration. --include-all is required to apply that older, reviewed migration.
+      - run: supabase db push --include-all --db-url "$SUPABASE_DB_URL"
+      - run: npx vitest run src/lib/rls.integration.test.ts
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Remove browser fixture secret files
+        if: ${{ always() }}
+        run: node scripts/prepare-e2e-fixtures.mjs --cleanup
+
+  # Privilege/RPC changes can break the old app. An approved operator must quiesce
+  # writes/cron, verify recovery readiness, and coordinate the matching app release.
+  # A Vercel application rollback alone cannot undo database changes.
+  migrate-production:
+    needs: [verify, local-database, starred-flows]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.coordinated_cutover == true && inputs.reviewed_sha == github.sha }}
+    environment: production
+    concurrency:
+      group: maintain-workforce-production-cutover
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: supabase/setup-cli@v1
+      - run: supabase db push --include-all --db-url "$SUPABASE_PRODUCTION_DB_URL"
+        env:
+          SUPABASE_PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}

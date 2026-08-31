@@ -1,0 +1,87 @@
+industry,trade_role,proficiency
+Commercial Construction,Commercial Roofing,Apprentice
+Commercial Construction,Commercial Roofing,Junior
+Commercial Construction,Commercial Roofing,Mid
+Commercial Construction,Commercial Roofing,Senior
+Commercial Construction,Structural Steel Erection,Junior
+Commercial Construction,Structural Steel Erection,Mid
+Commercial Construction,Structural Steel Erection,Senior
+Commercial Construction,Concreting,Apprentice
+Commercial Construction,Concreting,Junior
+Commercial Construction,Concreting,Mid
+Commercial Construction,Concreting,Senior
+Residential Construction,Bricklaying & Blockwork,Apprentice
+Residential Construction,Bricklaying & Blockwork,Junior
+Residential Construction,Bricklaying & Blockwork,Mid
+Residential Construction,Bricklaying & Blockwork,Senior
+Residential Construction,Carpentry (Structural),Apprentice
+Residential Construction,Carpentry (Structural),Junior
+Residential Construction,Carpentry (Structural),Mid
+Residential Construction,Carpentry (Structural),Senior
+Fit-out & Refurbishment,Fit-out Carpentry,Apprentice
+Fit-out & Refurbishment,Fit-out Carpentry,Junior
+Fit-out & Refurbishment,Fit-out Carpentry,Mid
+Fit-out & Refurbishment,Fit-out Carpentry,Senior
+Fit-out & Refurbishment,Commercial Painting,Junior
+Fit-out & Refurbishment,Commercial Painting,Mid
+Fit-out & Refurbishment,Commercial Painting,Senior
+Fit-out & Refurbishment,Plastering & Linings,Apprentice
+Fit-out & Refurbishment,Plastering & Linings,Junior
+Fit-out & Refurbishment,Plastering & Linings,Mid
+Fit-out & Refurbishment,Plastering & Linings,Senior
+Fit-out & Refurbishment,Flooring & Floor Coverings,Junior
+Fit-out & Refurbishment,Flooring & Floor Coverings,Mid
+Fit-out & Refurbishment,Flooring & Floor Coverings,Senior
+Commercial Construction,Commercial Electrical,Apprentice
+Commercial Construction,Commercial Electrical,Mid
+Commercial Construction,Commercial Electrical,Senior
+Commercial Construction,Plumbing & Drainage,Apprentice
+Commercial Construction,Plumbing & Drainage,Junior
+Commercial Construction,Plumbing & Drainage,Mid
+Commercial Construction,Plumbing & Drainage,Senior
+Industrial Construction,Mechanical Services (HVAC),Junior
+Industrial Construction,Mechanical Services (HVAC),Mid
+Industrial Construction,Mechanical Services (HVAC),Senior
+Industrial Construction,Fire Protection Services,Junior
+Industrial Construction,Fire Protection Services,Mid
+Industrial Construction,Fire Protection Services,Senior
+Civil & Infrastructure,Civil Earthworks,Junior
+Civil & Infrastructure,Civil Earthworks,Mid
+Civil & Infrastructure,Civil Earthworks,Senior
+Civil & Infrastructure,Road Construction,Junior
+Civil & Infrastructure,Road Construction,Mid
+Civil & Infrastructure,Road Construction,Senior
+Civil & Infrastructure,Traffic Management,Junior
+Civil & Infrastructure,Traffic Management,Mid
+Civil & Infrastructure,Traffic Management,Senior
+Commercial Construction,Scaffolding,Junior
+Commercial Construction,Scaffolding,Mid
+Commercial Construction,Scaffolding,Senior
+Commercial Construction,Crane & Rigging,Junior
+Commercial Construction,Crane & Rigging,Mid
+Commercial Construction,Crane & Rigging,Senior
+Demolition & Remediation,Demolition & Strip-out,Junior
+Demolition & Remediation,Demolition & Strip-out,Mid
+Demolition & Remediation,Demolition & Strip-out,Senior
+Demolition & Remediation,Asbestos Removal,Junior
+Demolition & Remediation,Asbestos Removal,Mid
+Demolition & Remediation,Asbestos Removal,Senior
+Facilities Maintenance,Facilities & Building Maintenance,Junior
+Facilities Maintenance,Facilities & Building Maintenance,Mid
+Facilities Maintenance,Facilities & Building Maintenance,Senior
+Landscaping & External Works,Landscaping & Turf,Apprentice
+Landscaping & External Works,Landscaping & Turf,Junior
+Landscaping & External Works,Landscaping & Turf,Mid
+Landscaping & External Works,Landscaping & Turf,Senior
+Landscaping & External Works,Fencing & Gates,Junior
+Landscaping & External Works,Fencing & Gates,Mid
+Landscaping & External Works,Fencing & Gates,Senior
+Energy & Utilities,Solar & Renewables Install,Junior
+Energy & Utilities,Solar & Renewables Install,Mid
+Energy & Utilities,Solar & Renewables Install,Senior
+Energy & Utilities,Underground Services,Junior
+Energy & Utilities,Underground Services,Mid
+Energy & Utilities,Underground Services,Senior
+Mining & Resources,Shutdown & Maintenance Trades,Junior
+Mining & Resources,Shutdown & Maintenance Trades,Mid
+Mining & Resources,Shutdown & Maintenance Trades,Senior

@@ -36,7 +36,7 @@ export const nav = [
 
 // One label per intent, site-wide.
 export const ctas = {
-  register: { href: "/register", label: "Register your company" },
-  login: { href: "/login", label: "Log in" },
+  signUp: { href: "/signup", label: "Register your company" },
+  signIn: { href: "/signin", label: "Log in" },
   contact: { href: "/contact", label: "Talk to the team" },
 } as const;

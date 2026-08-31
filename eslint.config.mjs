@@ -12,6 +12,18 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Repository-local agent/tooling inputs and generated verification output are
+    // not application source. Keep src, e2e, emails and scripts inside the lint gate.
+    ".claude/**",
+    ".claude-flow/**",
+    ".playwright-mcp/**",
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
+    "dist/**",
+    ".vercel/**",
+    "supabase/.temp/**",
+    "src/lib/supabase/types.ts",
   ]),
 ]);
 

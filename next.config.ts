@@ -9,7 +9,11 @@ const nextConfig: NextConfig = {
   // URLs land on the nearest surviving intent.
   async redirects() {
     return [
-      { source: "/apply", destination: "/register", permanent: true },
+      { source: "/apply", destination: "/signup", permanent: true },
+      // The auth screens were renamed to /signin and /signup; the old paths still
+      // resolve so existing links and bookmarks do not break.
+      { source: "/login", destination: "/signin", permanent: true },
+      { source: "/register", destination: "/signup", permanent: true },
       { source: "/capabilities", destination: "/#how", permanent: true },
       { source: "/testimonials", destination: "/about", permanent: true },
     ];

@@ -258,8 +258,8 @@ function Family() {
             </p>
           </div>
           <div className="mt-(--space-6) flex flex-wrap items-center gap-(--space-4)">
-            <Link href={ctas.register.href} className={BTN_PRIMARY}>
-              {ctas.register.label}
+            <Link href={ctas.signUp.href} className={BTN_PRIMARY}>
+              {ctas.signUp.label}
               <Icon name="i-arrow-right" className="size-5" />
             </Link>
             <Link href={ctas.contact.href} className={BTN_GHOST}>

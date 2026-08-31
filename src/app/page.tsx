@@ -82,8 +82,8 @@ function Hero() {
             className="mw-enter mt-(--space-6) flex flex-wrap items-center gap-(--space-4)"
             style={{ "--enter-step": 2 } as React.CSSProperties}
           >
-            <Link href={ctas.register.href} className={BTN_PRIMARY}>
-              {ctas.register.label}
+            <Link href={ctas.signUp.href} className={BTN_PRIMARY}>
+              {ctas.signUp.label}
               <Icon name="i-arrow-right" className="size-5" />
             </Link>
             <Link href="#how" className={BTN_GHOST}>
@@ -392,7 +392,7 @@ function MarketplacePreview() {
 
         <Reveal delay={0.2}>
           <div className="mt-(--space-7)">
-            <Link href={ctas.register.href} className={BTN_GHOST}>
+            <Link href={ctas.signUp.href} className={BTN_GHOST}>
               Register to browse the live board
               <Icon name="i-arrow-right" className="size-4" />
             </Link>
@@ -574,8 +574,8 @@ function CtaBand() {
               is free.
             </p>
             <div className="mt-(--space-6) flex flex-wrap items-center gap-(--space-4)">
-              <Link href={ctas.register.href} className={BTN_PRIMARY}>
-                {ctas.register.label}
+              <Link href={ctas.signUp.href} className={BTN_PRIMARY}>
+                {ctas.signUp.label}
                 <Icon name="i-arrow-right" className="size-5" />
               </Link>
               <Link href={ctas.contact.href} className={BTN_GHOST}>

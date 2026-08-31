@@ -1,0 +1,98 @@
+industry,trade_role,qualification,level,is_mandatory
+Commercial Construction,Commercial Roofing,White Card (Construction Induction),worker,true
+Commercial Construction,Commercial Roofing,Working at Heights,worker,true
+Commercial Construction,Commercial Roofing,Public Liability Insurance,company,true
+Commercial Construction,Commercial Roofing,Workers Compensation Insurance,company,true
+Commercial Construction,Structural Steel Erection,White Card (Construction Induction),worker,true
+Commercial Construction,Structural Steel Erection,Working at Heights,worker,true
+Commercial Construction,Structural Steel Erection,Rigging Licence,worker,true
+Commercial Construction,Structural Steel Erection,Public Liability Insurance,company,true
+Commercial Construction,Structural Steel Erection,Workers Compensation Insurance,company,true
+Commercial Construction,Concreting,White Card (Construction Induction),worker,true
+Commercial Construction,Concreting,Public Liability Insurance,company,true
+Commercial Construction,Concreting,Workers Compensation Insurance,company,true
+Residential Construction,Bricklaying & Blockwork,White Card (Construction Induction),worker,true
+Residential Construction,Bricklaying & Blockwork,Public Liability Insurance,company,true
+Residential Construction,Bricklaying & Blockwork,Workers Compensation Insurance,company,true
+Residential Construction,Carpentry (Structural),White Card (Construction Induction),worker,true
+Residential Construction,Carpentry (Structural),Public Liability Insurance,company,true
+Residential Construction,Carpentry (Structural),Workers Compensation Insurance,company,true
+Fit-out & Refurbishment,Fit-out Carpentry,White Card (Construction Induction),worker,true
+Fit-out & Refurbishment,Fit-out Carpentry,Public Liability Insurance,company,true
+Fit-out & Refurbishment,Fit-out Carpentry,Workers Compensation Insurance,company,true
+Fit-out & Refurbishment,Commercial Painting,White Card (Construction Induction),worker,true
+Fit-out & Refurbishment,Commercial Painting,Public Liability Insurance,company,true
+Fit-out & Refurbishment,Commercial Painting,Workers Compensation Insurance,company,true
+Fit-out & Refurbishment,Plastering & Linings,White Card (Construction Induction),worker,true
+Fit-out & Refurbishment,Plastering & Linings,Public Liability Insurance,company,true
+Fit-out & Refurbishment,Plastering & Linings,Workers Compensation Insurance,company,true
+Fit-out & Refurbishment,Flooring & Floor Coverings,White Card (Construction Induction),worker,true
+Fit-out & Refurbishment,Flooring & Floor Coverings,Public Liability Insurance,company,true
+Fit-out & Refurbishment,Flooring & Floor Coverings,Workers Compensation Insurance,company,true
+Commercial Construction,Commercial Electrical,White Card (Construction Induction),worker,true
+Commercial Construction,Commercial Electrical,Electrical Licence,worker,true
+Commercial Construction,Commercial Electrical,Public Liability Insurance,company,true
+Commercial Construction,Commercial Electrical,Workers Compensation Insurance,company,true
+Commercial Construction,Plumbing & Drainage,White Card (Construction Induction),worker,true
+Commercial Construction,Plumbing & Drainage,Plumbing Licence,worker,true
+Commercial Construction,Plumbing & Drainage,Public Liability Insurance,company,true
+Commercial Construction,Plumbing & Drainage,Workers Compensation Insurance,company,true
+Industrial Construction,Mechanical Services (HVAC),White Card (Construction Induction),worker,true
+Industrial Construction,Mechanical Services (HVAC),Public Liability Insurance,company,true
+Industrial Construction,Mechanical Services (HVAC),Workers Compensation Insurance,company,true
+Industrial Construction,Fire Protection Services,White Card (Construction Induction),worker,true
+Industrial Construction,Fire Protection Services,Public Liability Insurance,company,true
+Industrial Construction,Fire Protection Services,Workers Compensation Insurance,company,true
+Civil & Infrastructure,Civil Earthworks,White Card (Construction Induction),worker,true
+Civil & Infrastructure,Civil Earthworks,Plant Operator Ticket,worker,true
+Civil & Infrastructure,Civil Earthworks,Public Liability Insurance,company,true
+Civil & Infrastructure,Civil Earthworks,Workers Compensation Insurance,company,true
+Civil & Infrastructure,Road Construction,White Card (Construction Induction),worker,true
+Civil & Infrastructure,Road Construction,Traffic Control Ticket,worker,true
+Civil & Infrastructure,Road Construction,Public Liability Insurance,company,true
+Civil & Infrastructure,Road Construction,Workers Compensation Insurance,company,true
+Civil & Infrastructure,Traffic Management,White Card (Construction Induction),worker,true
+Civil & Infrastructure,Traffic Management,Traffic Control Ticket,worker,true
+Civil & Infrastructure,Traffic Management,Public Liability Insurance,company,true
+Civil & Infrastructure,Traffic Management,Workers Compensation Insurance,company,true
+Commercial Construction,Scaffolding,White Card (Construction Induction),worker,true
+Commercial Construction,Scaffolding,Scaffolding Licence,worker,true
+Commercial Construction,Scaffolding,Working at Heights,worker,true
+Commercial Construction,Scaffolding,Public Liability Insurance,company,true
+Commercial Construction,Scaffolding,Workers Compensation Insurance,company,true
+Commercial Construction,Crane & Rigging,White Card (Construction Induction),worker,true
+Commercial Construction,Crane & Rigging,Rigging Licence,worker,true
+Commercial Construction,Crane & Rigging,Dogging Licence,worker,true
+Commercial Construction,Crane & Rigging,Public Liability Insurance,company,true
+Commercial Construction,Crane & Rigging,Workers Compensation Insurance,company,true
+Demolition & Remediation,Demolition & Strip-out,White Card (Construction Induction),worker,true
+Demolition & Remediation,Demolition & Strip-out,Asbestos Awareness,worker,true
+Demolition & Remediation,Demolition & Strip-out,Public Liability Insurance,company,true
+Demolition & Remediation,Demolition & Strip-out,Workers Compensation Insurance,company,true
+Demolition & Remediation,Asbestos Removal,White Card (Construction Induction),worker,true
+Demolition & Remediation,Asbestos Removal,Asbestos Removal Licence,worker,true
+Demolition & Remediation,Asbestos Removal,Asbestos Awareness,worker,true
+Demolition & Remediation,Asbestos Removal,Public Liability Insurance,company,true
+Demolition & Remediation,Asbestos Removal,Workers Compensation Insurance,company,true
+Facilities Maintenance,Facilities & Building Maintenance,White Card (Construction Induction),worker,true
+Facilities Maintenance,Facilities & Building Maintenance,Public Liability Insurance,company,true
+Facilities Maintenance,Facilities & Building Maintenance,Workers Compensation Insurance,company,true
+Landscaping & External Works,Landscaping & Turf,White Card (Construction Induction),worker,true
+Landscaping & External Works,Landscaping & Turf,Public Liability Insurance,company,true
+Landscaping & External Works,Landscaping & Turf,Workers Compensation Insurance,company,true
+Landscaping & External Works,Fencing & Gates,White Card (Construction Induction),worker,true
+Landscaping & External Works,Fencing & Gates,Public Liability Insurance,company,true
+Landscaping & External Works,Fencing & Gates,Workers Compensation Insurance,company,true
+Energy & Utilities,Solar & Renewables Install,White Card (Construction Induction),worker,true
+Energy & Utilities,Solar & Renewables Install,Electrical Licence,worker,true
+Energy & Utilities,Solar & Renewables Install,Working at Heights,worker,true
+Energy & Utilities,Solar & Renewables Install,Public Liability Insurance,company,true
+Energy & Utilities,Solar & Renewables Install,Workers Compensation Insurance,company,true
+Energy & Utilities,Underground Services,White Card (Construction Induction),worker,true
+Energy & Utilities,Underground Services,Plant Operator Ticket,worker,true
+Energy & Utilities,Underground Services,Public Liability Insurance,company,true
+Energy & Utilities,Underground Services,Workers Compensation Insurance,company,true
+Mining & Resources,Shutdown & Maintenance Trades,White Card (Construction Induction),worker,true
+Mining & Resources,Shutdown & Maintenance Trades,Confined Space Entry,worker,true
+Mining & Resources,Shutdown & Maintenance Trades,Public Liability Insurance,company,true
+Mining & Resources,Shutdown & Maintenance Trades,Workers Compensation Insurance,company,true

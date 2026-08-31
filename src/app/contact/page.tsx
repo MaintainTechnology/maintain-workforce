@@ -162,8 +162,8 @@ function RegisterBand() {
             pilot is free.
           </p>
             <div className="mt-(--space-6)">
-              <Link href={ctas.register.href} className={BTN_PRIMARY}>
-                {ctas.register.label}
+              <Link href={ctas.signUp.href} className={BTN_PRIMARY}>
+                {ctas.signUp.label}
                 <Icon name="i-arrow-right" className="size-5" />
               </Link>
             </div>

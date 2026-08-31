@@ -41,16 +41,16 @@ export function MobileMenu() {
           </Link>
         ))}
         <Link
-          href={ctas.login.href}
+          href={ctas.signIn.href}
           className={`mt-(--space-2) block min-h-11 content-center rounded-(--radius-pill) border border-hairline px-(--space-3) text-center text-sm font-semibold text-on-dark ${NAV_FOCUS}`}
         >
-          {ctas.login.label}
+          {ctas.signIn.label}
         </Link>
         <Link
-          href={ctas.register.href}
+          href={ctas.signUp.href}
           className={`mt-(--space-2) block min-h-11 content-center rounded-(--radius-pill) bg-primary px-(--space-3) text-center text-sm font-semibold text-primary-ink focus-visible:bg-amber-tint-2 ${NAV_FOCUS}`}
         >
-          {ctas.register.label}
+          {ctas.signUp.label}
         </Link>
       </div>
     </details>

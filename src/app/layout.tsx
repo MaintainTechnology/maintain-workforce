@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Manrope } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { SiteChromeFooter, SiteChromeHeader } from "@/components/site-chrome";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -56,9 +56,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${manrope.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <ClerkProvider>
+          <SiteChromeHeader />
+          {children}
+          <SiteChromeFooter />
+        </ClerkProvider>
         {/* Both no-op unless deployed on Vercel. Delete if hosting elsewhere. */}
         <Analytics />
         <SpeedInsights />

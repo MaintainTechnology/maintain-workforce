@@ -1,0 +1,81 @@
+industry,trade_role,name
+Commercial Construction,Commercial Roofing,Metal Roof Sheeting
+Commercial Construction,Commercial Roofing,Membrane Waterproofing
+Commercial Construction,Commercial Roofing,Roof Safety Mesh
+Commercial Construction,Structural Steel Erection,Steel Erection
+Commercial Construction,Structural Steel Erection,Bolting & Plumbing
+Commercial Construction,Structural Steel Erection,Rigging
+Commercial Construction,Concreting,Formwork
+Commercial Construction,Concreting,Placing & Finishing
+Commercial Construction,Concreting,Steel Fixing
+Residential Construction,Bricklaying & Blockwork,Face Brickwork
+Residential Construction,Bricklaying & Blockwork,Blockwork
+Residential Construction,Bricklaying & Blockwork,Rendering
+Residential Construction,Carpentry (Structural),Frame & Truss
+Residential Construction,Carpentry (Structural),Formwork
+Residential Construction,Carpentry (Structural),Decking
+Fit-out & Refurbishment,Fit-out Carpentry,Partition Framing
+Fit-out & Refurbishment,Fit-out Carpentry,Suspended Ceilings
+Fit-out & Refurbishment,Fit-out Carpentry,Door Hanging
+Fit-out & Refurbishment,Fit-out Carpentry,Joinery Install
+Fit-out & Refurbishment,Commercial Painting,Spray Application
+Fit-out & Refurbishment,Commercial Painting,Surface Preparation
+Fit-out & Refurbishment,Commercial Painting,Protective Coatings
+Fit-out & Refurbishment,Plastering & Linings,Wall Lining
+Fit-out & Refurbishment,Plastering & Linings,Cornice & Set
+Fit-out & Refurbishment,Plastering & Linings,Patching
+Fit-out & Refurbishment,Flooring & Floor Coverings,Vinyl & Sheet
+Fit-out & Refurbishment,Flooring & Floor Coverings,Carpet Tile
+Fit-out & Refurbishment,Flooring & Floor Coverings,Timber Overlay
+Commercial Construction,Commercial Electrical,Cable Tray Installation
+Commercial Construction,Commercial Electrical,Switchboard Fit-off
+Commercial Construction,Commercial Electrical,Lighting Install
+Commercial Construction,Commercial Electrical,Testing & Tagging
+Commercial Construction,Plumbing & Drainage,Rough-in
+Commercial Construction,Plumbing & Drainage,Fit-off
+Commercial Construction,Plumbing & Drainage,Hydraulic Services
+Industrial Construction,Mechanical Services (HVAC),Ductwork Install
+Industrial Construction,Mechanical Services (HVAC),Plant Install
+Industrial Construction,Mechanical Services (HVAC),Commissioning
+Industrial Construction,Fire Protection Services,Sprinkler Install
+Industrial Construction,Fire Protection Services,Fire Detection
+Industrial Construction,Fire Protection Services,Certification Support
+Civil & Infrastructure,Civil Earthworks,Bulk Earthworks
+Civil & Infrastructure,Civil Earthworks,Trenching
+Civil & Infrastructure,Civil Earthworks,Compaction
+Civil & Infrastructure,Road Construction,Asphalt Laying
+Civil & Infrastructure,Road Construction,Kerb & Channel
+Civil & Infrastructure,Road Construction,Line Marking
+Civil & Infrastructure,Traffic Management,Traffic Control
+Civil & Infrastructure,Traffic Management,Site Setup
+Civil & Infrastructure,Traffic Management,Escort Vehicle
+Commercial Construction,Scaffolding,Erect & Dismantle
+Commercial Construction,Scaffolding,Mobile Towers
+Commercial Construction,Scaffolding,Edge Protection
+Commercial Construction,Crane & Rigging,Dogging
+Commercial Construction,Crane & Rigging,Rigging
+Commercial Construction,Crane & Rigging,Crane Operation
+Demolition & Remediation,Demolition & Strip-out,Soft Strip
+Demolition & Remediation,Demolition & Strip-out,Structural Demolition
+Demolition & Remediation,Demolition & Strip-out,Waste Segregation
+Demolition & Remediation,Asbestos Removal,Non-friable Removal
+Demolition & Remediation,Asbestos Removal,Decontamination
+Demolition & Remediation,Asbestos Removal,Air Monitoring Support
+Facilities Maintenance,Facilities & Building Maintenance,Reactive Repairs
+Facilities Maintenance,Facilities & Building Maintenance,Planned Maintenance
+Facilities Maintenance,Facilities & Building Maintenance,Minor Works
+Landscaping & External Works,Landscaping & Turf,Soft Landscaping
+Landscaping & External Works,Landscaping & Turf,Hard Landscaping
+Landscaping & External Works,Landscaping & Turf,Irrigation
+Landscaping & External Works,Fencing & Gates,Temporary Fencing
+Landscaping & External Works,Fencing & Gates,Security Fencing
+Landscaping & External Works,Fencing & Gates,Gate Install
+Energy & Utilities,Solar & Renewables Install,Panel Mounting
+Energy & Utilities,Solar & Renewables Install,DC Cabling
+Energy & Utilities,Solar & Renewables Install,Inverter Install
+Energy & Utilities,Underground Services,Conduit Install
+Energy & Utilities,Underground Services,Pit & Pipe
+Energy & Utilities,Underground Services,Cable Hauling
+Mining & Resources,Shutdown & Maintenance Trades,Shutdown Support
+Mining & Resources,Shutdown & Maintenance Trades,Mechanical Fitting
+Mining & Resources,Shutdown & Maintenance Trades,Confined Space Entry

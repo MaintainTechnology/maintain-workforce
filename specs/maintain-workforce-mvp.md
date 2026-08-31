@@ -1,0 +1,349 @@
+# Maintain Workforce MVP — Spec
+
+| | |
+|---|---|
+| Version | 0.7 — certified build-ready (LLM Council round 5: unanimous 9.0/10 on v0.6; v0.7 applies that round's verified residuals). Lineage: brief v0.1 → v0.3 operational workflow + production readiness → v0.4 round-2 fixes → v0.5 round-3 → v0.6 round-4 → v0.7 round-5 |
+| Basis | Brief v0.1, revised per specs/llm-council-evaluation.md (R1–R14) and specs/llm-council-evaluation-v0.3.md (R1–R10), the planning corpus in ../MaintainWorkforce, and the End-to-End Operational Workflow (ad → funnel → qualification → matching → commercial trigger → engagement, 24 Aug) |
+| Authority order on conflict | Confirmed decisions (Operating Blueprint CD-xx) > Decision Brief 01 > this spec > Brief v0.1. Open decisions (OD-xx) are carried in Open Questions, never silently resolved |
+| Date | 24 August 2026 |
+
+## Objective
+
+Build the controlled B2B workforce-capacity exchange for Maintain Workforce: verified construction companies register their workforce, list spare capacity (SELL CAPACITY) and post requirements (BUY CAPACITY), while Maintain staff mediate every match through an admin portal and the platform records each engagement's commercial outcome. The MVP succeeds when one supplier's listed capacity can be matched to one buyer's requirement, approved by both parties, and recorded as an engagement with the full rate/fee calculation — with Maintain staff able to operate the whole loop concierge-style from day one.
+
+## Context / background
+
+- The marketplace is controlled: companies never browse other companies or search named workers; Maintain sits at the centre of every transaction.
+- Three legal guardrails from the planning record are load-bearing and must hold everywhere in the build (Operating Blueprint s01–s02, Decision Brief D2, the customer one-pager):
+  1. The supplier owns its rate. Maintain publishes recommended bands; the supplier confirms or overrides its own number. Maintain never sets a non-negotiable price between competing businesses.
+  2. Maintain never assigns a named individual, and the buyer never selects one. Maintain proposes a shape (trade, proficiency, quantity, dates); the supplier nominates which of its people go.
+  3. The platform facilitates a deal between two businesses. It never employs anyone and is never on site directing work. Banned vocabulary (s22 below) keeps that true in every discoverable artefact.
+- Workers are records, not accounts (Decision Brief D5): company-managed profiles with facts only — no worker logins, no ratings of people.
+- Payments run manually outside the platform via Stripe Connect (CD-02); the platform records the handoff, never processes money.
+- Host: the existing maintain-workforce Next.js 16 repo. The platform is built as authenticated route groups beside the marketing site, on the Hi-Vis Standard design system (DESIGN.md).
+- The End-to-End Operational Workflow is the operating frame: marketing owns the acquisition funnel (ads → landing page → SELL/BUY self-select → interactive capture → calculator → SMS/video/email nurture → lead scoring) up to the HANDOFF TO MAINTAIN; this platform owns everything from lead intake onward. Module 0 maps every workflow stage to a platform state. The MVP objective is to prove the marketplace works — the closing milestone is one real matched engagement, end to end.
+
+## Requirements
+
+Requirements are numbered per module. Each is testable: two builders reading it should produce the same behaviour.
+
+### 0. Funnel handoff and lead intake
+
+0.1 The acquisition funnel runs in the marketing stack (owner: marketing; tooling per Open Question 9), not in this platform. The platform's boundary is the handoff: a scored, high-intent lead with a declared SELL or BUY intent.
+0.2 The platform stores leads. Lead fields: source, intent (sell, buy, both), contact name, business name, ABN (optional at capture), phone, email, trade interest, headcount or requirement notes, funnel score/reference, created_at. Leads enter by three routes: (a) the marketing site's public capture forms (already in the repo); (b) CSV import by a Maintain admin; (c) one inbound webhook endpoint (single POST, token-authenticated via LEAD_WEBHOOK_TOKEN). The webhook payload contract is the platform's own zod schema of these fields, committed to the repo — whatever funnel tool Open Question 9 lands on must meet it. Lead inserts run server-side only (no anonymous insert policy). No outbound sync to the funnel tool in MVP.
+0.3 Lead statuses: New → Contacted → Qualified | Disqualified. Qualification is a human step (SELL-side and BUY-side qualification are procedurally owned per 16.3). Qualification requires the lead's ABN (checksum-validated and uniqueness-checked per 1.2) and contact email; the qualify action creates the Pending company (module 1) pre-filled from the lead's fields, links the lead to the company, and sends a Maintain-initiated first-administrator invitation to the lead's contact email, reusing the 1.8 tokenised flow. Until the invitation is accepted the company has no users and is concierge-managed under 16.1; a company may remain login-less indefinitely. Disqualified records a reason. A lead is never visible to any company.
+0.4 The admin portal has a Leads queue: list, filter by intent and status, lead detail, qualify/disqualify actions.
+0.5 Workflow-to-platform state map (the operational workflow's vocabulary resolves to these spec states):
+
+| Workflow stage | Platform state |
+|---|---|
+| New lead / high-intent lead | Lead: New |
+| Qualification (Maintain contacts them) | Lead: Contacted → Qualified |
+| Supply / demand onboarding | Company: Pending (profile, documents and workers prepared; capacity and demand open only once Active per 1.3) |
+| Verification → Maintain approval | Verification queue → Company: Active |
+| Available supply / open demand | CapacityLine: Open / DemandLine: Open |
+| Manual matching | Matching workspace → Match: Awaiting Supplier |
+| Supplier approval → buyer approval | Match: Awaiting Buyer → Accepted |
+| Commercial trigger (pay after match) | Engagement: Awaiting Commercial → Confirmed (13.2) |
+| Active → completed | Engagement: Active → Completed |
+
+### 1. Registration and verification
+
+1.1 A public Register screen creates a company (legal name, trading name, ABN, industry, primary contact name, email, phone, primary location region, operating regions) plus its first Company Administrator (name, email, password). The company is created with status Pending.
+1.2 ABN is validated with the standard 11-digit checksum at entry and is unique across companies. A registration against an existing ABN is blocked and routed to Maintain admin review; the response does not reveal which company holds the ABN.
+1.3 A Pending company can log in, complete its profile, upload compliance documents, and create workers — but cannot create capacity or demand, is excluded from matching, and sees a persistent banner stating verification is in progress.
+1.4 The admin portal has a Verification queue listing Pending companies. An admin works a per-company checklist: ABN verified; public liability insurance; workers compensation; trade licence(s); labour-hire licence (optional field, nullable); payment-details-provided flag (reference only — no bank data stored). Each checklist item that is a document is a CompanyDocument row: type, number, issuer, issue date, expiry date, uploaded file, verified_by, verified_at.
+1.5 Approving the checklist sets the company Active (notification sent); rejecting records a reason and notifies the company. Only Maintain admins can change company status.
+1.6 Company compliance documents have a derived status: Current, Expiring Soon (expiry within 30 days), Expired. A daily job flags Expiring Soon (notify company and Maintain) and marks Expired. A company with an expired mandatory document (public liability, workers comp, or a licence required for its trades) is excluded from new match proposals until resolved; existing engagements are flagged for Maintain review, not auto-cancelled.
+1.7 Company documents are stored in a private Supabase Storage bucket, path scoped by company id, max 10 MB, pdf/jpg/png, accessible via signed URLs only to the owning company and Maintain.
+1.8 An existing Company Administrator can invite additional administrators by email; the invitee sets a password via a tokenised link (72-hour expiry) and is bound to the inviting company only. An expired token can be re-issued by a company administrator or a Maintain admin (audited) — required because 0.3 companies may stay login-less long past the first token's expiry.
+
+### 2. Authentication and roles
+
+2.1 Supabase Auth, email + password. Email verification required before first login completes. Screens: Login, Forgot password, Reset password, Accept invitation.
+2.2 Roles: company_admin (bound to exactly one company via CompanyUser) and maintain_admin (a platform-level role claim, not membership of any company). Every Maintain action is performed as the individual user and audited — no anonymous service-role actor in the audit trail.
+2.3 Route protection: /app/* requires an authenticated company_admin; /admin/* requires maintain_admin. All authenticated routes are noindex.
+2.4 Passwords minimum 12 characters. Rate limiting by named, serverless-safe mechanisms: Supabase Auth's built-in rate limits for login, reset, and verification endpoints; Vercel WAF/middleware IP rules for the lead webhook. TOTP MFA for maintain_admin accounts. maintain_admin role claims are assigned only by a scripted, audited runbook step (supabase CLI), executed in the launch checklist and for each later admin.
+
+### 3. Company and team management
+
+3.1 Company profile/settings screen: edit company details (1.1 fields), view compliance documents and their statuses, manage administrators (1.8).
+3.2 Company statuses: Pending, Active, Suspended, Closed. Suspended: users get read-only access; the company's workers are excluded from matching; new supply/demand blocked; its open matches are withdrawn by Maintain (parties notified per 15.2); engagements in a committing status (13.0) flagged for Maintain review. Closed is terminal and admin-set only.
+3.3 Every Active company can both sell and buy; there are no separate buyer/supplier account types.
+
+### 4. Catalogue
+
+4.1 Maintain-administered, database-driven reference data: Industry → TradeRole → Skill; Qualification; Proficiency; Region. Adding or editing any of these requires no deployment. Admin CRUD screens exist for each.
+4.2 Valid proficiencies vary per trade: a TradeRoleProficiency join defines which proficiency levels (Apprentice, Junior, Mid, Senior) each trade supports. Worker classification, demand lines, and rate bands may only use combinations present in it.
+4.3 Catalogue items are never hard-deleted once referenced; each carries an is_active flag. Inactive items are hidden from new data entry but remain on existing records and history.
+4.4 The MVP ships with one Region: Brisbane / South East Queensland. The Region table exists so more can be added as data.
+4.5 Mandatory credentials are data, not code: the TradeRole–Qualification mapping carries an is_mandatory flag and a level column (worker | company). Worker-level mandatory rows define "expired mandatory qualification" (7.2) for a worker's primary trade; company-level mandatory rows name the CompanyDocument types that "a licence required for its trades" (1.6) means — the union over the trades of the company's current workers — so both rules are computable from data. Proficiency rows carry a rank integer (Apprentice < Junior < Mid < Senior) that drives the 11.1 "include higher proficiency" toggle.
+
+### 5. Rate bands and platform fee
+
+5.1 Maintain publishes a recommended rate band per (trade, proficiency, region): band_low_cents, band_high_cents, effective_from date. Admin CRUD without deployment. Band history is retained (new effective-dated rows, no destructive edits).
+5.2 The supplier owns its rate. When creating a capacity line, the rate field is pre-filled from the current band and the supplier confirms or overrides it. The confirmed supplier rate is stored on the capacity line. Suppliers see only their own rates and the recommended band — never another supplier's rate.
+5.3 The platform fee is a configuration value (percentage, stored as basis points; default 1500 = 15%, marked placeholder pending founder decision OD-02), editable by Maintain admins — never a hardcoded constant. fee_bp is snapshotted onto the Match at proposal and copied, never re-read, onto the Engagement at creation.
+5.4 Buyer rate = round-half-up(supplier_rate_cents × (10000 + fee_bp) / 10000). The buyer always sees a single all-in rate; the supplier rate and fee split are never present in any buyer-visible response (enforced server-side, not by UI omission).
+5.5 At demand creation the buyer sees an indicative all-in rate range derived from the band (band_low and band_high each marked up by the fee), computed server-side — the buyer never receives raw band values (17.1). The actual buyer rate is fixed at match proposal from the confirmed rate of the match's capacity line (11.3).
+5.6 Booking minimums are configuration values: minimum_hours_per_line (default 8) and minimum_crew_size per match (default 1; founders may raise to 2 per Decision Brief D2 fix 1). Demand lines and matches validate against them.
+
+### 6. Workers
+
+6.1 Worker profile: unique worker id, first name, last name, mobile, email, base location region, current employer (derived — see 6.4), primary trade, primary proficiency (valid per 4.2), additional skills (tags from the Skill catalogue), qualifications (module 7), travel regions.
+6.2 Worker email and mobile are unique platform-wide. Creating a worker whose email or mobile (either field) matches an existing worker is blocked with a generic "these details match an existing worker record" response and the transfer flow (module 8) is offered instead; the response never discloses which field matched or the current employer — existence only.
+6.3 Worker creation requires a consent confirmation checkbox ("this worker has been informed and consents to being listed"), recorded with user and timestamp. Worker records hold facts only — no rating or score fields exist in the schema.
+6.4 Employment is modelled as WorkerEmployment rows (worker, company, start date, end date, end reason). The current employer is the row with a null end date; at most one open row per worker (DB-enforced); a worker may have zero. Changing employer never creates a new worker.
+6.5 Worker stored status is account-level only: Active, Inactive, Suspended (Maintain-set). Marketplace state (Available, Partially Available, Engaged, Unavailable) is derived at read time from open capacity lines and engagements and is never stored or hand-edited.
+6.6 Proficiency provenance is recorded on the worker: assigned_by, maintain_overridden (boolean), changed_at. Maintain admins can override proficiency; the override is audited.
+6.7 The WorkerSkill row carries a nullable proficiency_id (unused by MVP UI) so per-skill proficiency can be added later without a schema change. Worker.user_id (nullable) reserves the future worker-login link.
+
+### 7. Worker qualifications and expiry
+
+7.1 Worker qualifications reference the Qualification catalogue: type, licence/ticket number, issue date, expiry date, optional document upload (same storage rules as 1.7). Qualification documents follow the worker, not the uploader: read access is worker-scoped (the current employer and Maintain, via server-issued signed URLs) regardless of which company uploaded them, and storage paths are never re-parented on transfer. Status is derived: Current, Expiring Soon (within 30 days), Expired — never manually set.
+7.2 A daily job (Vercel Cron) recomputes qualification and company-document statuses, notifies the employing company and Maintain at the 30-day mark, and excludes workers with an Expired mandatory qualification from new matching (existing engagements are flagged, not cancelled).
+7.3 For matching, a required qualification is fully satisfied when it is not Expired and its expiry is on or after the demand line's end date — a qualification in Expiring Soon whose expiry clears the window leaves the worker Eligible, with an "expiring within 30 days" badge. A worker whose required qualification is Expired, or expires before the demand line's start date, is excluded from candidates. A worker whose required qualification expires inside the engagement window appears greyed with an "expires during engagement" warning (the 11.1 display classes); the Maintain admin may include them knowingly via the audited override recorded on the match (12.2).
+
+### 8. Worker transfer
+
+8.1 There is no cross-company worker search or browse, anywhere. A transfer starts only from the duplicate-detection path (6.2): the new employer, attempting to add a worker who already exists, is offered "Request transfer".
+8.2 Flow: Requested (system auto-notifies the current employer) → current employer Approves or Declines. Approval completes immediately: the open WorkerEmployment row is closed (end reason: transfer), a new one opens for the requesting company, and the previous employment is retained historically.
+8.3 The requesting employer can withdraw a pending request. If the current employer does not respond within 5 business days (Monday–Friday, excluding Queensland public holidays — held as a seeded PublicHoliday table of dates, loaded with the catalogue per 23.1 and maintainable by Maintain admins without deployment; no holiday library is a dependency), the request escalates to Admin Review, where a Maintain admin approves or declines it. Maintain can also force-transfer via Admin Review in exceptional cases (audited). A collision with a worker who has no current employer (6.4 permits zero open employment rows) goes straight to Admin Review, where Maintain approves or declines the association.
+8.4 A transfer cannot complete while the worker has an engagement in a committing status (13.0), unless a Maintain admin explicitly overrides (the engagement is then cancelled or reassigned by Maintain first).
+8.5 On completion, the worker's open capacity line memberships under the old employer are removed automatically, and any pending match nominations of the worker are declined automatically, with notifications to affected parties.
+8.6 Transfer statuses: Requested, Awaiting Current Employer, Approved, Declined, Withdrawn, Admin Review, Completed.
+
+### 9. Sell capacity
+
+9.1 SELL CAPACITY creates a CapacityListing containing one or more CapacityLine rows. Each line: trade, proficiency, available from, available until, available days (informational in MVP), hours per week, location region, travel regions, confirmed supplier rate (5.2), and the attached workers.
+9.2 All workers on a line share the line's trade and proficiency — attaching a worker whose profile trade or proficiency differs is rejected (create a separate line instead). CapacityLineWorker rows carry no per-worker overrides.
+9.3 The bulk flow from the brief (s16) is one form that creates multiple lines in one submission; every line still names its individual workers — no anonymous capacity.
+9.4 A worker may not appear on two open capacity lines (9.5) with overlapping date windows. Withdrawn and Expired lines retain their CapacityLineWorker rows as history and never block a new listing.
+9.5 Line statuses: Open, Partially Committed, Fully Committed, Withdrawn, Expired (automatic once available_until passes). An "open capacity line" is one in {Open, Partially Committed}; every "open line" reference in this spec means exactly that set, and line commit status is a supply-count display concept only — it never affects the 11.1 candidate computation. Suppliers can withdraw their own lines; withdrawal with a pending match requires the match to be withdrawn by Maintain first, and editing any matchable field — window, workers, rate, trade, proficiency, hours, location or travel regions — while an open match references it is blocked the same way. Automatic expiry is never blocked: if a line reaches available_until while an open match references it, the line becomes Expired and the match expires with it in the same daily-job run (12.1), holds released and Maintain notified. Remaining headcount = attached workers minus workers on engagements in a committing status (13.0) overlapping the line window; a line at zero remaining no longer appears in supply counts.
+9.6 Capacity lines are the single source of availability truth. The worker-profile "availability" fields from the brief (s6) are display-only derivations of open lines.
+9.7 Rate provenance: each capacity line records rate_entered_by (the supplier user, or the Maintain admin for concierge entry). A concierge-entered rate is ratified by the supplier's match acceptance (12.2), which is recorded as the ratification event.
+
+### 10. Buy capacity
+
+10.1 BUY CAPACITY creates a DemandRequest (name/project, industry, work location region, optional description) containing one or more DemandLine rows: trade, proficiency, quantity, start date, end date, hours per week (canonical; if the buyer enters total hours, hours per week = ceil(total_hours ÷ (inclusive days ÷ 7)) — the weeks divisor stays fractional per 20.3 and only the resulting hours-per-week value is rounded up), required skills, required qualifications, optional notes.
+10.2 Lines validate against booking minimums (5.6) and TradeRoleProficiency (4.2).
+10.3 Line statuses: Open, Partially Filled, Filled, Withdrawn, Expired (automatic once end date passes). Two derived counts: quantity_filled = EngagementWorker rows in a committing status (13.0) on the line; quantity_pending = for each open match on the line, its requested quantity while Awaiting Supplier, or its nominated MatchWorker count once Awaiting Buyer. Status: Filled when filled = quantity; Partially Filled when 0 < filled < quantity; Open otherwise — the admin view shows filled and pending separately. quantity_filled counts distinct workers: a worker covering the line through sequential engagements occupies one slot. Over-proposal guard: filled + pending never exceeds quantity. A demand line with an open match cannot be withdrawn, and none of its matchable fields — quantity, window, hours, trade, proficiency, required skills, or required qualifications — can be edited until Maintain withdraws the match, mirroring the capacity-side rule in 9.5. Independently of matches, quantity may never be set below quantity_filled (reduce by cancelling engagements first), so the status derivation above always holds. Unfilled demand = sum of (quantity − filled) across Open/Partially Filled lines.
+10.4 The buyer sees the indicative all-in rate range (5.5) at creation and the fixed buyer rate at proposal.
+
+### 11. Matching workspace (admin)
+
+11.1 A Maintain admin opens a demand line and sees candidate workers (the candidate unit is the worker, via its CapacityLineWorker rows), computed server-side into three display classes:
+  - Excluded (never shown): trade mismatch; proficiency below the demand level (the "include higher proficiency" toggle adds levels above, per the 4.5 rank); the capacity line's region set does not contain the work region; no capacity-window overlap with the demand window; worker stored status not Active; employing company not Active or non-compliant (1.6); a required qualification Expired or expiring before the demand start date; or availability % = 0 per 21.2 (every day of the demand window that the worker's capacity lines cover is already consumed by engagements in a committing status, 13.0 — including the case where the lines cover only part of the window).
+  - Greyed with reason (shown, selectable only with an audited admin override): nominated in another open match overlapping the window (soft-hold); an engagement in a committing status overlapping part of the window (partial conflict — reflected in the availability %); a required qualification expiring inside the engagement window (7.3).
+  - Eligible: everything else, with availability % and badges per 11.2.
+11.2 Each candidate shows: availability percentage (see s21 below), hours sufficiency (line hours/week vs demand hours/week), qualification badges (including "expires during engagement" warnings), skills coverage as n/m (soft criterion — never excludes), supplier company, and confirmed supplier rate with the derived buyer rate.
+11.3 The admin selects candidate capacity and creates a Match scoped to exactly one demand line, one supplier company, and one capacity line. A selection spanning N suppliers or N capacity lines creates N matches (one per line). At proposal the match snapshots the capacity line's confirmed supplier rate, the current fee_bp, and the derived buyer rate, and records its engagement window = the intersection of the demand window and the capacity line window — the dates shown to both parties and inherited by the engagement (13.1) — plus the demand line's hours_per_week, the single hours value every estimate uses (12.2, 12.4, 20.3). The match's requested quantity = the count of shortlisted candidates, capped at the demand line's quantity − filled − pending (10.3). The admin's selection is a feasibility shortlist — it does not assign individuals (see 12.2).
+11.4 The workspace supports filter, sort, and multi-select over candidate lists of up to ~500 rows (client-side table operations on a server-produced candidate set).
+11.5 Expected volumes: ≤200 companies, ≤5,000 workers, ≤500 open lines in year one. No search infrastructure beyond SQL.
+
+### 12. Match proposal and confirmations
+
+12.1 Match statuses: Awaiting Supplier → Awaiting Buyer → Accepted | Declined | Withdrawn (Maintain, any pre-Accepted state) | Expired (automatic 7 days after proposal, or once the demand line's end date has passed, whichever is first; soft-holds released; Maintain notified). Mid-window proposals — backfill after a cancellation, remainder-fill of a partially filled line — are expected and never expire merely because the line's start date has passed. An "open match" is one in {Awaiting Supplier, Awaiting Buyer}; every "open match" reference in this spec means exactly that set. A match also auto-Declines when knockouts (12.7) drop its nominations below minimum_crew_size.
+12.2 Supplier confirmation: the supplier sees the shape — trade, proficiency, quantity, dates, hours, work region, work description, the match's snapshotted rate (its own confirmed rate for that capacity line), estimated engagement value — and, on accepting, nominates which workers fulfil the match (MatchWorker rows). Nominations are restricted to workers attached to the match's capacity line who are not Excluded under 11.1; soft-holds in other open matches warn but never block a nomination. A worker greyed for an in-window qualification expiry (7.3) is nominable only when the Maintain admin's audited override is recorded on the match (at proposal, or added later by a Maintain admin — audited either way, so late greying never forces withdraw-and-re-propose); a worker greyed for a partial committing-status conflict cannot be nominated while the conflicting engagement covers any day of the match's engagement window — the conflict must be resolved (cancellation, completion, or substitution) first. The supplier may substitute any nominable worker. Partial acceptance is allowed down to minimum_crew_size (5.6); the demand line stays open for the remainder. The supplier does not see the buyer's company name. Accepting the match constitutes the supplier's ratification of the snapshotted rate (9.7).
+12.3 System validation re-checks every nominated worker server-side at nomination time and again at buyer acceptance, rejecting a nomination only for 11.1 Excluded-class criteria or a committing-status overlap with the match's engagement window (the 13.6 constraint is the final backstop). Soft-holds never cause rejection — a soft-held worker's nomination stands until a competing engagement enters a committing status, at which point 12.7 knocks it out.
+12.4 Buyer confirmation: after supplier acceptance, the buyer sees trade, proficiency, quantity, skills coverage, aggregate qualification badges (e.g. "all required tickets held", counts — never ticket numbers, never per-worker rows), dates, hours, buyer rate, estimated total cost — no worker names, no supplier company name, no supplier rate. Buyer accepts or declines the proposal as a whole.
+12.5 On buyer acceptance the match becomes Accepted and the engagement is created in status Awaiting Commercial (module 13). Company identities and nominated workers' names plus ticket facts are revealed to the counterparty only at Confirmed — after the commercial trigger — for site access. Worker mobile/email are never shown to the buyer.
+12.6 A decline at either step records who declined and an optional reason, releases soft-holds, returns the match to the matching workspace as Declined, and notifies Maintain. Declined workers may be re-proposed only by explicit Maintain action.
+12.7 Nomination knockout: when a nominated worker becomes ineligible before the match is Accepted — transfer completion; a worker qualification or a company compliance document expiring (1.6, 7.2); the worker's stored status leaving Active (6.5); the supplier company leaving Active (3.2, which also withdraws its open matches); or a conflicting engagement entering a committing status — that MatchWorker row is auto-declined, the match's worker count drops, and the supplier is prompted to substitute from the same capacity line. If the count falls below minimum_crew_size the match auto-Declines; if the match is Awaiting Buyer when the count changes, the buyer must be re-presented with the updated quantity in-app before any acceptance is valid — the 15.2 re-notification email is informational and never gates the workflow (15.1).
+
+### 13. Engagements
+
+13.0 Committing statuses (definition, used throughout this spec): an engagement in Awaiting Commercial, Confirmed, or Active is "committing". Its EngagementWorker rows consume worker capacity everywhere capacity is counted (9.5, 10.3, 11.1, 13.6, 21.2) and block transfers (8.4). The word "confirmed" in lowercase never appears as a status test in this spec — status sets are always explicit.
+13.1 One Engagement is created per Accepted match, with EngagementWorker rows for the nominated workers. Commercial identity fields are copied from the match's proposal-time snapshot, never re-read from live tables: buyer company, supplier company, demand line and capacity line references, trade, proficiency, work region, the engagement window (start/end dates, 11.3), supplier_rate_cents, fee_bp, fee_cents_per_hour, buyer_rate_cents, and the snapshotted hours_per_week (11.3). Estimated values — expected hours, estimated supplier value, estimated Maintain revenue, estimated buyer value — are computed once at engagement creation per 20.3, from the snapshotted rates and hours × the nominated EngagementWorker count, then frozen. Later edits to rate bands or fee config never change existing matches or engagements.
+13.2 Engagement statuses: Awaiting Commercial → Confirmed (the commercial trigger: a Maintain admin records that the hiring business's payment is pre-authorised, per the one-pager promise that no job starts before pre-authorisation; procedural owner per 16.3; a trigger recorded on or after the start date records Confirmed and Active in one transaction, two audit events — Active is never reached without passing through Confirmed) → Active (automatic once start_date ≤ today) → Completed (automatic once end_date < today — the final on-site day stays committing; Maintain may complete early by editing the end date) ; Awaiting Commercial/Confirmed/Active → Cancelled (Maintain only in MVP; buyer/supplier request it off-platform); Active/Completed → Disputed (Maintain-set) → resolved to Completed or Cancelled. An engagement still Awaiting Commercial at its start date is flagged Overdue on the admin dashboard and cannot become Active until the trigger is recorded or Maintain cancels it.
+13.3 Outcome fields, editable by Maintain at completion: actual_hours, actual_value_cents, completed_at, dispute notes. Cancellation fields: cancelled_by, reason, within_notice_window flag.
+13.4 Payment handoff (recorded, never processed): payment_status (none, pre-authorised, released, disputed) and external_payment_ref, maintained manually by Maintain admins to mirror the off-platform payment flow (CD-02). Setting payment_status to pre-authorised IS the commercial trigger that moves the engagement from Awaiting Commercial to Confirmed (13.2). The unresolved payment-rail and pre-auth-expiry questions (Open Questions 10, OD-04) affect only what happens off-platform; the platform records status either way.
+13.5 On cancellation: the workers' committed dates are released, the demand line's filled count decrements (line reverts to Open/Partially Filled), and both companies are notified.
+13.6 Double-booking is impossible by construction: a Postgres exclusion constraint rejects two engagement-worker rows in committing statuses (13.0) for the same worker with overlapping date ranges. Implementation note: Postgres exclusion constraints are single-table, so EngagementWorker denormalises the engagement's status and date range (btree_gist), kept in sync inside the same transaction as any Engagement status or date change (including 13.2 end-date edits). Because Awaiting Commercial commits, the conflict is caught at buyer acceptance — never after a second buyer has pre-authorised payment.
+
+### 14. Dashboards
+
+14.1 Company dashboard: worker count, workers currently available (derived), workers deployed, open demand, proposed matches awaiting my action, current engagements. Primary CTAs: SELL CAPACITY, BUY CAPACITY.
+14.2 Maintain admin dashboard: SUPPLY (available workers, available hours, upcoming capacity), DEMAND (open requirements, required workers/hours, unfilled demand), MATCHES (awaiting supplier, awaiting buyer, declined needing attention), ENGAGEMENTS (Awaiting Commercial — with Overdue highlighted — Confirmed, Active, Completed; "upcoming" is not a status but a filter: Confirmed engagements whose start date is in the future), plus marketplace cards: active companies, total workers, estimated transaction value, estimated Maintain revenue. Basic cards only — no analytics platform.
+14.3 The admin Engagements, Companies, and Workers lists each support CSV export of the currently filtered rows; the engagement export includes every 13.1 field. This is the only reporting facility in MVP.
+
+### 15. Notifications
+
+15.1 Email only, via Resend with react-email templates. Every send is written to the Notification table first (recipient, trigger, related record, sent_at, failure recorded) so failures are visible and re-sendable. A failed email never blocks a workflow.
+15.2 Trigger → recipient matrix (templates for each): company registered (Maintain); ABN-collision registration routed to review (Maintain); company verified/rejected (company); admin invitation — covers both 1.8 invitations and the 0.3 lead-qualification first-administrator invitation (invitee); transfer requested (current employer), transfer approved/declined/escalated (both companies, Maintain on escalation); transfer completed — listings withdrawn and nominations auto-declined (affected supplier, Maintain); new capacity, new demand (Maintain); match proposed (supplier); supplier accepted (buyer, Maintain); match declined by a party (Maintain and the other party); match auto-Declined by knockout below minimum_crew_size (both the supplier and, if it had reached Awaiting Buyer, the buyer; plus Maintain); match expired (Maintain); nomination knocked out with substitution prompt (supplier; buyer re-notified per 12.7 when Awaiting Buyer); match accepted — commercial trigger required (Maintain); engagement confirmed (both companies); engagement cancelled (both companies); document/qualification expiring in 30 days (company, Maintain); document or qualification expired (company, Maintain); no applicable rate band on a capacity or demand line (Maintain); match withdrawn by Maintain (both parties, per 3.2 and 9.5). This matrix is exhaustive: an event not listed here sends nothing, and the definition-of-done test covers exactly this list.
+15.3 Notification emails contain no rates, no worker names, and no counterparty company names before the related engagement is Confirmed; they state the event and deep-link into the app where visibility rules apply.
+15.4 SMS and push are out of MVP.
+
+### 16. Concierge operations
+
+16.1 Maintain admins can create and edit companies' capacity listings, demand requests, workers, company profile details, and compliance documents (1.4 uploads) on their behalf (availability and paperwork arrive by phone and email, not typed in by subbies), and can record phoned-in decisions on their behalf: a supplier's match acceptance with its worker nominations, a supplier's decline, and a buyer's acceptance or decline. Every concierge record and recorded decision is flagged admin-entered, carries a mandatory evidence note (who was spoken to, and when), and is audited with the acting admin. Recorded supplier acceptance preserves guardrail 2 — the nomination is the supplier's, relayed, never the admin's choice — and constitutes rate ratification per 9.7 and 12.2.
+16.2 Delivery is phased so Maintain can operate before self-serve matures: Phase 1 = auth, leads queue, registration + verification, catalogue + rate bands, workers, capacity/demand intake (company-facing forms plus concierge entry), matching workspace, confirmations, engagements with the commercial trigger — the full loop operable by Maintain. Phase 2 = company self-serve dashboards, bulk capacity UX, transfer self-service, CSV exports, notification polish. The Brief v0.1 s35 success transaction must be demonstrable at the end of Phase 1.
+16.3 Operational ownership (procedural — MVP has a single maintain_admin role; granular admin roles are v2 per Brief s29):
+
+| Owner | Platform surface |
+|---|---|
+| Marketing / funnel | Outside the platform; feeds the Leads queue (module 0) |
+| Supply-side operations | SELL leads qualification, supply onboarding, the Verification queue, concierge worker/capacity entry, supplier-acceptance facilitation |
+| Marketplace operations | BUY leads qualification, demand onboarding and concierge entry, company activation, the matching workspace, buyer-acceptance facilitation |
+| Commercial | Fee and rate-band configuration, booking minimums, recording the commercial trigger (13.4) |
+| Engineering | Build, migrations, seed, deployment (Production readiness section) |
+
+### 17. Permissions and data visibility
+
+17.1 Tenancy is enforced in the database with Supabase RLS — application-level filtering is a convenience, never the security boundary. Table classification:
+  - Company-scoped by company_id: Company (own row), CompanyUser, CompanyDocument, CapacityListing/Line/LineWorker, DemandRequest/Line.
+  - Worker-scoped via the open WorkerEmployment row: Worker, WorkerSkill, WorkerQualification, WorkerEmployment. After a transfer, the previous employer retains read access to its own historical employment rows and past engagements only — no live profile access.
+  - Global catalogue (companies read, Maintain writes): Industry, TradeRole, TradeRoleProficiency, the TradeRole–Qualification mapping (4.5), Skill, Qualification, Proficiency, Region.
+  - RateBand (Maintain writes; no company ever reads the base table): suppliers read bands via a projection scoped to the trades of their current workers plus the trade of any line being created (so the first line's 5.2 pre-fill is well-defined); buyers receive only fee-marked-up indicative ranges computed server-side (5.5) — raw band values are absent from every buyer-facing response. Accepted limit, stated so no one mistakes the posture for a guarantee: a dual-role company that supplies and buys in the same trade legitimately sees both its own band (as supplier) and a marked-up range (as buyer), and can therefore derive fee_bp by division. The fee percentage is not treated as a market secret; what these projections do protect is the per-deal counterparty supplier rate on any match, which no buyer-facing surface ever carries.
+  - Maintain-only: Lead, PlatformConfig, AuditEvent, Notification (rows written server-side only), Verification queue data.
+  - Dual-party with per-role projections: Match, MatchWorker, Engagement, EngagementWorker, WorkerTransfer. Companies never read these base tables directly; each party reads a role-specific view. The buyer projection excludes supplier_rate, fee fields, worker identities pre-Confirmed, and the supplier company name pre-Confirmed; the supplier projection excludes buyer_rate, fee_bp, fee_cents_per_hour, estimated buyer value, estimated Maintain revenue, and the buyer company name pre-Confirmed (fee fields would let a supplier reconstruct the buyer rate by one multiplication).
+17.2 Worker PII (mobile, email) is never included in any buyer-facing response, ever. Workers may request access, correction, or removal via Maintain (Privacy Act posture; consent per 6.3).
+17.3 Maintain admin screens run server-side with the service-role key, gated by the maintain_admin claim; every mutation records the acting user.
+
+### 18. Audit
+
+18.1 App-level audit: one audit_event table (actor_user_id, action, entity_type, entity_id, before/after JSON, created_at) written by a shared helper inside every mutating server action. DB triggers are not used (service-role writes lack user context). One reserved, audited system actor id exists for clock-driven transitions (the module 19 executor table); it is the only non-human actor permitted in the audit trail, and 2.2's no-anonymous-actor rule reads accordingly.
+18.2 Minimum audited events: company status changes; verification decisions; document verified/expired; worker created/edited; proficiency changed and Maintain override; employer changed (transfer lifecycle); capacity created/withdrawn; demand created/withdrawn; match created/accepted/declined/withdrawn/expired; engagement created/cancelled/completed/disputed; the commercial trigger and every payment_status change; rate band changed; fee config changed; admin concierge entries; company user invited/removed; logins and password resets.
+18.3 The audit log is append-only and visible to Maintain admins only.
+
+### 19. State machines (canonical)
+
+| Entity | States and transitions |
+|---|---|
+| Company | Pending → Active (admin verify) ; Active ⇄ Suspended (admin) ; any → Closed (admin, terminal) |
+| CapacityLine | Open → Partially Committed → Fully Committed (derived from engagements) ; Open/Partial → Withdrawn (supplier/admin) ; auto → Expired (available_until passed) |
+| DemandLine | Open → Partially Filled → Filled (derived) ; Open/Partial → Withdrawn (buyer/admin; blocked while an open match references the line, 10.3) ; auto → Expired (end date passed) |
+| Match | Awaiting Supplier → Awaiting Buyer (supplier accepts + nominates) → Accepted (buyer accepts) ; → Declined (either party, or auto below minimum_crew_size per 12.7) ; → Withdrawn (admin, pre-Accepted) ; auto → Expired (7 days after proposal or line end date passed, 12.1) |
+| Engagement | Awaiting Commercial → Confirmed (admin records payment pre-authorised — the commercial trigger) → Active (start date) → Completed (end date / admin) ; Awaiting Commercial/Confirmed/Active → Cancelled (admin) ; Active/Completed → Disputed (admin) → Completed/Cancelled |
+| Lead | New → Contacted (admin) → Qualified (creates Pending company) / Disqualified (admin, with reason) |
+| WorkerTransfer | Requested → Awaiting Current Employer (auto) → Approved → Completed (auto) ; → Declined ; → Withdrawn (requester) ; → Admin Review (admin or 5-business-day timeout) → Approved/Declined |
+| Worker (stored) | Active ⇄ Inactive (company admin or Maintain) ; ⇄ Suspended (Maintain). Marketplace state is derived, never stored |
+
+Automatic transitions and their executors. Every "automatic" transition above is owned by exactly one mechanism; nothing is left to implication. The daily job runs once at 00:00 Australia/Brisbane as the audited system actor (18.1) and is idempotent — one transition and one Notification row per entity per trigger per day; a second run changes nothing.
+
+| Transition | Executor |
+|---|---|
+| Company document / worker qualification status recompute, 30-day warnings, expiry (1.6, 7.2) | Daily job |
+| CapacityLine → Expired (available_until passed, 9.5) | Daily job |
+| DemandLine → Expired (end date passed, 10.3) | Daily job |
+| Match → Expired (7 days after proposal or once the demand line's end date has passed, 12.1; holds released, Maintain notified) | Daily job |
+| Engagement Confirmed → Active (start date) and Active → Completed (end date, 13.2) | Daily job |
+| Engagement Overdue flag (Awaiting Commercial past start date, 13.2) | Daily job |
+| WorkerTransfer → Admin Review (5 business days without response, 8.3) | Daily job |
+| WorkerTransfer Requested → Awaiting Current Employer (on creation) and Approved → Completed (8.2) | In-transaction, synchronous, acting user |
+| Nomination knockouts and match auto-Decline below minimum_crew_size (12.7) | In-transaction with the triggering event (transfer completion, a competing engagement entering a committing status); daily job when triggered by qualification/document expiry |
+| Line fill/commit statuses (9.5, 10.3), worker marketplace state (6.5), document/qualification display statuses between runs | Derived at read time, never stored |
+
+### 20. Money rules
+
+20.1 All monetary values are stored as integer cents (bigint). All rates and values are ex-GST and every displayed amount is labelled "ex GST" (invoice flow pending OD-03).
+20.2 Buyer rate derivation and rounding: 5.4. Fee snapshots: 5.3, 13.1.
+20.3 Expected hours = hours_per_week × (inclusive calendar days in the engagement window ÷ 7), rounded to the nearest whole hour. Estimated supplier value = expected hours × supplier rate × worker count; estimated buyer value = expected hours × buyer rate × worker count; estimated Maintain revenue = the difference. Values computed and frozen at engagement creation, labelled "Estimated".
+20.4 A missing rate band row never invents a rate: capacity and demand lines without an applicable band are flagged "no recommended band" (the supplier can still set a rate); a demand line whose trade/proficiency/region has no band shows no indicative range and is flagged to Maintain.
+20.5 Dates are calendar dates in Australia/Brisbane, stored as DATE columns (no timestamps for availability or engagement windows). Display dd/mm/yyyy. Audit timestamps stored UTC, displayed Australia/Brisbane. Currency displayed as AUD, en-AU formatting.
+
+### 21. Availability arithmetic
+
+21.1 Candidate eligibility filter: defined in 11.1, computed in SQL (view or RPC), not application code. Capacity windows are Postgres dateranges; overlap uses the && operator.
+21.2 Availability is computed per worker. The worker's availability window is the union of the windows of their capacity lines in {Open, Partially Committed, Fully Committed} that intersect the demand window — commit status never removes a line from this union (9.5); consumption is subtracted below, so a Fully Committed line whose headcount is exhausted by an engagement covering only part of its window still contributes its free days. Availability % = days of the demand window covered by that union, minus days within the union consumed by engagements in a committing status (13.0), ÷ total days of the demand window — engagement days outside the covered union are never subtracted. 100% requires full coverage AND, for each covered day, the covering line's hours/week ≥ demand hours/week; anything lower displays as "Partial (N%)" with an hours-shortfall indicator when applicable; 0% is excluded (11.1). Available days are informational only in MVP and never enter the calculation.
+21.3 Commitment semantics, in escalating order: nomination in an open match soft-holds a worker's dates (greyed with reason, 11.1); buyer acceptance creates the engagement in Awaiting Commercial, which hard-commits the dates (13.0, 13.6); the commercial trigger confirms the engagement without changing the commitment. Declines, expiries, withdrawals, knockouts (12.7), and cancellations release holds immediately.
+
+### 22. Terminology and copy
+
+22.1 Banned in all UI copy, emails, code identifiers, and documentation: "labour hire", "hire" as the offering, "staff supply", "under the umbrella", "labour" as a noun for the offering. Approved register (from the one-pager): capacity, crew, "facilitates a deal between two businesses", supplying business, hiring business. One statutory carve-out: "labour-hire licence" as the proper name of the government document (the 1.4 checklist item and its CompanyDocument type, identifier lh_licence) is exempt — a statute's name cannot be paraphrased. The check ships as a lint script in the repo: word-boundary matching with an explicit allowlist ("hiring business", "supplying business", "labour-hire licence"), so the test is executable and passable against compliant copy.
+22.2 Legally sensitive copy surfaces (rate displays, fee wording, worker-naming screens, confirmation screens, email templates) are config/data, not hardcoded strings, so counsel's pending answers (OD-05) change text without changing architecture.
+22.3 Buttons name exact outcomes; toasts confirm in the same words. Voice: executive, plain, operational (build-spec s6 copy discipline).
+
+### 23. Seed data
+
+23.1 The catalogue (industries, trades, skills, qualifications, proficiency mappings) and rate bands are founder-supplied spreadsheets loaded by an idempotent, re-runnable seed script — a launch precondition with a named owner and date (Open Question 2). Admin UIs are for ongoing maintenance, not initial load.
+23.2 Spec examples are trade-agnostic; nothing in schema, code, or tests hardcodes any trade (s33 of the brief stands). The beachhead trade decision (roofing vs fit-out carpentry/painting vs electrical) is the founders' to make and changes data only.
+23.3 Real verified SEQ supply is seeded before any external user sees the platform (build-spec non-negotiable).
+
+## Non-goals
+
+Everything in Brief v0.1 s34 remains excluded: payroll, automated invoicing, timesheets (actual hours are Maintain data entry at completion, not a timesheet module), payment processing (manual Stripe Connect off-platform; the platform records the handoff only), award interpretation, rostering, native apps, AI matching, automated compliance verification (ABR/QBCC API lookups are v2; MVP verification is manual against uploaded documents), recruitment/job ads, ATS, ratings/reviews of companies or people, dynamic pricing, rate negotiation flows, messaging/chat, complex analytics, CRM. Additionally excluded: worker logins (schema-ready only), cross-company browse or search of any kind, SMS/push, geocoded distance matching (region FK only), GSAP and Three.js anywhere in the authenticated app, internationalisation and multi-currency (AUD, English, Australia only).
+
+## Constraints
+
+- Stack: Next.js 16 App Router in the existing maintain-workforce repo (authenticated route groups /app and /admin beside the marketing routes); Supabase (Auth, Postgres with RLS, Storage) in ap-southeast-2 (Sydney); Vercel hosting with Vercel Cron for the daily expiry job; Tailwind CSS v4 with the existing token layer.
+- Dependencies — add: @supabase/supabase-js, @supabase/ssr, supabase CLI (dev; migrations + generated types, no ORM), react-email + @react-email/components, @tanstack/react-table, date-fns, vitest, @playwright/test. Reuse (installed): react-hook-form, zod, @hookform/resolvers, resend, clsx, tailwind-merge. Rejected: GSAP and Three.js (no requirement; the app's motion spec is CSS with prefers-reduced-motion respected), Prisma, PostGIS/geocoding, queue infrastructure, SMS providers. ABN checksum is ~20 lines inline.
+- Design system: DESIGN.md Hi-Vis Standard — semantic tokens only, never raw hex in components; amber is earned (~2 per screen); monospace for ABNs, trade codes, availability windows and rates; dark-locked.
+- Accessibility and responsive: WCAG AA contrast, full keyboard navigation, visible focus, reduced motion respected. Company-facing screens fully usable at 375 px (supplier/buyer confirmations and transfer approvals are the priority mobile flows); the admin portal is desktop-first at 1280 px minimum.
+- Operations: daily automated backups with point-in-time recovery, 7-day retention minimum; environments = local, Vercel preview (separate Supabase project), production; transactional email domain verified before launch; 99.5% availability target during AEST business hours (no formal SLA).
+- Legal guardrail as an acceptance constraint: no screen, email, or API response may (a) show a buyer a supplier rate or fee split, (b) let Maintain or the buyer assign or select a named individual, or (c) use the banned vocabulary. These are testable and tested (see Definition of done).
+
+## Production readiness and deployment
+
+- Environments: local (supabase CLI local stack), preview (Vercel preview deployments against Supabase branch databases — one branch per preview, or staging migrations serialized to single concurrency so parallel previews never collide), production (Vercel production + a production Supabase project in ap-southeast-2). Preview and local never point at production data.
+- Configuration is environment variables only, set in Vercel: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (server-only), RESEND_API_KEY, LEAD_WEBHOOK_TOKEN, CRON_SECRET, APP_BASE_URL. Secrets never appear in the repo or any client bundle; a build-time check greps the client output for the service-role key prefix and fails the build on a hit.
+- Database change management: every schema change is a supabase CLI migration committed to the repo; production schema changes happen only through migrations applied in deploy order; TypeScript types are regenerated from the schema on every migration; RLS is enabled deny-by-default on every table from the first migration, with policies added per module 17. Migrations are additive-only during MVP — any destructive change requires an explicit plan and a pre-change backup point.
+- Deploy pipeline, in order: push → Vercel preview build with typecheck, lint, vitest, and the vocabulary lint (22.1) as blocking steps → migrations applied to the preview branch → Playwright starred flows run against the preview → production migrations applied by a CI step running the supabase CLI (the named migration actor — Vercel does not apply migrations) → promote to production → smoke test (login, dashboard load, one read per module, /api/health). Migrations run before promotion because migrations are additive-only: old code on the new schema is safe, while promoting new code onto the old schema is the unsafe window. Rollback = Vercel instant rollback to the previous deployment (demonstrated once before launch).
+- Scheduled work: the daily job runs as a Vercel Cron hitting /api/cron/daily at 00:00 Australia/Brisbane, authenticated with CRON_SECRET, executing every transition in the module 19 executor table as the audited system actor (18.1), configured in the repo and verified in production after first deploy. The job is idempotent — one transition and one notification per entity per trigger per day; running it twice changes nothing.
+- Email: the sending domain is DNS-verified in Resend (SPF and DKIM) before launch; sender notifications@ the production domain. Supabase Auth's own emails (verification, password reset, invitations) are routed through the same verified domain via custom SMTP (Resend), so no platform email ever leaves an unverified sender. One production test send per template family — including reset and invitation — is part of the launch checklist.
+- Monitoring: a /api/health endpoint returns app and database status for uptime monitoring; Vercel runtime logs with alerting on function errors; error boundaries on every app route group. No additional APM in MVP.
+- Backups: Supabase daily backups with point-in-time recovery enabled, 7-day retention minimum, verified in the dashboard before launch; one restore drill to staging performed pre-launch.
+- Security at the edge: authenticated routes noindex; security headers (X-Frame-Options deny, nosniff, strict referrer policy); rate limiting per 2.4; Storage buckets private with signed URLs only; the leads webhook rejects requests without the token and rate-limits by IP.
+- Launch checklist, in order: production Supabase provisioned (ap-southeast-2, PITR on) → migrations applied → RLS verification tests pass against the production schema → seed script run (catalogue, rate bands, regions, config values) → founder-confirmed configuration entered (fee %, booking minimums) → email domain verified and test sends pass → cron verified live → maintain_admin accounts created via the audited runbook script (2.4) with MFA enrolled → verified SEQ seed supply loaded → smoke test of the starred flows with a test company, then test data removed → marketing site register and enquiry forms pointed at production → go-live. The milestone that closes the MVP: one real matched engagement recorded end to end, from lead through commercial trigger to Active.
+
+## Edge cases to handle
+
+- Registration with an ABN already registered → blocked, routed to Maintain review, no information about the holder disclosed.
+- Pending or Suspended company attempts SELL/BUY → action blocked with the verification/suspension banner; concierge entry by Maintain is still possible for Active companies only.
+- Add-worker collision on email or mobile (either field) → creation blocked with a generic existence-only message, transfer offered, neither the matched field nor the current employer revealed.
+- Transfer request unanswered 5 business days (QLD holidays excluded per 8.3) → auto-escalates to Admin Review; requester notified.
+- Collision with a worker who has no current employer → straight to Admin Review (8.3); notifications go to the requesting company and Maintain only, since no releasing company exists.
+- Transfer requested while the worker has an engagement in a committing status (13.0) → the request can be lodged but cannot complete (8.4); Maintain may override via Admin Review after resolving the engagement.
+- Supplier declines a match → match Declined, soft-holds released, demand line unchanged (still Open), Maintain notified for re-proposal.
+- Supplier accepts 2 of 3 requested (at or above minimum_crew_size) → match proceeds to buyer with 2 (the line shows 2 pending); on buyer acceptance the line becomes Partially Filled (2 of 3, per 10.3) and stays open for the remainder.
+- Buyer declines after supplier accepted → match Declined, workers released, supplier and Maintain notified.
+- Nominated worker becomes ineligible before buyer acceptance (transfer, expiry, an overlapping engagement entering a committing status elsewhere) → the 12.7 knockout runs in the triggering event's transaction (daily job for expiry-driven cases); the supplier is prompted to substitute.
+- Capacity line withdrawn while a match references it → withdrawal blocked until Maintain withdraws the match.
+- Two admins propose the same worker into overlapping matches → allowed as soft-holds (greyed, visible); the first buyer acceptance hard-commits the worker (Awaiting Commercial), and the second match's server-side re-validation rejects the stale nomination at its next transition (12.3, 12.7) with the exclusion constraint as the final backstop — the conflict can never survive to a second buyer acceptance, let alone a second pre-authorisation.
+- Engagement cancelled mid-flight → dates released, demand line filled count decremented, both parties notified, cancellation fields recorded.
+- Qualification expires between nomination and engagement end → surfaced as a warning at matching; if already engaged, flagged to Maintain for review, never auto-cancelled.
+- Rate band edited while a match is awaiting approval → no effect; the match holds its snapshot. New proposals use the new band.
+- No rate band exists for a trade/proficiency/region → line flagged "no recommended band"; demand shows no indicative range; Maintain notified to add the band.
+- Email provider failure → workflow completes; Notification row records the failure for re-send.
+- Demand line with total hours instead of hours/week → hours/week derived per the 10.1 formula and shown for confirmation.
+
+## Definition of done
+
+Each item is objectively checkable; the Playwright suite covers the starred flows end-to-end against a seeded database.
+
+- [ ] * A company can register, upload compliance documents, be verified by a Maintain admin, and transition Pending → Active with notifications sent.
+- [ ] A Pending company can prepare workers but is blocked from SELL/BUY and absent from matching.
+- [ ] * A verified supplier can create a multi-line capacity listing with named workers, confirming or overriding the band-pre-filled rate per line.
+- [ ] * A verified buyer can create a multi-line demand request and sees only all-in indicative rates.
+- [ ] * A Maintain admin opens a demand line, sees correctly filtered candidates with availability percentages matching the 21.2 formula, and proposes a match scoped to one supplier.
+- [ ] * The supplier accepts and nominates workers; the buyer sees the shape with no names, no supplier identity, no supplier rate; on buyer acceptance an engagement exists in Awaiting Commercial with correct snapshotted money fields (integer cents, round-half-up, ex-GST labels).
+- [ ] * The commercial trigger works: recording payment pre-authorisation moves the engagement Awaiting Commercial → Confirmed and reveals counterparty identities; an engagement past its start date without the trigger is flagged Overdue and never becomes Active.
+- [ ] A lead can enter via the public form, CSV import, and the token-authenticated webhook (validated against the repo's zod schema); qualifying it (with ABN) creates a pre-filled Pending company linked to the lead and sends the first-administrator invitation, and the invitee can accept it and log in; an untokened webhook request is rejected.
+- [ ] Supplier partial acceptance (2 of 3) shows 2 pending on the line, and buyer acceptance makes it Partially Filled per 10.3; supplier decline and buyer decline paths behave per Edge cases.
+- [ ] A second engagement-worker row in a committing status for the same worker with overlapping dates is rejected at the database level (exclusion constraint test), including when the first engagement is still Awaiting Commercial.
+- [ ] * Maintain completes the starred transaction end-to-end in concierge mode for two companies that have never logged in — capacity entered, acceptances recorded with evidence notes, engagement through the commercial trigger.
+- [ ] The transfer flow works end-to-end from add-worker collision through approval, including the 5-day escalation and the engaged-worker block; completion closes old employment, withdraws old listings, declines pending nominations.
+- [ ] The daily job executes every row of the module 19 executor table — document/qualification warnings and expiries, line and match expiry with hold release, engagement activation/completion, Overdue flagging, transfer escalation — as the audited system actor, and running it twice in one day changes nothing.
+- [ ] RLS tests prove: company A cannot read company B's workers, listings, demand, or documents; the buyer projection of a match/engagement contains no supplier-rate or fee columns and no worker names pre-Confirmed; the supplier projection contains no buyer-rate or fee columns (17.1); a worker's mobile/email never appear in any buyer-facing response; raw rate-band values are absent from every buyer-facing response.
+- [ ] Vitest unit tests pass for: buyer-rate rounding (including a half-cent case), expected-hours formula, availability-percentage formula, ABN checksum.
+- [ ] Engagement CSV export from the admin list contains every 13.1 field for the filtered rows.
+- [ ] Every notification trigger in 15.2 writes a Notification row and sends via Resend; a forced provider failure does not block the triggering workflow.
+- [ ] Fee percentage, booking minimums, and rate bands are editable by a Maintain admin with no deployment, and existing engagements are unaffected by the edits.
+- [ ] The repo's vocabulary lint script (22.1: word-boundary matching with the stated allowlist and statutory carve-out) passes over UI copy, email templates, and identifiers, and runs as a blocking step in the deploy pipeline.
+- [ ] Company approval/confirmation screens are usable at 375 px; admin portal at 1280 px; keyboard-only navigation completes the starred flows; axe checks report no WCAG AA contrast violations on core screens.
+- [ ] The catalogue and rate bands load from the founder-supplied seed script idempotently; no trade name is hardcoded anywhere in schema, code, or tests.
+- [ ] The deploy pipeline blocks promotion on failed typecheck, lint, vitest, or Playwright starred flows; rollback to the previous deployment has been demonstrated once.
+- [ ] The launch checklist has been completed in order on production: /api/health returns healthy, the cron job has run successfully at least once, RLS verification passes against the production schema, and email test sends succeed from the verified domain.
+
+## Open questions
+
+1. Platform fee percentage (OD-02). Spec default: 15% placeholder in config. Owner: Jon.
+2. Beachhead seed trade and catalogue content — CD-08 (SEQ commercial roofing) vs Decision Brief D3 (inner-Brisbane fit-out carpentry + commercial painting) vs GTM (commercial electrical). Blocks seed data only, not the build. Owner: founders.
+3. Rate band values, and confirmation of tier structure (three tiers per the 7 Aug meeting vs four levels in Brief v0.1 — the TradeRoleProficiency mapping absorbs either). Owner: Jon.
+4. GST treatment and invoice flow (OD-03) — spec assumes ex-GST everywhere pending the accountant.
+5. Minimum booking values: 8-hour block confirmed? Minimum crew size 1 or 2? Spec ships both as config.
+6. Whether Brief v0.1's Maintain-set rates and Maintain-selected workers were intended to supersede CD-06/OD-01. This spec assumes the confirmed decision record stands; overturning it requires a written decision-log entry with legal sign-off (OD-05 lawyer engagement is still outstanding and gates launch, not build).
+7. Product name (Decision Brief D1 recommends Maintain Crew). All naming is config/copy; no code identifier depends on it.
+8. Cancellation notice window and minimum fee values (meeting decision 10: ~3 hours, fee inside window) — engagement fields exist; values are policy, set by founders.
+9. Funnel tooling: the operational workflow diagram shows GoHighLevel for capture, nurture, and lead scoring, while meeting decision 2 chose in-house landing pages on cost grounds. The platform is agnostic — leads arrive by form, CSV, or webhook either way (module 0) — but the choice needs confirming. Owner: Jon / marketing.
+10. Payment rail behind the commercial trigger: Stripe Connect pre-authorisation (CD-02) vs PayTo/direct debit (Decision Brief D4, meeting s9.3), with the ~7-day auth-expiry problem (OD-04) unresolved. The platform records payment_status only (13.4); the rail is an off-platform operational decision that gates go-live, not the build. Owner: Jon + Karla.
