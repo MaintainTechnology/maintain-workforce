@@ -86,6 +86,10 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: supabase/setup-cli@v1
+        with:
+          # Keep in step with the "supabase" devDependency in package.json. The
+          # action's default CLI (2.20.x) cannot read db.major_version = 17.
+          version: 2.115.0
       # A clean reset proves every committed migration is executable in order. This
       # never links to or mutates the preview/production projects.
       - run: supabase start
@@ -166,6 +170,10 @@ jobs:
       - run: node scripts/validate-rls-fixtures.mjs
       # Migrations run against the preview branch before the flows exercise it.
       - uses: supabase/setup-cli@v1
+        with:
+          # Keep in step with the "supabase" devDependency in package.json. The
+          # action's default CLI (2.20.x) cannot read db.major_version = 17.
+          version: 2.115.0
       # Remote history intentionally contains 007 before the pending 006 lifecycle
       # migration. --include-all is required to apply that older, reviewed migration.
       - run: supabase db push --include-all --db-url "$SUPABASE_DB_URL"
@@ -192,6 +200,10 @@ jobs:
         with:
           ref: ${{ github.sha }}
       - uses: supabase/setup-cli@v1
+        with:
+          # Keep in step with the "supabase" devDependency in package.json. The
+          # action's default CLI (2.20.x) cannot read db.major_version = 17.
+          version: 2.115.0
       - run: supabase db push --include-all --db-url "$SUPABASE_PRODUCTION_DB_URL"
         env:
           SUPABASE_PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
