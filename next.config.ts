@@ -1,5 +1,11 @@
 import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
+import { assertDeploymentEnvironment } from "./src/lib/deployment-env";
+
+// Next loads environment files before this config. Reject incomplete hosted builds
+// here, including deployments that invoke `next build` without an npm lifecycle hook.
+// Local and CI fixture builds are unaffected when VERCEL_ENV is not a hosted target.
+assertDeploymentEnvironment();
 
 const nextConfig: NextConfig = {
   // Lets .mdx files be routes (app/blog/foo/page.mdx) or imported as content.

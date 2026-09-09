@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
+import { PREVIEW_SECRET_ENV } from "../../scripts/validate-preview-config.mjs";
 
 // Use the real YAML parser already locked by ESLint, rather than matching comments.
 const { load } = createRequire(import.meta.url)("js-yaml") as {
@@ -27,6 +28,7 @@ type Job = {
   environment?: string;
   concurrency?: Concurrency;
   steps: Step[];
+  env?: Record<string, string>;
   "continue-on-error"?: boolean;
 };
 
@@ -65,7 +67,7 @@ function context(event: string, ref = "refs/heads/main", acknowledged = true, re
 // These pinned expressions use only operators with the same semantics in JS and
 // GitHub Actions for the string/boolean contexts exercised below. No API calls run.
 function evaluate(value: string, values: ReturnType<typeof context>): unknown {
-  return runInNewContext(expression(value), values, { timeout: 100 });
+  return runInNewContext(expression(value), values, { timeout: 1_000 });
 }
 
 function concurrencyGroup(group: string, values: ReturnType<typeof context>): string {
@@ -118,6 +120,22 @@ describe("blocking deploy-pipeline contract", () => {
     expect(migrationAt).toBeGreaterThan(discoveryAt);
     expect(workflow).toContain("node scripts/prepare-e2e-fixtures.mjs --cleanup");
     expect(workflow).toContain("if: ${{ always() }}");
+  });
+
+  it("reports all missing preview secrets before dependency installation or credential-file creation", () => {
+    const job = parsedWorkflow().jobs["starred-flows"];
+    const preflightAt = job.steps.findIndex((step) => step.run === "node scripts/validate-preview-config.mjs");
+    const installAt = job.steps.findIndex((step) => step.run === "npm ci");
+    const fixturesAt = job.steps.findIndex((step) => step.run === "node scripts/prepare-e2e-fixtures.mjs");
+    expect(preflightAt).toBeGreaterThanOrEqual(0);
+    expect(installAt).toBeGreaterThan(preflightAt);
+    expect(fixturesAt).toBeGreaterThan(installAt);
+    const environment = { ...job.env, ...job.steps[preflightAt].env };
+    for (const [name, secret] of Object.entries(PREVIEW_SECRET_ENV)) {
+      expect(environment[name], name).toBe(`\${{ secrets.${secret} }}`);
+    }
+    expect(job.steps[preflightAt].if).toBeUndefined();
+    expect(evaluate(job.if!, context("push"))).toBe(true);
   });
 
   it("makes seeded live RLS evidence mandatory before Playwright", () => {

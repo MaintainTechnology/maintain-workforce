@@ -156,6 +156,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Validate isolated-preview configuration
+        run: node scripts/validate-preview-config.mjs
+        env:
+          E2E_FIXTURE_BUNDLE_JSON: ${{ secrets.E2E_FIXTURE_BUNDLE_JSON }}
       - run: npm ci
       # Genuine pre-verified Clerk states are operator-provided bearer secrets, not
       # minted by a test login bypass. Validate the complete manifest BEFORE any

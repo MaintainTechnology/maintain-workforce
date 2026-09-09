@@ -10,9 +10,15 @@ const MANIFEST = "fixtures.json";
 const record = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const filename = (value) => typeof value === "string" && /^[a-zA-Z0-9][a-zA-Z0-9_-]*\.json$/.test(value) && value !== MANIFEST;
 
-export async function prepareE2eFixtures(serialized, parent = tmpdir()) {
+/** Validate the operator's bundle without writing credentials or opening a session. */
+export function parseE2eFixtureBundle(serialized) {
+  if (typeof serialized !== "string" || serialized.trim() === "") {
+    throw new Error("E2E_FIXTURE_BUNDLE_JSON is missing or empty. Configure this repository Actions secret using seed-data/E2E-VERIFICATION.md; real isolated-preview Clerk session states are required.");
+  }
   let bundle;
-  try { bundle = JSON.parse(serialized); } catch { throw new Error("A valid E2E_FIXTURE_BUNDLE_JSON secret is required."); }
+  try { bundle = JSON.parse(serialized); } catch {
+    throw new Error("E2E_FIXTURE_BUNDLE_JSON is not valid JSON. Supply the complete raw JSON bundle described in seed-data/E2E-VERIFICATION.md, without Markdown fences or base64 encoding.");
+  }
   if (!record(bundle) || !record(bundle.manifest) || !record(bundle.storageStates) ||
       !record(bundle.manifest.projects)) throw new Error("The E2E secret bundle needs a manifest and storageStates.");
   const names = Object.keys(bundle.storageStates);
@@ -32,6 +38,12 @@ export async function prepareE2eFixtures(serialized, parent = tmpdir()) {
     }
   }
   if (names.some((name) => !references.has(name))) throw new Error("Do not include unreferenced session credentials in the E2E bundle.");
+  return bundle;
+}
+
+export async function prepareE2eFixtures(serialized, parent = tmpdir()) {
+  const bundle = parseE2eFixtureBundle(serialized);
+  const names = Object.keys(bundle.storageStates);
   const base = await realpath(parent);
   const directory = await mkdtemp(join(base, PREFIX));
   try {

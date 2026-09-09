@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 // The runner is plain Node.js; import the same implementation used by CI.
-import { cleanupE2eFixtures, prepareE2eFixtures } from "../../scripts/prepare-e2e-fixtures.mjs";
+import { cleanupE2eFixtures, parseE2eFixtureBundle, prepareE2eFixtures } from "../../scripts/prepare-e2e-fixtures.mjs";
 
 let parent: string;
 beforeEach(async () => { parent = await mkdtemp(join(tmpdir(), "mw-e2e-secret-test-")); });
@@ -17,6 +17,19 @@ function bundle() {
 }
 
 describe("CI browser fixture secret files", () => {
+  it.each([undefined, "", " \r\n\t "])("identifies an unavailable secret before writing files (%#)", async (value) => {
+    await expect(prepareE2eFixtures(value, parent)).rejects.toThrow("E2E_FIXTURE_BUNDLE_JSON is missing or empty");
+    expect(await readdir(parent)).toEqual([]);
+  });
+
+  it("validates a raw multiline JSON bundle without writing credentials", async () => {
+    const value = bundle();
+    expect(parseE2eFixtureBundle(JSON.stringify(value, null, 2))).toEqual(value);
+    expect(await readdir(parent)).toEqual([]);
+    expect(() => parseE2eFixtureBundle("```json\nTEST-SECRET\n```"))
+      .toThrow("E2E_FIXTURE_BUNDLE_JSON is not valid JSON");
+  });
+
   it("writes only named private files to a fresh temporary directory and removes only that directory", async () => {
     const path = await prepareE2eFixtures(JSON.stringify(bundle()), parent);
     expect(basename(path)).toBe("fixtures.json");

@@ -185,12 +185,48 @@ their contents. This harness never enumerates or revokes existing sessions.
 
 ### CI secret-file provisioning
 
+The `starred-flows` job runs on main pushes and acknowledged, reviewed manual
+cutovers. It intentionally fails if its isolated-preview configuration is absent;
+passing the `verify` and `local-database` jobs alone is not live release evidence.
+This job does not deploy the Vercel website, and its fixture-preparation failure
+does not explain an HTTP 500 from an already deployed website.
+
+Provision these as **repository Actions secrets**, or organization Actions secrets
+shared with this repository. The preview job has no GitHub environment; secrets
+stored only in the protected `Production` environment are unavailable to it. Keep
+production credentials in that protected environment and use separate disposable
+preview credentials here:
+
+- `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PREVIEW_DB_URL`, and `PREVIEW_BASE_URL`.
+- `E2E_CLERK_PUBLISHABLE_KEY` and `E2E_CLERK_SECRET_KEY` from the verified Clerk
+  development instance serving the preview.
+- `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, and
+  `E2E_SUPABASE_SERVICE_ROLE_KEY` for the disposable preview database.
+- Every `RLS_TEST_*` **secret name** referenced by `.github/workflows/ci.yml` for
+  the isolated seeded records required by `src/lib/rls.integration.test.ts` and
+  `scripts/validate-rls-fixtures.mjs`. Runtime aliases
+  such as `RLS_TEST_URL` and `RLS_TEST_SERVICE_KEY` use the `E2E_SUPABASE_*`
+  secrets in that workflow; they do not need duplicate secret entries.
+- `E2E_FIXTURE_BUNDLE_JSON`, containing the raw JSON bundle described below.
+
+`scripts/validate-preview-config.mjs` reports all missing secret names together
+before dependency installation, secret-file creation, preview migrations or live
+tests. It validates the bundle envelope and RLS configuration without connecting to
+either service. The later browser preflight still checks the complete manifest and
+saved states; this early check does not certify their validity or freshness.
+
 Configure `E2E_FIXTURE_BUNDLE_JSON` as an approved CI secret with the shape
 `{ "manifest": <the manifest above>, "storageStates": { "admin.json": <full state>, ... } }`.
 Every state path in the manifest must be a plain filename provided in `storageStates`;
 absolute paths, traversal, missing files and unused session credentials are rejected.
 Use at most eight files (one admin plus three company states per project; an admin
 state may be shared). No default identities or cookies are generated.
+
+Use the file's complete JSON contents as the secret value, with no Markdown fences,
+base64 encoding, file path, or extra surrounding string quotes. An empty or
+unavailable secret produces a **missing or empty** diagnostic; a non-JSON value
+produces a **not valid JSON** diagnostic. Neither diagnostic prints the value.
+Do not substitute `{}`, sample cookies, or production sessions to pass this gate.
 
 `scripts/prepare-e2e-fixtures.mjs` writes the bundle to a fresh private OS temporary
 directory, records `E2E_FIXTURES_FILE` in the runner environment, and never logs its
