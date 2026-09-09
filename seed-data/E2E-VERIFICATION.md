@@ -233,3 +233,31 @@ locate the exact run marker in capacity `available_days` and demand `name`/`note
 After reviewing the evidence, an authorized operator must reset the **dedicated**
 fixture dataset or dispose of that preview database before another mutating run.
 Never use a blanket cleanup against a shared or production database.
+
+## Clerk bot protection and headless browsers
+
+Two Clerk behaviours only show up under automation, so a browser agent or a raw
+Playwright context can report the entry pages as broken while real visitors are fine.
+
+- **Sign-up is guarded by Cloudflare Turnstile.** After Continue, Clerk replaces the
+  form with a "Verify you are human" challenge that no automated browser can complete.
+  `e2e/company-auth-journey.spec.ts` drives the real registration, verification,
+  onboarding, dashboard, sign-out and sign-in path by attaching a Clerk Testing Token
+  to every Frontend API request, which is Clerk's supported way through bot protection
+  (`e2e/support/clerk-testing-token.ts`). It runs only with `E2E_ALLOW_TEST_WRITES=1`
+  and either `CLERK_TESTING_TOKEN` or a development `CLERK_SECRET_KEY` to mint one,
+  on a `pk_test_` instance; it uses a `+clerk_test` address and the fixed code 424242,
+  so no email is sent. Its user and company are named `E2E TEST COMPANY <run>` and are
+  retained like every other mutating scenario; `E2E_DELETE_TEST_RECORDS=1` removes them.
+- **A headless User-Agent breaks the session handshake.** Clerk's Frontend API omits
+  `Secure` from the handshake cookies for `HeadlessChrome`, browsers reject the
+  resulting `SameSite=None` cookies, and the middleware loops until Clerk signs the
+  visitor out (`Refreshing the session token resulted in an infinite redirect loop` in
+  the server log; a signed-in visitor lands back on `/signin` once their token lapses).
+  `src/proxy.ts` restores the attribute; `e2e/company-auth-handshake.spec.ts` is the
+  credential-free regression. The Playwright device profiles used by both projects send
+  a regular Chrome User-Agent, so the existing suite was never affected.
+
+```text
+APP_BASE_URL=http://localhost:3000 E2E_ALLOW_TEST_WRITES=1 npx playwright test e2e/company-auth-journey.spec.ts
+```

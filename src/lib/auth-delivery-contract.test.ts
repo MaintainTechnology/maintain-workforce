@@ -25,7 +25,12 @@ describe("Clerk authentication delivery contract", () => {
     expect(proxy).toMatch(
       /import\s+\{\s*clerkMiddleware\s*\}\s+from\s+"@clerk\/nextjs\/server"/,
     );
-    expect(proxy).toMatch(/export const proxy\s*=\s*clerkMiddleware\(/);
+    // Clerk's middleware is the proxy; the exported function only wraps it to repair
+    // the handshake cookies Clerk's Frontend API mis-serialises for headless browsers.
+    expect(proxy).toMatch(/const withClerk\s*=\s*clerkMiddleware\(/);
+    expect(proxy).toMatch(
+      /export async function proxy\(request: NextRequest, event: NextFetchEvent\)[\s\S]*await withClerk\(request, event\)[\s\S]*secureSameSiteNoneCookies\(response\.headers\)/,
+    );
     expect(proxy).toContain("authState.redirectToSignIn");
     expect(proxy).toMatch(/isAppRoute[\s\S]*isAdminRoute/);
   });
