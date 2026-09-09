@@ -397,6 +397,10 @@ export async function updateCompanyProfile(formData: FormData): Promise<void> {
     after,
   });
 
+  // The persistent workspace shell also displays the company name. Its layout
+  // lives at the (app) route group, so invalidate that file-structure path only
+  // after the profile update and audit have both succeeded.
+  revalidatePath("/(app)", "layout");
   redirect("/app/settings?saved=profile");
 }
 

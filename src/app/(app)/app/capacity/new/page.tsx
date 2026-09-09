@@ -47,7 +47,7 @@ export default async function NewCapacityPage() {
 
   const supabase = await createClient();
 
-  const [{ data: workerData }, { data: regionData }] = await Promise.all([
+  const [workerResult, regionResult] = await Promise.all([
     // RLS scopes this to the crew the company currently employs (17.1). Only Active
     // workers are offered: 6.5's stored status is the account-level fact, and 11.1
     // excludes anyone else from matching anyway.
@@ -60,6 +60,12 @@ export default async function NewCapacityPage() {
       .order("last_name"),
     supabase.from("region").select("id, name").eq("is_active", true).order("name"),
   ]);
+
+  if (workerResult.error || regionResult.error) {
+    throw new Error("Capacity options could not be loaded. Please try again.");
+  }
+  const { data: workerData } = workerResult;
+  const { data: regionData } = regionResult;
 
   const workers = (workerData ?? []) as unknown as WorkerRow[];
   const regions = (regionData ?? []) as { id: string; name: string }[];

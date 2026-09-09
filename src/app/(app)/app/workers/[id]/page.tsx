@@ -52,7 +52,8 @@ export default async function WorkerDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ notice?: string }>;
 }) {
-  await requireCompanyAdmin();
+  const { companyStatus } = await requireCompanyAdmin();
+  const readOnly = companyStatus === "Suspended" || companyStatus === "Closed";
   const { id } = await params;
   const { notice } = await searchParams;
   const supabase = await createClient();
@@ -83,10 +84,11 @@ export default async function WorkerDetailPage({
     supabase.from("trade_role").select("id, name"),
     supabase.from("proficiency").select("id, name"),
     supabase.from("region").select("id, name"),
-    supabase.from("qualification").select("id, name").eq("is_active", true).order("name"),
+    // Inactive catalogue names stay on historical records (4.3); only new entry is filtered.
+    supabase.from("qualification").select("id, name, is_active").order("name"),
     supabase
       .from("worker_qualification")
-      .select("id, qualification_id, number, issue_date, expiry_date")
+      .select("id, qualification_id, number, issue_date, expiry_date, file_path")
       .eq("worker_id", id),
     // 17.1 — the company reads its own employment rows only. A previous employer keeps
     // its history and gains nothing live.
@@ -107,6 +109,18 @@ export default async function WorkerDetailPage({
   const qualificationName = new Map(
     (qualificationsResult.data ?? []).map((q) => [q.id as string, q.name as string]),
   );
+  const qualifications = workerQualificationsResult.data ?? [];
+  // 7.1 — sign on the server using the current employer's session. The storage read
+  // policy checks the worker's open employment, including evidence uploaded before
+  // a transfer. No path is moved or exposed as a public document URL.
+  const evidenceUrls = new Map(await Promise.all(
+    qualifications.filter((row) => row.file_path).map(async (row) => {
+      const { data } = await supabase.storage
+        .from("worker-qualifications")
+        .createSignedUrl(row.file_path as string, 300);
+      return [row.id as string, data?.signedUrl] as const;
+    }),
+  ));
 
   const skillIds = (skillsResult.data ?? []).map((s) => s.skill_id as string);
   let skillNames: string[] = [];
@@ -168,7 +182,11 @@ export default async function WorkerDetailPage({
 
         {/* 6.5 / module 19 — a company admin moves its own worker between Active and
             Inactive. Suspended is Maintain's, and the action refuses it outright. */}
-        {worker.status !== "Suspended" ? (
+        {readOnly ? (
+          <p className="mt-(--space-5) text-body-sm text-on-dark-muted">
+            This account is read-only. Worker records and qualifications remain available to view.
+          </p>
+        ) : worker.status !== "Suspended" ? (
           <form action={setWorkerAccountStatus} className="mt-(--space-5) flex flex-wrap items-center gap-(--space-3)">
             <input type="hidden" name="worker_id" value={worker.id as string} />
             <input type="hidden" name="status" value={nextStatus} />
@@ -233,17 +251,18 @@ export default async function WorkerDetailPage({
                 <th className={TH}>Issued</th>
                 <th className={TH}>Expires</th>
                 <th className={TH}>Status</th>
+                <th className={TH}>Evidence</th>
               </tr>
             </thead>
             <tbody>
-              {(workerQualificationsResult.data ?? []).length === 0 ? (
+              {qualifications.length === 0 ? (
                 <tr>
-                  <td className={TD} colSpan={5}>
+                  <td className={TD} colSpan={6}>
                     None recorded yet.
                   </td>
                 </tr>
               ) : (
-                (workerQualificationsResult.data ?? []).map((row) => {
+                qualifications.map((row) => {
                   const status = credentialStatus((row.expiry_date as string | null) ?? null, today);
                   return (
                     <tr key={row.id as string}>
@@ -256,6 +275,19 @@ export default async function WorkerDetailPage({
                       <td className={TD}>
                         <span className={pill(toneFor(status))}>{status}</span>
                       </td>
+                      <td className={TD}>
+                        {evidenceUrls.get(row.id as string) ? (
+                          <a
+                            href={evidenceUrls.get(row.id as string)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${LINK} inline-flex min-h-11 items-center`}
+                            aria-label={`Open evidence for ${qualificationName.get(row.qualification_id as string) ?? "qualification"}`}
+                          >
+                            Open evidence
+                          </a>
+                        ) : row.file_path ? "Unavailable — refresh to retry" : "No document"}
+                      </td>
                     </tr>
                   );
                 })
@@ -264,7 +296,7 @@ export default async function WorkerDetailPage({
           </table>
         </div>
 
-        <form action={addWorkerQualification} className="mt-(--space-5) grid gap-(--space-4) sm:grid-cols-2">
+        {!readOnly && <form action={addWorkerQualification} className="mt-(--space-5) grid gap-(--space-4) sm:grid-cols-2">
           <input type="hidden" name="worker_id" value={worker.id as string} />
           <label className="flex flex-col gap-(--space-2)">
             <span className="text-sm font-semibold text-on-dark">Qualification</span>
@@ -274,7 +306,7 @@ export default async function WorkerDetailPage({
               className="min-h-11 w-full rounded-(--radius-md) border border-hairline bg-black-2 px-(--space-4) py-(--space-3) text-body text-on-dark"
             >
               <option value="">Choose one</option>
-              {(qualificationsResult.data ?? []).map((q) => (
+              {(qualificationsResult.data ?? []).filter((q) => q.is_active).map((q) => (
                 <option key={q.id as string} value={q.id as string}>
                   {q.name as string}
                 </option>
@@ -319,7 +351,7 @@ export default async function WorkerDetailPage({
               Record qualification
             </button>
           </div>
-        </form>
+        </form>}
       </section>
     </div>
   );

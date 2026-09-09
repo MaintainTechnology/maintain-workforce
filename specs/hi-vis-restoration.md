@@ -1,5 +1,10 @@
 # Spec: Restore the Hi-Vis Standard design system to the Maintain Worker site
 
+> Historical marketing-restyle scope. Its frozen-content constraint applied to that
+> task; the later dashboard and MVP alignment requests authorise functional changes.
+> [DESIGN.md](../DESIGN.md) remains the design authority; [the MVP spec](maintain-workforce-mvp.md)
+> governs current application behaviour.
+
 ## Goal
 
 The site's **content** (Maintain Worker, the B2B workforce exchange) is correct

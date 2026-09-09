@@ -15,7 +15,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-/** The lead fields of 0.2. ABN is optional at capture; it becomes mandatory to qualify (0.3). */
+/** The lead fields of 0.2. ABN remains optional at capture and qualification (0.3). */
 const leadWebhookSchema = z.object({
   source: z.string().trim().max(120).optional(),
   intent: z.enum(["sell", "buy", "both"]),

@@ -1,5 +1,9 @@
 # Self-Assessment — Maintain Workforce Spec Build
 
+> Historical assessment of spec v0.7, not implementation or deployment certification.
+> Use [the current MVP](maintain-workforce-mvp.md) and [latest alignment report](MVP-ALIGNMENT-2026-09-09.md)
+> for the current contract and focused build evidence.
+
 My own rubric, written before scoring, applied to the delivered work (spec v0.7 plus the evaluation record). Separate from the LLM Council's build-readiness rating; this scores the whole deliverable, including the process and the documents around the spec.
 
 ## The rubric

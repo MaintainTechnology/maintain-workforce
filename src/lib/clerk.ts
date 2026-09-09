@@ -48,6 +48,7 @@ export async function inviteAdministrator(
       emailAddress: invitedEmail,
       redirectUrl: new URL("/signup", baseUrl).toString(),
       ignoreExisting: true,
+      expiresInDays: 3, // MVP 1.8: a new invitation expires after 72 hours.
       publicMetadata: { company_id: companyId, invited_email: invitedEmail },
     });
     return { ok: true };

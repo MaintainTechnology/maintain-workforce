@@ -714,10 +714,11 @@ export type SupplierMatchView = {
  */
 export async function supplierMatches(): Promise<SupplierMatchView[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("supplier_match_view")
     .select("*")
     .order("proposed_at", { ascending: false });
+  if (error) throw new Error("Supplier matches could not be loaded. Please try again.");
   const rows = data ?? [];
   if (rows.length === 0) return [];
   return Promise.all(rows.map((row) => enrichSupplierMatch(row as Row)));
@@ -725,14 +726,15 @@ export async function supplierMatches(): Promise<SupplierMatchView[]> {
 
 export async function supplierMatch(id: string): Promise<SupplierMatchView | null> {
   const supabase = await createClient();
-  const { data } = await supabase.from("supplier_match_view").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("supplier_match_view").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error("Supplier match could not be loaded. Please try again.");
   if (!data) return null;
   return enrichSupplierMatch(data as Row);
 }
 
 async function enrichSupplierMatch(row: Row): Promise<SupplierMatchView> {
   const admin = createAdminClient();
-  const { data: detail } = await admin
+  const { data: detail, error: detailError } = await admin
     .from("match")
     .select(
       `id,
@@ -745,13 +747,17 @@ async function enrichSupplierMatch(row: Row): Promise<SupplierMatchView> {
     .eq("id", row.id as string)
     .maybeSingle();
 
+  if (detailError) throw new Error("Supplier match details could not be loaded. Please try again.");
+
   const demandLine = one<Row>(detail?.demand_line as Row | Row[] | undefined);
   const request = one<Row>(demandLine?.request as Row | Row[] | undefined);
 
-  const { data: nominations } = await admin
+  const { data: nominations, error: nominationError } = await admin
     .from("match_worker")
     .select("worker_id, knocked_out, knocked_out_reason, worker:worker_id (first_name, last_name)")
     .eq("match_id", row.id as string);
+
+  if (nominationError) throw new Error("Supplier nominations could not be loaded. Please try again.");
 
   const hours = num(row.hours_per_week);
   const days = inclusiveDayCount(row.engagement_start as string, row.engagement_end as string);
@@ -823,17 +829,19 @@ export type BuyerMatchView = {
  */
 export async function buyerMatches(): Promise<BuyerMatchView[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("buyer_match_view")
     .select("*")
     .order("proposed_at", { ascending: false });
+  if (error) throw new Error("Buyer matches could not be loaded. Please try again.");
   const rows = data ?? [];
   return Promise.all(rows.map((row) => enrichBuyerMatch(row as Row)));
 }
 
 export async function buyerMatch(id: string): Promise<BuyerMatchView | null> {
   const supabase = await createClient();
-  const { data } = await supabase.from("buyer_match_view").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("buyer_match_view").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error("Buyer match could not be loaded. Please try again.");
   if (!data) return null;
   return enrichBuyerMatch(data as Row);
 }
@@ -842,7 +850,7 @@ async function enrichBuyerMatch(row: Row): Promise<BuyerMatchView> {
   const admin = createAdminClient();
   const demandLineId = row.demand_line_id as string;
 
-  const { data: line } = await admin
+  const { data: line, error: lineError } = await admin
     .from("demand_line")
     .select(
       `id, trade:trade_role_id (name), proficiency:proficiency_id (name),
@@ -850,6 +858,8 @@ async function enrichBuyerMatch(row: Row): Promise<BuyerMatchView> {
     )
     .eq("id", demandLineId)
     .maybeSingle();
+
+  if (lineError) throw new Error("Buyer match details could not be loaded. Please try again.");
 
   const nominations = await readMatchingRows((from, to) => admin
     .from("match_worker")

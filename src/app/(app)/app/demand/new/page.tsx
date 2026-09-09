@@ -45,12 +45,12 @@ export default async function NewDemandPage() {
   const supabase = await createClient();
 
   const [
-    { data: industryData },
-    { data: regionData },
-    { data: tradeData },
-    { data: pairData },
-    { data: skillData },
-    { data: qualificationData },
+    industryResult,
+    regionResult,
+    tradeResult,
+    pairResult,
+    skillResult,
+    qualificationResult,
     rules,
     // 5.5 / 17.1 — already marked up by the fee, computed server-side. A hiring
     // business never receives a raw band value.
@@ -67,6 +67,17 @@ export default async function NewDemandPage() {
     getBookingRules(),
     indicativeRangeMap(),
   ]);
+
+  if ([industryResult, regionResult, tradeResult, pairResult, skillResult, qualificationResult]
+    .some((result) => result.error)) {
+    throw new Error("Requirement options could not be loaded. Please try again.");
+  }
+  const { data: industryData } = industryResult;
+  const { data: regionData } = regionResult;
+  const { data: tradeData } = tradeResult;
+  const { data: pairData } = pairResult;
+  const { data: skillData } = skillResult;
+  const { data: qualificationData } = qualificationResult;
 
   const pairs = (pairData ?? []) as unknown as PairRow[];
 

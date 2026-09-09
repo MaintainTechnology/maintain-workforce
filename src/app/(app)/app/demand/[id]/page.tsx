@@ -44,14 +44,14 @@ const OPEN_MATCH_STATUSES = ["Awaiting Supplier", "Awaiting Buyer"];
 
 /**
  * 10.3 — quantity_filled counts DISTINCT workers in a committing status (13.0) on the
- * line; quantity_pending is the requested quantity of each open match while Awaiting
- * Supplier, or its live nomination count once Awaiting Buyer. Both read server-side:
+ * line. Editing is blocked by the existence of an open match, independently of its
+ * current nomination count. Both read server-side:
  * match and engagement_worker are revoked from authenticated (17.1).
  */
-async function lineCounts(lineId: string): Promise<{ filled: number; pending: number }> {
+async function lineCounts(lineId: string): Promise<{ filled: number; hasOpenMatch: boolean }> {
   const admin = createAdminClient();
 
-  const [{ data: workers }, { data: matches }] = await Promise.all([
+  const [workerResult, matchResult] = await Promise.all([
     admin
       .from("engagement_worker")
       .select("worker_id, engagement:engagement_id!inner(demand_line_id)")
@@ -59,24 +59,21 @@ async function lineCounts(lineId: string): Promise<{ filled: number; pending: nu
       .eq("engagement.demand_line_id", lineId),
     admin
       .from("match")
-      .select("id, status, requested_quantity, match_worker (worker_id, knocked_out)")
+      .select("id")
       .eq("demand_line_id", lineId)
       .in("status", OPEN_MATCH_STATUSES),
   ]);
 
+  if (workerResult.error || matchResult.error) {
+    throw new Error("Requirement commitments could not be loaded. Please try again.");
+  }
+  const { data: workers } = workerResult;
+  const { data: matches } = matchResult;
+
   const filled = new Set(((workers ?? []) as { worker_id: string }[]).map((row) => row.worker_id))
     .size;
 
-  const pending = ((matches ?? []) as {
-    status: string;
-    requested_quantity: number;
-    match_worker: { knocked_out: boolean }[] | null;
-  }[]).reduce((total, match) => {
-    if (match.status === "Awaiting Supplier") return total + match.requested_quantity;
-    return total + (match.match_worker ?? []).filter((row) => !row.knocked_out).length;
-  }, 0);
-
-  return { filled, pending };
+  return { filled, hasOpenMatch: (matches ?? []).length > 0 };
 }
 
 export default async function DemandLinePage({ params }: { params: Promise<{ id: string }> }) {
@@ -84,13 +81,15 @@ export default async function DemandLinePage({ params }: { params: Promise<{ id:
   const { companyStatus } = await requireCompanyAdmin();
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("demand_line")
     .select(
       "id, trade_role_id, proficiency_id, quantity, start_date, end_date, hours_per_week, notes, status, trade:trade_role_id (name), proficiency:proficiency_id (name), request:request_id (name, work_region_id, region:work_region_id (name)), demand_line_skill (skill_id, skill:skill_id (name)), demand_line_qualification (qualification_id, qualification:qualification_id (name))",
     )
     .eq("id", id)
     .maybeSingle();
+
+  if (error) throw new Error("Requirement line could not be loaded. Please try again.");
 
   // RLS scopes the read to the owning company (17.1): a miss is a 404.
   if (!data) notFound();
@@ -112,6 +111,10 @@ export default async function DemandLinePage({ params }: { params: Promise<{ id:
     supabase.from("qualification").select("id, name").eq("is_active", true).order("name"),
   ]);
 
+  if (skillResult.error || qualificationResult.error) {
+    throw new Error("Requirement options could not be loaded. Please try again.");
+  }
+
   const isHistory = line.status === "Withdrawn" || line.status === "Expired";
 
   // 10.3 — Filled when filled = quantity; Partially Filled when 0 < filled < quantity;
@@ -124,7 +127,7 @@ export default async function DemandLinePage({ params }: { params: Promise<{ id:
         ? "Partially Filled"
         : "Open";
 
-  const matchIsOpen = counts.pending > 0;
+  const matchIsOpen = counts.hasOpenMatch;
   const canEdit = companyStatus === "Active" && !isHistory && !matchIsOpen;
   const days = inclusiveDays({ start: line.start_date, end: line.end_date });
 

@@ -7,6 +7,7 @@ import { formatCentsExGst } from "@/lib/domain/money";
 import { brisbaneToday } from "@/lib/cron";
 import { H1, H2, PANEL, LABEL } from "@/lib/ui";
 import { MONO } from "@/lib/platform-ui";
+import { collectReportPages } from "@/lib/admin-reporting";
 
 // Maintain marketplace dashboard — spec 14.2.
 //
@@ -27,6 +28,24 @@ export const metadata: Metadata = { title: "Marketplace" };
 const OPEN_CAPACITY = ["Open", "Partially Committed"];
 const OPEN_DEMAND = ["Open", "Partially Filled"];
 
+type CapacityRow = {
+  id: string; status: string; available_from: string; available_until: string;
+  hours_per_week: number; capacity_line_worker: { worker_id: string }[] | null;
+};
+type DemandRow = {
+  id: string; status: string; quantity: number; hours_per_week: number;
+  start_date: string; end_date: string;
+};
+type MatchRow = {
+  id: string; status: string;
+  demand_line: { status: string } | { status: string }[] | null;
+};
+type EngagementRow = {
+  id: string; status: string; demand_line_id: string; start_date: string; end_date: string;
+  estimated_buyer_value_cents: number; estimated_maintain_revenue_cents: number;
+  engagement_worker: { worker_id: string }[] | null;
+};
+
 /** PostgREST returns an embedded to-one relation as an object; the client's inference
  *  cannot prove that without generated types, so both shapes are normalised here. */
 function one<T>(value: T | T[] | null | undefined): T | null {
@@ -39,35 +58,32 @@ export default async function MarketplaceDashboard() {
   const today = brisbaneToday();
   const db = createAdminClient();
 
-  const [capacity, demand, matches, engagements, companies, workers] = await Promise.all([
-    db
+  // Historical matches and engagements can exceed the API row cap. Use the same
+  // counted pagination as CSV reports; incomplete or failed reads reach the route
+  // error boundary instead of producing a partial total or a reassuring zero.
+  const [capacityRows, demandRows, matchRows, engagementRows, companies, workers] = await Promise.all([
+    collectReportPages<CapacityRow>((from, to) => db
       .from("capacity_line")
-      .select("id, status, available_from, available_until, hours_per_week, capacity_line_worker (worker_id)")
-      .in("status", OPEN_CAPACITY),
-    db
+      .select("id, status, available_from, available_until, hours_per_week, capacity_line_worker (worker_id)", { count: "exact" })
+      .in("status", OPEN_CAPACITY).order("id").range(from, to), "Dashboard capacity"),
+    collectReportPages<DemandRow>((from, to) => db
       .from("demand_line")
-      .select("id, status, quantity, hours_per_week, start_date, end_date")
-      .in("status", OPEN_DEMAND),
-    db.from("match").select("id, status, demand_line:demand_line_id (status)"),
-    db
+      .select("id, status, quantity, hours_per_week, start_date, end_date", { count: "exact" })
+      .in("status", OPEN_DEMAND).order("id").range(from, to), "Dashboard requirements"),
+    collectReportPages<MatchRow>((from, to) => db.from("match")
+      .select("id, status, demand_line:demand_line_id (status)", { count: "exact" })
+      .order("id").range(from, to), "Dashboard matches"),
+    collectReportPages<EngagementRow>((from, to) => db
       .from("engagement")
-      // One literal string: the client infers the row shape from the select text.
-      .select("id, status, demand_line_id, start_date, end_date, estimated_buyer_value_cents, estimated_maintain_revenue_cents, engagement_worker (worker_id)"),
+      .select("id, status, demand_line_id, start_date, end_date, estimated_buyer_value_cents, estimated_maintain_revenue_cents, engagement_worker (worker_id)", { count: "exact" })
+      .order("id").range(from, to), "Dashboard engagements"),
     db.from("company").select("id", { count: "exact", head: true }).eq("status", "Active"),
     db.from("worker").select("id", { count: "exact", head: true }),
   ]);
 
-  type EngagementRow = {
-    id: string;
-    status: string;
-    demand_line_id: string;
-    start_date: string;
-    end_date: string;
-    estimated_buyer_value_cents: number;
-    estimated_maintain_revenue_cents: number;
-    engagement_worker: { worker_id: string }[] | null;
-  };
-  const engagementRows: EngagementRow[] = (engagements.data ?? []) as unknown as EngagementRow[];
+  if (companies.error || workers.error || companies.count === null || workers.count === null) {
+    throw new Error("Marketplace totals could not be loaded. Please retry.");
+  }
 
   /* -- SUPPLY (9.5, 21.2) --------------------------------------------------------- */
   // A worker deployed today is one on a committing engagement covering today (13.0).
@@ -81,7 +97,7 @@ export default async function MarketplaceDashboard() {
   const availableWorkers = new Set<string>();
   let availableHoursPerWeek = 0;
   let upcomingLines = 0;
-  for (const line of capacity.data ?? []) {
+  for (const line of capacityRows) {
     const attached = ((line.capacity_line_worker ?? []) as { worker_id: string }[]).map(
       (w) => w.worker_id,
     );
@@ -109,7 +125,7 @@ export default async function MarketplaceDashboard() {
   let requiredWorkers = 0;
   let requiredHoursPerWeek = 0;
   let unfilledDemand = 0;
-  for (const line of demand.data ?? []) {
+  for (const line of demandRows) {
     requiredWorkers += line.quantity;
     requiredHoursPerWeek += Number(line.hours_per_week) * line.quantity;
     const filled = filledByLine.get(line.id)?.size ?? 0;
@@ -117,12 +133,6 @@ export default async function MarketplaceDashboard() {
   }
 
   /* -- MATCHES (12.1) -------------------------------------------------------------- */
-  type MatchRow = {
-    id: string;
-    status: string;
-    demand_line: { status: string } | { status: string }[] | null;
-  };
-  const matchRows: MatchRow[] = (matches.data ?? []) as unknown as MatchRow[];
   const awaitingSupplier = matchRows.filter((m) => m.status === "Awaiting Supplier").length;
   const awaitingBuyer = matchRows.filter((m) => m.status === "Awaiting Buyer").length;
   // 12.6 — a declined match returns to the matching workspace. It needs attention only
@@ -173,7 +183,7 @@ export default async function MarketplaceDashboard() {
       </Section>
 
       <Section title="Demand" href="/admin/matching" hint="Open and partially filled lines">
-        <Stat label="Open requirements" value={demand.data?.length ?? 0} note="Lines seeking crew" />
+        <Stat label="Open requirements" value={demandRows.length} note="Lines seeking crew" />
         <Stat label="Crew required" value={requiredWorkers} note="Across those lines" />
         <Stat
           label="Hours required"
@@ -202,16 +212,19 @@ export default async function MarketplaceDashboard() {
           label="Awaiting commercial"
           value={awaitingCommercial.length}
           note="Pre-authorisation not yet recorded"
+          href="/admin/engagements?status=Awaiting%20Commercial"
         />
         <Stat
           label="Overdue"
           value={overdue}
-          note="Past the start date without the trigger"
+          note="Start date reached without the trigger"
+          href="/admin/engagements?timing=overdue"
           emphasis
         />
-        <Stat label="Confirmed" value={confirmed.length} note={`${upcoming} upcoming`} />
-        <Stat label="Active" value={active} note="On site now" />
-        <Stat label="Completed" value={completed} note="Finished, outcome recorded" />
+        <Stat label="Confirmed" value={confirmed.length} note="Commercial trigger recorded" href="/admin/engagements?status=Confirmed" />
+        <Stat label="Upcoming" value={upcoming} note="Confirmed, starting after today" href="/admin/engagements?timing=upcoming" />
+        <Stat label="Active" value={active} note="On site now" href="/admin/engagements?status=Active" />
+        <Stat label="Completed" value={completed} note="Finished, outcome recorded" href="/admin/engagements?status=Completed" />
       </Section>
 
       <Section title="Marketplace" href="/admin/companies" hint="Cumulative, estimates ex GST">
@@ -256,7 +269,7 @@ function Section({
           {hint}
         </Link>
       </div>
-      <div className="mt-(--space-4) grid gap-(--space-4) sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-(--space-4) grid gap-(--space-4) sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
         {children}
       </div>
     </section>
@@ -268,14 +281,16 @@ function Stat({
   value,
   note,
   emphasis,
+  href,
 }: {
   label: string;
   value: number;
   note: string;
   emphasis?: boolean;
+  href?: string;
 }) {
-  return (
-    <div className={`${PANEL} p-(--space-5)`}>
+  const body = (
+    <>
       <p className={LABEL}>{label}</p>
       <p
         className={`${MONO} mt-(--space-3) text-h1 font-extrabold ${
@@ -285,8 +300,11 @@ function Stat({
         {value}
       </p>
       <p className="mt-(--space-2) text-sm text-on-dark-muted">{note}</p>
-    </div>
+    </>
   );
+  return href ? (
+    <Link href={href} className={`${PANEL} p-(--space-5) transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark`}>{body}</Link>
+  ) : <div className={`${PANEL} p-(--space-5)`}>{body}</div>;
 }
 
 function StatText({ label, value, note }: { label: string; value: string; note: string }) {

@@ -1,5 +1,9 @@
 # Maintain Workforce — build verification
 
+> Historical evidence from 31 August. See [9 September alignment](MVP-ALIGNMENT-2026-09-09.md)
+> for the subsequent dashboard and workflow fixes and [MVP v0.8](maintain-workforce-mvp.md)
+> for the reconciled contract. Counts and remote-history observations below are dated.
+
 Updated 31 August 2026. The scoped implementation/specification/quality reviews and
 final local build checks have passed. This records that evidence, not production
 certification: the live release gates below have not passed.

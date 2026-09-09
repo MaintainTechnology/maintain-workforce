@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import { requireCompanyAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { H1, LINK } from "@/lib/ui";
+import { CARD } from "@/lib/platform-ui";
 import { WorkerForm } from "../worker-form";
 
 // Add a worker — spec 6.1–6.4. 1.3 lets a Pending company prepare its crew before
-// verification, so this screen is open to any company_admin; what stays shut until
-// Active is capacity and demand.
+// verification. Suspended and Closed accounts remain read-only (3.2).
 
 export const metadata: Metadata = { title: "Add a worker" };
 
@@ -17,7 +17,18 @@ function brisbaneToday(): string {
 }
 
 export default async function NewWorkerPage() {
-  await requireCompanyAdmin();
+  const { companyStatus } = await requireCompanyAdmin();
+  if (companyStatus === "Suspended" || companyStatus === "Closed") {
+    return (
+      <div className="flex max-w-[720px] flex-col gap-(--space-6)">
+        <Link href="/app/workers" className={LINK}>Back to your crew</Link>
+        <h1 className={H1}>Add a worker</h1>
+        <p className={`${CARD} text-body text-on-dark-muted`}>
+          This account is read-only. You can view existing worker records, but cannot add workers or request transfers.
+        </p>
+      </div>
+    );
+  }
   const supabase = await createClient();
 
   // 4.1/4.3 — the catalogue is data, and inactive rows are hidden from new entry while

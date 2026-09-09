@@ -180,6 +180,7 @@ describe("invitation reissue company write boundary", () => {
         emailAddress: INVITEE,
         redirectUrl: "https://app.example.test/signup",
         ignoreExisting: true,
+        expiresInDays: 3,
         publicMetadata: { company_id: OWN_COMPANY, invited_email: INVITEE },
       });
       expect(io.auditInsert).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({

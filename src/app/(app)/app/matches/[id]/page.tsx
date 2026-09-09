@@ -10,6 +10,7 @@ import {
   supplierSubstituteNominations,
 } from "@/lib/actions/match";
 import { getBookingRules } from "@/lib/config";
+import { requireCompanyAdmin } from "@/lib/auth";
 import { formatCentsExGst } from "@/lib/domain/money";
 import { buyerMatch, nominationPool, supplierMatch } from "@/lib/matching";
 import { H1 } from "@/lib/ui";
@@ -41,6 +42,8 @@ function Fact({ label, value, mono }: { label: string; value: string; mono?: boo
 
 export default async function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const { companyStatus } = await requireCompanyAdmin();
+  const canRespond = companyStatus === "Active";
 
   // The RLS views are scoped to the reader's own company, so at most one of these
   // returns a row and which one it is decides the posture (3.3).
@@ -59,8 +62,15 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <h1 className={`${H1} mt-(--space-3)`}>Match</h1>
       </div>
 
-      {supplying && <SupplierView match={supplying} />}
-      {hiring && <BuyerView match={hiring} />}
+      {!canRespond && (
+        <p className={`${CARD} text-body text-on-dark-muted`}>
+          {companyStatus === "Pending"
+            ? "Responding to matches opens once Maintain activates the account."
+            : "This account is read-only. Contact Maintain to discuss this proposal."}
+        </p>
+      )}
+      {supplying && <SupplierView match={supplying} canRespond={canRespond} />}
+      {hiring && <BuyerView match={hiring} canRespond={canRespond} />}
     </div>
   );
 }
@@ -69,10 +79,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
 async function SupplierView({
   match,
+  canRespond,
 }: {
   match: NonNullable<Awaited<ReturnType<typeof supplierMatch>>>;
+  canRespond: boolean;
 }) {
-  const [pool, rules] = await Promise.all([nominationPool(match.id), getBookingRules()]);
+  const canNominate = canRespond && (match.status === "Awaiting Supplier" || match.status === "Awaiting Buyer");
+  const [pool, rules] = await Promise.all([
+    canNominate ? nominationPool(match.id) : Promise.resolve([]),
+    canNominate ? getBookingRules() : Promise.resolve(null),
+  ]);
   const live = match.nominatedWorkers.filter((w) => !w.knockedOut);
   const knockedOut = match.nominatedWorkers.filter((w) => w.knockedOut);
 
@@ -112,19 +128,23 @@ async function SupplierView({
         </p>
       </div>
 
-      {live.length > 0 && (
+      {(live.length > 0 || knockedOut.length > 0) && (
         <div className={CARD}>
           <h2 className="font-display text-h4 font-bold text-on-dark">Your nominations</h2>
-          <ul className="mt-(--space-3) flex flex-col gap-(--space-2)">
-            {live.map((worker) => (
-              <li key={worker.id} className="text-body text-on-dark">{worker.name}</li>
-            ))}
-          </ul>
+          {live.length > 0 ? (
+            <ul className="mt-(--space-3) flex flex-col gap-(--space-2)">
+              {live.map((worker) => (
+                <li key={worker.id} className="text-body text-on-dark">{worker.name}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-(--space-3) text-body text-on-dark-muted">No current nominations remain.</p>
+          )}
           {/* 12.7 — a knocked-out nomination is shown with its prompt to substitute. */}
           {knockedOut.length > 0 && (
             <>
               <h3 className="mt-(--space-4) text-body font-semibold text-on-dark">
-                Knocked out — substitute from the same listing
+                Knocked-out nominations
               </h3>
               <ul className="mt-(--space-2) flex flex-col gap-(--space-2)">
                 {knockedOut.map((worker) => (
@@ -134,12 +154,17 @@ async function SupplierView({
                   </li>
                 ))}
               </ul>
+              <p className="mt-(--space-3) text-body-sm text-on-dark-muted">
+                {canNominate
+                  ? "Substitute from the same listing below."
+                  : "Contact Maintain to discuss a new proposal."}
+              </p>
             </>
           )}
         </div>
       )}
 
-      {(match.status === "Awaiting Supplier" || match.status === "Awaiting Buyer") && (
+      {canNominate && rules && (
         <div className="grid gap-(--space-5) lg:grid-cols-2">
           <div className={CARD}>
             <h2 className="font-display text-h4 font-bold text-on-dark">
@@ -241,7 +266,10 @@ async function SupplierView({
 
 /* --------------------------------------------------------------------- 12.4 buyer -- */
 
-function BuyerView({ match }: { match: NonNullable<Awaited<ReturnType<typeof buyerMatch>>> }) {
+function BuyerView({ match, canRespond }: {
+  match: NonNullable<Awaited<ReturnType<typeof buyerMatch>>>;
+  canRespond: boolean;
+}) {
   return (
     <section className="flex flex-col gap-(--space-5)">
       <div className={CARD}>
@@ -301,7 +329,7 @@ function BuyerView({ match }: { match: NonNullable<Awaited<ReturnType<typeof buy
         </p>
       </div>
 
-      {match.status === "Awaiting Buyer" && (
+      {canRespond && match.status === "Awaiting Buyer" && (
         <div className="grid gap-(--space-5) lg:grid-cols-2">
           <div className={CARD}>
             <h2 className="font-display text-h4 font-bold text-on-dark">Accept this proposal</h2>

@@ -1,8 +1,8 @@
 # Build Scorecard — Maintain Workforce MVP
 
 > Historical review notes, not the current completion verdict. See
-> [Build verification — 31 August 2026](BUILD-VERIFICATION-2026-08-31.md) for current
-> evidence, review gates and unexecuted launch checks. The historical numeric rubric
+> [MVP alignment — 9 September 2026](MVP-ALIGNMENT-2026-09-09.md) for the latest focused
+> changes, evidence and remaining gates. The historical numeric rubric
 > and plateau rule below are not being used to declare this build complete.
 
 The rubric below was written **before** the round-2 independent review reported,

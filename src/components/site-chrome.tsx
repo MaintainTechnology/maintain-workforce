@@ -4,10 +4,11 @@ import { usePathname } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
-// The auth screens own the whole viewport: they carry their own logo and their own
-// footer line, so the marketing header and footer would only duplicate them. Everything
-// else on the site keeps the standard chrome.
+// Auth screens and authenticated workspaces own their navigation and viewport.
+// Exact route-family matching keeps marketing pages on their public chrome.
 const BARE = [
+  "/app",
+  "/admin",
   "/signin",
   "/signup",
   "/onboarding",

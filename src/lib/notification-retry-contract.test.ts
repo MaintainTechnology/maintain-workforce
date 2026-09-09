@@ -45,6 +45,7 @@ describe("notification retry contract (15.1)", () => {
   it("keeps the queue Maintain-only and never puts delivery copy in the retry form", () => {
     const page = source("src/app/(admin)/admin/notifications/page.tsx");
     const layout = source("src/app/(admin)/layout.tsx");
+    const navigation = source("src/components/admin-navigation.tsx");
     const authAt = page.indexOf("await requireMaintainAdmin()");
     const serviceAt = page.indexOf("createAdminClient()");
 
@@ -57,6 +58,7 @@ describe("notification retry contract (15.1)", () => {
     expect(page).toContain(".range(from, from + PAGE_SIZE - 1)");
     expect(page).toContain("Previous");
     expect(page).toContain("Next");
-    expect(layout).toContain('{ href: "/admin/notifications", label: "Notifications" }');
+    expect(layout).toContain("<AdminNavigation />");
+    expect(navigation).toContain('{ href: "/admin/notifications", label: "Notifications" }');
   });
 });

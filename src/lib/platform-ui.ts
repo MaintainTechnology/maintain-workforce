@@ -5,39 +5,40 @@
 export const PAGE = "py-(--space-7)";
 export const CARD = "rounded-(--radius-lg) border border-hairline bg-black-2 p-(--space-5)";
 
-// Monospace carries operational truth: ABNs, trade codes, availability windows, rates.
-export const MONO = "font-mono tabular-nums";
+// Keep the legacy export so existing tables and forms share the correction:
+// operational data uses Manrope too (DESIGN.md, Single Family Rule).
+export const MONO = "font-body tabular-nums";
 
 export const TABLE = "w-full border-collapse text-left text-body";
 export const TH =
-  "border-b border-hairline px-(--space-3) py-(--space-3) text-label uppercase tracking-[0.08em] text-on-dark-faint font-semibold";
+  "border-b border-hairline px-(--space-3) py-(--space-3) text-overline uppercase tracking-(--tracking-caps) text-on-dark-faint font-semibold";
 export const TD = "border-b border-hairline px-(--space-3) py-(--space-3) align-top";
 
 export const FIELD = "flex flex-col gap-(--space-2)";
 export const INPUT =
   "w-full rounded-(--radius-sm) border border-hairline bg-black px-(--space-3) py-(--space-3) text-body text-on-dark placeholder:text-on-dark-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hi-vis-amber";
 export const FIELD_LABEL = "text-body font-semibold text-on-dark";
-export const FIELD_HINT = "text-body-sm text-on-dark-muted";
-export const FIELD_ERROR = "text-body-sm text-status-critical";
+export const FIELD_HINT = "text-sm text-on-dark-muted";
+export const FIELD_ERROR = "text-sm text-status-critical";
 
 /**
- * Status pills. The canonical vocabulary is shared with the operating model, and
- * colour is never the only signal — every pill carries its label (Operating
- * Blueprint s06, and the accessibility floor in Constraints).
+ * DESIGN.md's Dot-and-Label Rule: status colour belongs to a decorative 8px
+ * dot; the written label stays neutral. An empty pseudo-element adds no
+ * accessible text, so existing callers keep their complete status labels.
  */
 export const STATUS_TONE = {
-  neutral: "border-hairline text-on-dark-muted",
-  active: "border-status-active/40 text-status-active",
-  scheduled: "border-status-scheduled/40 text-status-scheduled",
-  pending: "border-status-pending/40 text-status-pending",
-  overdue: "border-status-overdue/40 text-status-overdue",
-  critical: "border-status-critical/40 text-status-critical",
+  neutral: "before:bg-on-dark-faint",
+  active: "before:bg-status-active",
+  scheduled: "before:bg-status-scheduled",
+  pending: "before:bg-status-pending",
+  overdue: "before:bg-status-overdue",
+  critical: "before:bg-status-critical",
 } as const;
 
 export type StatusTone = keyof typeof STATUS_TONE;
 
 export function pill(tone: StatusTone): string {
-  return `inline-flex items-center gap-(--space-2) rounded-(--radius-pill) border px-(--space-3) py-(--space-1) text-label font-semibold uppercase tracking-[0.08em] ${STATUS_TONE[tone]}`;
+  return `inline-flex items-center gap-(--space-2) rounded-(--radius-pill) border border-hairline px-(--space-3) py-(--space-1) text-overline font-semibold uppercase tracking-(--tracking-caps) text-on-dark-muted before:size-2 before:shrink-0 before:rounded-full before:content-[''] ${STATUS_TONE[tone]}`;
 }
 
 /** Maps the spec's status vocabularies onto the shared tone set. */

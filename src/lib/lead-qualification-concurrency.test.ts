@@ -327,6 +327,7 @@ describe("invitation recovery after a successful qualification claim", () => {
     expect(auditActions()).toEqual([...qualificationActions, "company_user.invited"]);
     expect(mocks.createInvitation).toHaveBeenCalledExactlyOnceWith({
       emailAddress: "ops@example.test", redirectUrl: expect.stringMatching(/\/signup$/), ignoreExisting: true,
+      expiresInDays: 3,
       publicMetadata: { company_id: db.currentLead.company_id, invited_email: "ops@example.test" },
     });
     expect(mocks.notify).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({

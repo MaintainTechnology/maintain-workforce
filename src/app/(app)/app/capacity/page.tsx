@@ -37,11 +37,13 @@ type Commitment = { workerId: string; start: string; end: string };
  */
 async function committingCommitments(companyId: string): Promise<Commitment[]> {
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("engagement_worker")
     .select("worker_id, engagement:engagement_id!inner(supplier_company_id, start_date, end_date)")
     .in("status", [...COMMITTING_STATUSES])
     .eq("engagement.supplier_company_id", companyId);
+
+  if (error) throw new Error("Capacity commitments could not be loaded. Please try again.");
 
   return ((data ?? []) as unknown as {
     worker_id: string;
@@ -85,13 +87,15 @@ export default async function CapacityPage() {
   const { companyId, companyStatus } = await requireCompanyAdmin();
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("capacity_line")
     .select(
       "id, available_from, available_until, hours_per_week, supplier_rate_cents, status, trade:trade_role_id (name), proficiency:proficiency_id (name), region:location_region_id (name), capacity_line_worker (worker_id)",
     )
     .eq("company_id", companyId)
     .order("available_from", { ascending: false });
+
+  if (error) throw new Error("Capacity could not be loaded. Please try again.");
 
   const lines = (data ?? []) as unknown as LineRow[];
   const commitments = await committingCommitments(companyId);

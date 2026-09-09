@@ -41,7 +41,8 @@ export default async function TransfersPage({
 }: {
   searchParams: Promise<TransferSearchParams>;
 }) {
-  const { companyId } = await requireCompanyAdmin();
+  const { companyId, companyStatus } = await requireCompanyAdmin();
+  const readOnly = companyStatus === "Suspended" || companyStatus === "Closed";
   const search = await searchParams;
   const notice = typeof search.notice === "string" ? search.notice : undefined;
   const supabase = await createClient();
@@ -128,7 +129,7 @@ export default async function TransfersPage({
                         <span className={pill(toneFor(status))}>{status}</span>
                       </td>
                       <td className={TD}>
-                        {status === "Awaiting Current Employer" ? (
+                        {status === "Awaiting Current Employer" && !readOnly ? (
                           <div className="flex flex-wrap items-center gap-(--space-3)">
                             <ActionForm action={approveTransfer} submitLabel="Approve transfer" pendingLabel="Approving…">
                               <input type="hidden" name="transfer_id" value={id} />
@@ -148,7 +149,7 @@ export default async function TransfersPage({
                           </div>
                         ) : (
                           <span className="text-body-sm text-on-dark-muted">
-                            {row.decided_at ? formatDate(row.decided_at as string) : "—"}
+                            {readOnly && status === "Awaiting Current Employer" ? "Read-only" : row.decided_at ? formatDate(row.decided_at as string) : "—"}
                           </span>
                         )}
                       </td>
@@ -165,7 +166,7 @@ export default async function TransfersPage({
         <h2 className="text-title font-display font-bold text-on-dark">Requests you made</h2>
         <p className="mt-(--space-2) max-w-[62ch] text-body-sm text-on-dark-muted">
           We cannot show you the worker or their current employer until the transfer
-          completes. You can withdraw a request at any time before it is decided.
+          completes. {readOnly ? "This account is read-only; contact Maintain about an outstanding request." : "You can withdraw a request at any time before it is decided."}
         </p>
 
         {outgoing.length === 0 ? (
@@ -196,7 +197,7 @@ export default async function TransfersPage({
                       </td>
                       <td className={TD}>{(row.reason as string | null) ?? "—"}</td>
                       <td className={TD}>
-                        {LIVE.includes(status) ? (
+                        {LIVE.includes(status) && !readOnly ? (
                           <ActionForm action={withdrawTransfer} submitLabel="Withdraw request" pendingLabel="Withdrawing…" tone="ghost">
                             <input type="hidden" name="transfer_id" value={id} />
                             <input type="hidden" name="expected_status" value={status} />

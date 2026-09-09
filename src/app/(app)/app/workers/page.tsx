@@ -37,10 +37,12 @@ function marketplaceState(input: {
   today: string;
 }): MarketplaceState {
   if (input.accountStatus !== "Active") return "Unavailable";
+  // A commitment remains visible even after its capacity line is fully committed,
+  // withdrawn or expired and therefore no longer appears in the open-line query.
+  if (input.engagedToday) return "Engaged";
 
   const live = input.openLines.filter((line) => line.until >= input.today);
   if (live.length === 0) return "Unavailable";
-  if (input.engagedToday) return "Engaged";
 
   const coversToday = live.some((line) => line.from <= input.today && input.today <= line.until);
   if (!coversToday) return "Partially Available";
@@ -55,7 +57,8 @@ function stateTone(state: MarketplaceState) {
 }
 
 export default async function WorkersPage() {
-  const { companyId } = await requireCompanyAdmin();
+  const { companyId, companyStatus } = await requireCompanyAdmin();
+  const readOnly = companyStatus === "Suspended" || companyStatus === "Closed";
   const supabase = await createClient();
   const today = brisbaneToday();
 
@@ -148,16 +151,18 @@ export default async function WorkersPage() {
           <Link href="/app/transfers" className={BTN_GHOST}>
             Transfers
           </Link>
-          <Link href="/app/workers/new" className={BTN_PRIMARY}>
-            Add a worker
-          </Link>
+          {!readOnly && (
+            <Link href="/app/workers/new" className={BTN_PRIMARY}>
+              Add a worker
+            </Link>
+          )}
         </div>
       </div>
 
       {workers.length === 0 ? (
         <div className={CARD}>
           <p className="text-body text-on-dark-muted">
-            No workers yet. Add your first one to start listing capacity.
+            {readOnly ? "No workers recorded." : "No workers yet. Add your first one to start listing capacity."}
           </p>
         </div>
       ) : (

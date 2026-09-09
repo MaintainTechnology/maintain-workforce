@@ -61,11 +61,13 @@ async function committedWorkerIds(line: LineRow): Promise<Set<string>> {
   if (attached.length === 0) return new Set();
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("engagement_worker")
     .select("worker_id, engagement:engagement_id!inner(start_date, end_date)")
     .in("status", [...COMMITTING_STATUSES])
     .in("worker_id", attached);
+
+  if (error) throw new Error("Capacity commitments could not be loaded. Please try again.");
 
   const rows = (data ?? []) as unknown as {
     worker_id: string;
@@ -93,7 +95,7 @@ export default async function CapacityLinePage({
   const { companyStatus } = await requireCompanyAdmin();
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("capacity_line")
     .select(
       "id, trade_role_id, proficiency_id, location_region_id, available_from, available_until, available_days, hours_per_week, supplier_rate_cents, rate_entered_by_admin, rate_ratified_at, status, trade:trade_role_id (name), proficiency:proficiency_id (name), region:location_region_id (name), capacity_line_worker (worker_id), capacity_line_travel_region (region_id)",
@@ -101,12 +103,14 @@ export default async function CapacityLinePage({
     .eq("id", id)
     .maybeSingle();
 
+  if (error) throw new Error("Capacity line could not be loaded. Please try again.");
+
   // RLS scopes the read to the owning company (17.1): a miss is a 404, never a hint
   // that the line belongs to someone else.
   if (!data) notFound();
   const line = data as unknown as LineRow;
 
-  const [{ data: workerData }, { data: regionData }, { data: openMatches }, band, committed] =
+  const [workerResult, regionResult, matchResult, band, committed] =
     await Promise.all([
       supabase
         .from("worker")
@@ -124,6 +128,13 @@ export default async function CapacityLinePage({
       supplierBand(line.trade_role_id, line.proficiency_id, line.location_region_id),
       committedWorkerIds(line),
     ]);
+
+  if (workerResult.error || regionResult.error || matchResult.error) {
+    throw new Error("Capacity line details could not be loaded. Please try again.");
+  }
+  const { data: workerData } = workerResult;
+  const { data: regionData } = regionResult;
+  const { data: openMatches } = matchResult;
 
   const workers = (workerData ?? []) as unknown as WorkerRow[];
   const regions = (regionData ?? []) as { id: string; name: string }[];

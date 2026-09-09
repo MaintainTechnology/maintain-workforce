@@ -35,11 +35,13 @@ async function filledByLine(lineIds: string[]): Promise<Map<string, number>> {
   if (lineIds.length === 0) return new Map();
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("engagement_worker")
     .select("worker_id, engagement:engagement_id!inner(demand_line_id)")
     .in("status", [...COMMITTING_STATUSES])
     .in("engagement.demand_line_id", lineIds);
+
+  if (error) throw new Error("Requirement commitments could not be loaded. Please try again.");
 
   const distinct = new Map<string, Set<string>>();
   for (const row of (data ?? []) as unknown as {
@@ -66,13 +68,15 @@ export default async function DemandPage() {
   const { companyId, companyStatus } = await requireCompanyAdmin();
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("demand_line")
     .select(
       "id, quantity, start_date, end_date, hours_per_week, status, trade:trade_role_id (name), proficiency:proficiency_id (name), request:request_id (name, region:work_region_id (name))",
     )
     .eq("company_id", companyId)
     .order("start_date", { ascending: false });
+
+  if (error) throw new Error("Requirements could not be loaded. Please try again.");
 
   const lines = (data ?? []) as unknown as LineRow[];
   const filled = await filledByLine(lines.map((line) => line.id));

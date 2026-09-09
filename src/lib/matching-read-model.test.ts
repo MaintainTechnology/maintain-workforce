@@ -114,6 +114,37 @@ describe("complete candidate read model", () => {
   });
 });
 
+describe("company proposal read failures", () => {
+  it.each(["supplier", "buyer"] as const)("does not turn a failed %s lookup into empty matches or a missing proposal", async (role) => {
+    state.failingTable = `${role}_match_view`;
+    const list = role === "supplier" ? matching.supplierMatches : matching.buyerMatches;
+    const detail = role === "supplier" ? matching.supplierMatch : matching.buyerMatch;
+    await expect(list()).rejects.toThrow("could not be loaded");
+    await expect(detail("match")).rejects.toThrow("could not be loaded");
+  });
+
+  it.each([
+    ["supplier", "match"],
+    ["supplier", "match_worker"],
+    ["buyer", "demand_line"],
+  ] as const)("does not render a partial %s proposal when %s fails", async (role, table) => {
+    state.tables[`${role}_match_view`] = [{
+      id: "match", demand_line_id: "demand", engagement_start: demand.startDate,
+      engagement_end: demand.endDate, hours_per_week: 40, requested_quantity: 1,
+    }];
+    state.failingTable = table;
+    const detail = role === "supplier" ? matching.supplierMatch : matching.buyerMatch;
+    await expect(detail("match")).rejects.toThrow("could not be loaded");
+  });
+
+  it.each(["supplier", "buyer"] as const)("preserves genuine empty and missing %s results", async (role) => {
+    const list = role === "supplier" ? matching.supplierMatches : matching.buyerMatches;
+    const detail = role === "supplier" ? matching.supplierMatch : matching.buyerMatch;
+    await expect(list()).resolves.toEqual([]);
+    await expect(detail("missing")).resolves.toBeNull();
+  });
+});
+
 describe("buyer ticket facts", () => {
   it("excludes actually expired Current credentials from aggregate coverage before cron catches up", async () => {
     state.tables.buyer_match_view = [{ id: "match", demand_line_id: "demand", engagement_start: demand.startDate,

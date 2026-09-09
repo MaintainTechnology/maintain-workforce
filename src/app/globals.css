@@ -40,6 +40,7 @@
   --color-teal-deep: var(--mw-teal-deep);
   --color-teal-mist: var(--mw-teal-mist);
   --color-amber: var(--mw-amber);
+  --color-hi-vis-amber: var(--mw-amber);
   --color-amber-mid: var(--mw-amber-mid);
   --color-amber-deep: var(--mw-amber-deep);
   --color-amber-dark: var(--mw-amber-dark);
@@ -71,6 +72,11 @@
   --text-body-lg: 1.125rem;
   --text-body: 1rem;
   --text-overline: 0.6875rem;
+  /* Compatibility names used by platform forms and tables, mapped to the
+     existing brand scale rather than a second type system. */
+  --text-body-sm: var(--text-sm);
+  --text-label: var(--text-overline);
+  --text-title: var(--text-h2);
 }
 
 /* Every other scale (space / radius / shadow / tracking / leading / motion / z)
@@ -292,4 +298,13 @@ details[open] .mw-menu-panel {
   border-radius: inherit;
   background-color: inherit;
   animation: mw-ping 2400ms var(--ease-out) infinite;
+}
+
+/* Workspace chrome is a functional floating layer. Keep it solid when the
+   reader requests less transparency or greater contrast. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .mw-workspace header {
+    background-color: var(--mw-ink-teal);
+    backdrop-filter: none;
+  }
 }
