@@ -212,3 +212,9 @@ Local note: `.env.local` carries both the development and the `#CLERK LIVE KEY`
 assignments for the same variable names. `next dev` takes the later value, so local
 development also signs in through the production instance and needs the same trust
 entry.
+
+Applied on 11 September through the Management API: the project now lists both
+issuers, the development one as `clerk-development` and the production one as
+`custom` with its JWKS resolved at registration. A production-instance session token
+then read the catalogue and tenant tables with HTTP 206/200, matching the development
+token, without any deployment.
