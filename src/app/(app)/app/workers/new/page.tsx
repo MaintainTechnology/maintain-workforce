@@ -42,6 +42,13 @@ export default async function NewWorkerPage() {
       supabase.from("skill").select("id, name, trade_role_id").eq("is_active", true).order("name"),
     ]);
 
+  // A required select with no options is not a form, it is a dead end. The catalogue
+  // is never legitimately empty (4.1 seeds it), so a failed read is surfaced, not
+  // rendered as "no regions" — see supabase/server.ts for the usual cause.
+  if ([regionsResult, tradesResult, proficienciesResult, pairsResult, skillsResult].some((result) => result.error)) {
+    throw new Error("Worker options could not be loaded. Please try again.");
+  }
+
   const proficiencies = (proficienciesResult.data ?? []).map((p) => ({
     id: p.id as string,
     name: p.name as string,

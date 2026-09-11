@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { z } from "zod";
 import { requireCompanyAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { addWorkerQualification, setWorkerAccountStatus } from "@/lib/actions/worker";
@@ -56,12 +57,15 @@ export default async function WorkerDetailPage({
   const readOnly = companyStatus === "Suspended" || companyStatus === "Closed";
   const { id } = await params;
   const { notice } = await searchParams;
+  // worker.id is a uuid; anything else is a URL nobody was given, so it is a 404 rather
+  // than a PostgREST type error dressed up as a failed read.
+  if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient();
   const today = brisbaneToday();
 
   // RLS keys `worker` on the open employment row (17.1), so a worker who has transferred
   // away is simply not here — no extra check is needed, and none would be trustworthy.
-  const { data: worker } = await supabase
+  const { data: worker, error: workerError } = await supabase
     .from("worker")
     .select(
       "id, first_name, last_name, mobile, email, status, base_region_id, primary_trade_id, primary_proficiency_id, proficiency_overridden_by_maintain, proficiency_changed_at, consent_confirmed_at, created_at",
@@ -69,6 +73,8 @@ export default async function WorkerDetailPage({
     .eq("id", id)
     .maybeSingle();
 
+  // Only a successful empty answer is a 404; a rejected read says so instead.
+  if (workerError) throw new Error("This worker record could not be loaded. Please try again.");
   if (!worker) notFound();
 
   const [
@@ -101,6 +107,21 @@ export default async function WorkerDetailPage({
     supabase.from("worker_travel_region").select("region_id").eq("worker_id", id),
   ]);
 
+  if (
+    [
+      tradesResult,
+      proficienciesResult,
+      regionsResult,
+      qualificationsResult,
+      workerQualificationsResult,
+      employmentResult,
+      skillsResult,
+      travelResult,
+    ].some((result) => result.error)
+  ) {
+    throw new Error("This worker record could not be loaded. Please try again.");
+  }
+
   const tradeName = new Map((tradesResult.data ?? []).map((t) => [t.id as string, t.name as string]));
   const proficiencyName = new Map(
     (proficienciesResult.data ?? []).map((p) => [p.id as string, p.name as string]),
@@ -125,7 +146,8 @@ export default async function WorkerDetailPage({
   const skillIds = (skillsResult.data ?? []).map((s) => s.skill_id as string);
   let skillNames: string[] = [];
   if (skillIds.length > 0) {
-    const { data } = await supabase.from("skill").select("id, name").in("id", skillIds);
+    const { data, error } = await supabase.from("skill").select("id, name").in("id", skillIds);
+    if (error) throw new Error("This worker record could not be loaded. Please try again.");
     skillNames = (data ?? []).map((s) => s.name as string);
   }
 

@@ -108,6 +108,17 @@ export default async function SettingsPage({
         .eq("company_id", companyId),
     ]);
 
+  // Every read above runs under the session. A rejected session must fail the screen,
+  // not render "no documents", "no administrators" and empty selects — or, worse,
+  // "Company not found." for a company that is there.
+  if (
+    [companyResult, regionResult, industryResult, operatingResult, documentResult, userResult].some(
+      (result) => result.error,
+    )
+  ) {
+    throw new Error("Company settings could not be loaded. Please try again.");
+  }
+
   const company = companyResult.data;
   if (!company) return <p className="text-body text-on-dark-muted">Company not found.</p>;
 

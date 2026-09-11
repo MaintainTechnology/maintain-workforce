@@ -78,6 +78,11 @@ export default async function WorkersPage() {
       .in("status", ["Open", "Partially Committed"]),
   ]);
 
+  // "No workers yet" is a fact about the crew; a failed read must not impersonate it.
+  if ([workersResult, tradesResult, proficienciesResult, linesResult].some((result) => result.error)) {
+    throw new Error("Your crew could not be loaded. Please try again.");
+  }
+
   const workers = workersResult.data ?? [];
   const tradeName = new Map((tradesResult.data ?? []).map((t) => [t.id as string, t.name as string]));
   const proficiencyName = new Map(
@@ -94,13 +99,14 @@ export default async function WorkersPage() {
 
   const linesByWorker = new Map<string, { from: string; until: string }[]>();
   if (lines.length > 0) {
-    const { data: memberships } = await supabase
+    const { data: memberships, error: membershipError } = await supabase
       .from("capacity_line_worker")
       .select("capacity_line_id, worker_id")
       .in(
         "capacity_line_id",
         lines.map((line) => line.id as string),
       );
+    if (membershipError) throw new Error("Your crew could not be loaded. Please try again.");
     for (const row of memberships ?? []) {
       const window = lineById.get(row.capacity_line_id as string);
       if (!window) continue;
@@ -133,6 +139,9 @@ export default async function WorkersPage() {
         .in("status", [...COMMITTING_STATUSES])
         .overlaps("committed_window", `[${today},${horizon}]`),
     ]);
+    if (todayRows.error || windowRows.error) {
+      throw new Error("Your crew could not be loaded. Please try again.");
+    }
     for (const row of todayRows.data ?? []) engagedToday.add(row.worker_id as string);
     for (const row of windowRows.data ?? []) committedInWindow.add(row.worker_id as string);
   }

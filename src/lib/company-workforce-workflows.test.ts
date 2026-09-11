@@ -38,6 +38,7 @@ function database() {
     ],
   };
   const signed: { path: string; expiresIn: number; client: string }[] = [];
+  const failed = new Set<string>();
   let signingFails = false;
 
   function client(kind: "tenant" | "service") {
@@ -52,6 +53,10 @@ function database() {
           : Response.json({ signedURL: `/object/sign/${path}?token=temporary-test-token` });
       }
       const table = url.pathname.split("/").at(-1)!;
+      if (failed.has(table)) {
+        // What PostgREST answers when the bearer token's issuer is not trusted.
+        return Response.json({ code: "PGRST301", message: "No suitable key or wrong key type" }, { status: 401 });
+      }
       let rows = tables[table] ?? [];
       for (const [column, filter] of url.searchParams) {
         if (["select", "order", "offset", "limit"].includes(column)) continue;
@@ -79,7 +84,7 @@ function database() {
   }
   mocks.tenant.mockResolvedValue(client("tenant"));
   mocks.admin.mockReturnValue(client("service"));
-  return { tables, signed, failSigning: () => { signingFails = true; } };
+  return { tables, signed, failSigning: () => { signingFails = true; }, failTable: (table: string) => { failed.add(table); } };
 }
 
 function company(status: CompanyStatus) {
@@ -176,6 +181,56 @@ describe("worker qualification evidence — MVP 4.3 and 7.1", () => {
     expect(html).toContain("Unavailable — refresh to retry");
     expect(html).toContain("No document");
     expect(html).not.toContain("earlier-employer.pdf");
+  });
+});
+
+describe("workforce read failures — MVP 4.1 and 17.1", () => {
+  const plain = () => {};
+  // Reads that only happen once earlier rows exist need those rows first.
+  const openLine = () => {
+    db.tables.capacity_line = [{ id: "line", company_id: companyId, status: "Open", available_from: today, available_until: today }];
+  };
+  const taggedSkill = () => {
+    db.tables.worker_skill = [{ worker_id: workerId, skill_id: "skill" }];
+  };
+
+  it.each([
+    ["crew list", "worker", () => WorkersPage(), plain],
+    ["crew trades", "trade_role", () => WorkersPage(), plain],
+    ["crew proficiencies", "proficiency", () => WorkersPage(), plain],
+    ["crew capacity lines", "capacity_line", () => WorkersPage(), plain],
+    ["crew line members", "capacity_line_worker", () => WorkersPage(), openLine],
+    ["crew commitments", "engagement_worker", () => WorkersPage(), plain],
+    ["intake regions", "region", () => NewWorkerPage(), plain],
+    ["intake trades", "trade_role", () => NewWorkerPage(), plain],
+    ["intake proficiencies", "proficiency", () => NewWorkerPage(), plain],
+    ["intake trade levels", "trade_role_proficiency", () => NewWorkerPage(), plain],
+    ["intake skills", "skill", () => NewWorkerPage(), plain],
+    ["record", "worker", () => detail(), plain],
+    ["record trades", "trade_role", () => detail(), plain],
+    ["record proficiencies", "proficiency", () => detail(), plain],
+    ["record regions", "region", () => detail(), plain],
+    ["record qualifications", "qualification", () => detail(), plain],
+    ["record credentials", "worker_qualification", () => detail(), plain],
+    ["record employment", "worker_employment", () => detail(), plain],
+    ["record skills", "worker_skill", () => detail(), plain],
+    ["record skill names", "skill", () => detail(), taggedSkill],
+    ["record travel regions", "worker_travel_region", () => detail(), plain],
+  ] as const)("fails visibly when the %s cannot load", async (_label, table, page, arrange) => {
+    arrange();
+    db.failTable(table);
+    await expect(page()).rejects.toThrow("could not be loaded");
+  });
+
+  it("treats a malformed worker id as a missing record, not a failed read", async () => {
+    const page = WorkerDetailPage({ params: Promise.resolve({ id: "not-a-worker" }), searchParams: Promise.resolve({}) });
+    await expect(page).rejects.toThrow("not-found");
+  });
+
+  it("offers every catalogue option once the reads succeed", async () => {
+    const html = renderToStaticMarkup(await NewWorkerPage());
+    expect(html).toContain('<option value="region">Region</option>');
+    expect(html).toContain('<option value="trade">Trade</option>');
   });
 });
 

@@ -171,3 +171,44 @@ preview environment requires the user's pending
 choice. The local preflight changes are not yet committed or pushed; the recovered
 production deployment uses the previously committed revision. No migrations,
 application-data changes, user/session creation or outbound emails were performed.
+
+## Supabase must trust the production Clerk instance
+
+Diagnosed on 11 September. Signed in through the production Clerk instance, the
+Add a worker screen rendered its reference-data selects (base region, primary trade,
+proficiency, travel regions) with no options, and the crew list would show no workers.
+The catalogue itself is intact: the Workforce Supabase project holds the full
+`seed-data` load (industries, regions, trades, proficiency mappings, skills,
+qualifications).
+
+The cause is token trust, not data. The server Supabase client sends the Clerk
+`supabase` template token as the bearer. The Supabase project lists one Third-Party
+Auth integration, the **development** instance `accepted-panda-5245.clerk.accounts.dev`.
+A token issued by the production instance `https://clerk.maintainworkforce.com.au` is
+refused with HTTP 401 `PGRST301 No suitable key was found to decode the JWT`, so every
+RLS-gated read (catalogue tables and tenant tables alike) returns nothing. In the same
+check a real development-instance session token read the same tables successfully,
+which isolates the missing trust entry.
+
+Fix: on the Supabase project, Authentication, then Sign In / Providers, then
+Third-Party Auth, add Clerk with domain `clerk.maintainworkforce.com.au`. The
+equivalent Management API call (a personal access token; nothing else changes):
+
+    POST https://api.supabase.com/v1/projects/<project-ref>/config/auth/third-party-auth
+    {"oidc_issuer_url": "https://clerk.maintainworkforce.com.au"}
+
+Keep the development entry: this project already holds a development-instance company
+membership (the first registration), and local work against it uses that instance. Verify by
+listing `GET .../config/auth/third-party-auth` (two entries), then loading
+`/app/workers/new` in a production session: the base-region and primary-trade selects
+list the seeded catalogue.
+
+The server client now logs one `[supabase] Rejected the Clerk session token issued by
+<issuer>` line on any 401, and the Workforce and Company settings screens fail visibly
+instead of rendering an empty required form, so a repeat of this misconfiguration is
+named in the runtime logs rather than hidden behind blank selects.
+
+Local note: `.env.local` carries both the development and the `#CLERK LIVE KEY`
+assignments for the same variable names. `next dev` takes the later value, so local
+development also signs in through the production instance and needs the same trust
+entry.
