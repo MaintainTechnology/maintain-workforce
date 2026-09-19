@@ -590,6 +590,9 @@ export async function conciergeCreateWorker(
   values.skills = skillIds.join(",");
   values.travel_regions = travelRegionIds.join(",");
   values.evidence_note = String(formData.get("evidence_note") ?? "");
+  // 6.3 — echoed with the rest of the form; a save failure must not quietly drop the
+  // attestation the admin just recorded on the company's behalf.
+  values.consent = String(formData.get("consent") ?? "");
 
   if (!companyId) return { ok: false, values, message: "Choose a company first." };
   if (!evidence.success) {

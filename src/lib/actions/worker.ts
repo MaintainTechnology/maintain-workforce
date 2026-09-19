@@ -146,6 +146,10 @@ export async function createWorker(
   const travelRegionIds = formData.getAll("travel_regions").map(String).filter(Boolean);
   values.skills = skillIds.join(",");
   values.travel_regions = travelRegionIds.join(",");
+  // 6.3 — the attestation is echoed with the rest of the form. Clearing it on an
+  // unrelated save failure re-asks for a confirmation this user just gave, and reads
+  // as "the tick was the problem" when it was not.
+  values.consent = String(formData.get("consent") ?? "");
 
   const parsed = workerSchema.safeParse({
     ...values,

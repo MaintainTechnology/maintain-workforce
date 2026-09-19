@@ -224,8 +224,13 @@ export function WorkerForm({
 
         {/* 6.3 — consent, recorded against the user who confirms it and the moment they did. */}
         <div>
-          <label className={OPTION_ROW}>
-            <input type="checkbox" name="consent" className="size-4 accent-teal-mist" />
+          <label className={OPTION_ROW} key={`consent-${values?.consent ?? ""}`}>
+            <input
+              type="checkbox"
+              name="consent"
+              defaultChecked={values?.consent === "on"}
+              className="size-4 accent-teal-mist"
+            />
             <span className="flex-1 text-body text-on-dark">
               This worker has been informed and consents to being listed.
             </span>

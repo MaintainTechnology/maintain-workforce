@@ -195,8 +195,13 @@ export function ConciergeWorkerForm({
         {/* 6.3 / 16.1 — the admin confirms the company has told the worker and
             obtained consent by phone or email; it is not Maintain's consent to give. */}
         <div className={FIELD}>
-          <label className={OPTION_ROW}>
-            <input type="checkbox" name="consent" className="size-4 accent-teal-mist" />
+          <label className={OPTION_ROW} key={`consent-${values?.consent ?? ""}`}>
+            <input
+              type="checkbox"
+              name="consent"
+              defaultChecked={values?.consent === "on"}
+              className="size-4 accent-teal-mist"
+            />
             <span className="flex-1 text-body text-on-dark">
               The company confirms this worker has been informed and consents to being listed.
             </span>

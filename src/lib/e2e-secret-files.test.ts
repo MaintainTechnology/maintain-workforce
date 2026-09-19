@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -33,7 +33,11 @@ describe("CI browser fixture secret files", () => {
   it("writes only named private files to a fresh temporary directory and removes only that directory", async () => {
     const path = await prepareE2eFixtures(JSON.stringify(bundle()), parent);
     expect(basename(path)).toBe("fixtures.json");
-    expect(dirname(dirname(path))).toBe(parent);
+    // prepareE2eFixtures canonicalises its parent before creating anything, because
+    // cleanup will only remove a directory that genuinely resolves under it. Compare
+    // canonical to canonical: tmpdir() is a symlink on macOS (/var -> /private/var) and
+    // an 8.3 short name on some Windows profiles, neither of which is a real difference.
+    expect(dirname(dirname(path))).toBe(await realpath(parent));
     expect(await readdir(dirname(path))).toEqual(["admin.json", "company.json", "fixtures.json"]);
     expect(JSON.parse(await readFile(path, "utf8"))).toEqual(bundle().manifest);
     expect(await readFile(join(dirname(path), "admin.json"), "utf8")).toContain("TEST-ADMIN-SECRET");
