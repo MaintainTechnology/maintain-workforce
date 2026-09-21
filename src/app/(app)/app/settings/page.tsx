@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import {
   companyChecklist,
   inviteCompanyAdmin,
@@ -49,7 +50,10 @@ const PROBLEM: Record<string, string> = {
   invalid: "Some details were missing or malformed, so nothing was changed.",
   abn_checksum: "That ABN fails the standard 11-digit checksum.",
   abn_review: "That ABN is already registered. Maintain is reviewing it and will be in touch.",
+  abn_collision:
+    "That ABN was registered by another company before this change was saved. Contact Maintain for help.",
   save_failed: "The change could not be saved. Try again.",
+  stale: "Company details changed after this page loaded. Refresh and review the latest values before saving.",
   file_too_large: "Documents are capped at 10 MB.",
   file_type: "Documents must be PDF, JPG or PNG.",
   upload_failed: "The file could not be stored. Try again.",
@@ -94,8 +98,8 @@ export default async function SettingsPage({
   const [companyResult, regionResult, industryResult, operatingResult, documentResult, userResult] =
     await Promise.all([
       supabase.from("company").select("*").eq("id", companyId).maybeSingle(),
-      supabase.from("region").select("id, name").eq("is_active", true).order("name"),
-      supabase.from("industry").select("id, name").eq("is_active", true).order("name"),
+      supabase.from("region").select("id, name, is_active").order("name"),
+      supabase.from("industry").select("id, name, is_active").order("name"),
       supabase.from("company_operating_region").select("region_id").eq("company_id", companyId),
       supabase
         .from("company_document")
@@ -124,7 +128,9 @@ export default async function SettingsPage({
 
   const regions = regionResult.data ?? [];
   const industries = industryResult.data ?? [];
-  const operatingIds: string[] = (operatingResult.data ?? []).map((r: { region_id: string }) => r.region_id);
+  const operatingIds: string[] = (operatingResult.data ?? [])
+    .map((r: { region_id: string }) => r.region_id)
+    .sort();
   const documents = documentResult.data ?? [];
   const checklist = await companyChecklist();
 
@@ -155,6 +161,17 @@ export default async function SettingsPage({
   );
 
   const readOnly = companyStatus === "Suspended" || companyStatus === "Closed";
+  const expectedProfile = JSON.stringify({
+    legal_name: company.legal_name,
+    trading_name: company.trading_name,
+    abn: company.abn,
+    industry_id: company.industry_id,
+    contact_name: company.contact_name,
+    contact_email: company.contact_email,
+    contact_phone: company.contact_phone,
+    primary_region_id: company.primary_region_id,
+    operating_region_ids: operatingIds,
+  });
 
   return (
     <div className={`${PAGE} flex flex-col gap-(--space-7)`}>
@@ -182,6 +199,7 @@ export default async function SettingsPage({
         </p>
 
         <form action={updateCompanyProfile} className="mt-(--space-5) grid gap-(--space-5) md:grid-cols-2">
+          <input type="hidden" name="expected_profile" value={expectedProfile} />
           <label className={FIELD}>
             <span className={FIELD_LABEL}>Registered legal name</span>
             <input className={INPUT} name="legal_name" defaultValue={company.legal_name} required disabled={readOnly} />
@@ -207,9 +225,14 @@ export default async function SettingsPage({
             <span className={FIELD_LABEL}>Industry</span>
             <select className={INPUT} name="industry_id" defaultValue={company.industry_id ?? ""} required disabled={readOnly}>
               <option value="">Choose an industry</option>
-              {industries.map((industry: { id: string; name: string }) => (
-                <option key={industry.id} value={industry.id}>
+              {industries.map((industry: { id: string; name: string; is_active: boolean }) => (
+                <option
+                  key={industry.id}
+                  value={industry.id}
+                  disabled={!industry.is_active && industry.id !== company.industry_id}
+                >
                   {industry.name}
+                  {!industry.is_active ? " (Unavailable)" : ""}
                 </option>
               ))}
             </select>
@@ -234,9 +257,14 @@ export default async function SettingsPage({
             <span className={FIELD_LABEL}>Primary location</span>
             <select className={INPUT} name="primary_region_id" defaultValue={company.primary_region_id ?? ""} required disabled={readOnly}>
               <option value="">Choose a region</option>
-              {regions.map((region: { id: string; name: string }) => (
-                <option key={region.id} value={region.id}>
+              {regions.map((region: { id: string; name: string; is_active: boolean }) => (
+                <option
+                  key={region.id}
+                  value={region.id}
+                  disabled={!region.is_active && region.id !== company.primary_region_id}
+                >
                   {region.name}
+                  {!region.is_active ? " (Unavailable)" : ""}
                 </option>
               ))}
             </select>
@@ -245,7 +273,7 @@ export default async function SettingsPage({
           <fieldset className="md:col-span-2">
             <legend className={FIELD_LABEL}>Regions you operate in</legend>
             <div className="mt-(--space-3) grid gap-(--space-2) sm:grid-cols-2 lg:grid-cols-3">
-              {regions.map((region: { id: string; name: string }) => (
+              {regions.map((region: { id: string; name: string; is_active: boolean }) => (
                 <label key={region.id} className="flex min-h-11 items-center gap-(--space-3) text-body text-on-dark">
                   <input
                     type="checkbox"
@@ -253,18 +281,21 @@ export default async function SettingsPage({
                     value={region.id}
                     defaultChecked={operatingIds.includes(region.id)}
                     className="size-4 accent-teal-mist"
-                    disabled={readOnly}
+                    disabled={readOnly || (!region.is_active && !operatingIds.includes(region.id))}
                   />
                   {region.name}
+                  {!region.is_active ? " (Unavailable)" : ""}
                 </label>
               ))}
             </div>
           </fieldset>
 
           <div className="md:col-span-2">
-            <button type="submit" className={BTN_PRIMARY} disabled={readOnly}>
-              Save company details
-            </button>
+            <PendingSubmitButton
+              className={BTN_PRIMARY}
+              disabled={readOnly}
+              idleLabel="Save company details"
+            />
           </div>
         </form>
       </section>

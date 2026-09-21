@@ -11,6 +11,7 @@ describe("read-only database readiness", () => {
     } }));
     expect(await checkDatabaseReadiness(env, request)).toEqual([
       "create_worker_transactional", "transition_company_status_atomic",
+      "update_company_profile_atomic",
     ]);
     expect(request).toHaveBeenCalledTimes(1);
     const [url, options] = request.mock.calls[0];

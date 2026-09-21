@@ -17,7 +17,6 @@ import { isValidAbn, normaliseAbn } from "@/lib/domain/abn";
 import { notify, NOTIFICATION_TRIGGERS } from "@/lib/notify";
 import { parseRegistrationInput } from "@/lib/registration";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 import type { CompanyStatus } from "@/lib/supabase/types";
 
 // Registration, company profile and verification — spec modules 1 and 3.2.
@@ -90,6 +89,18 @@ const profileFields = {
 };
 
 const profileSchema = z.object(profileFields);
+
+const companyProfileSnapshotSchema = z.object({
+  legal_name: z.string(),
+  trading_name: z.string().nullable(),
+  abn: z.string().nullable(),
+  industry_id: z.string().uuid().nullable(),
+  contact_name: z.string().nullable(),
+  contact_email: z.string(),
+  contact_phone: z.string().nullable(),
+  primary_region_id: z.string().uuid().nullable(),
+  operating_region_ids: z.array(z.string().uuid()),
+}).strict();
 
 /**
  * When an ABN is supplied it is checksum-validated and unique across companies.
@@ -330,6 +341,13 @@ export async function updateCompanyProfile(formData: FormData): Promise<void> {
   if (!writable(companyStatus)) redirect("/app/settings?error=read_only");
 
   const operatingRegionIds = formData.getAll("operating_region_ids").map(String).filter(Boolean);
+  let expectedProfile: unknown;
+  try {
+    expectedProfile = JSON.parse(String(formData.get("expected_profile") ?? ""));
+  } catch {
+    redirect("/app/settings?error=invalid");
+  }
+  const expected = companyProfileSnapshotSchema.safeParse(expectedProfile);
   const parsed = profileSchema.safeParse({
     legal_name: formData.get("legal_name"),
     trading_name: formData.get("trading_name") || undefined,
@@ -341,67 +359,117 @@ export async function updateCompanyProfile(formData: FormData): Promise<void> {
     primary_region_id: formData.get("primary_region_id"),
     operating_region_ids: operatingRegionIds,
   });
-  if (!parsed.success) redirect("/app/settings?error=invalid");
+  if (!expected.success || !parsed.success) redirect("/app/settings?error=invalid");
   const input = parsed.data;
 
   const abnCheck = await checkAbn(input.abn, companyId);
   if (!abnCheck.ok && abnCheck.reason === "invalid") redirect("/app/settings?error=abn_checksum");
-  if (!abnCheck.ok) {
-    await routeAbnCollisionToReview({
-      actor: { userId: user.id },
-      abn: abnCheck.abn,
-      businessName: input.legal_name,
-      contactName: input.contact_name,
-      contactEmail: input.contact_email,
-      contactPhone: input.contact_phone,
-      origin: "profile",
-    });
-    redirect("/app/settings?error=abn_review");
-  }
+  // Profile edits must not create a review artefact before the atomic writer has
+  // checked the displayed snapshot. Registration collisions still enter the Leads
+  // queue, while an existing company gets a stable, retry-safe collision response.
+  if (!abnCheck.ok) redirect("/app/settings?error=abn_collision");
 
-  const supabase = await createClient();
-  const { data: before } = await supabase
-    .from("company")
-    .select("legal_name, trading_name, abn, industry_id, contact_name, contact_email, contact_phone, primary_region_id")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  const after = {
-    legal_name: input.legal_name,
-    trading_name: input.trading_name ?? null,
-    abn: abnCheck.abn,
-    industry_id: input.industry_id,
-    contact_name: input.contact_name,
-    contact_email: input.contact_email,
-    contact_phone: input.contact_phone,
-    primary_region_id: input.primary_region_id,
-  };
-
-  // RLS-scoped: company_own_update is the security boundary, the company_id filter a
-  // convenience (17.1).
-  const { error } = await supabase.from("company").update(after).eq("id", companyId);
-  if (error) redirect("/app/settings?error=save_failed");
-
-  const regionIds = Array.from(new Set([...input.operating_region_ids, input.primary_region_id]));
-  await supabase.from("company_operating_region").delete().eq("company_id", companyId);
-  await supabase
-    .from("company_operating_region")
-    .insert(regionIds.map((region_id) => ({ company_id: companyId, region_id })));
-
-  await audit({
-    actor: { userId: user.id },
-    action: "company.profile_updated",
-    entityType: "company",
-    entityId: companyId,
-    before,
-    after,
-  });
+  await companyRpc(
+    "update_company_profile_atomic",
+    {
+      p_company_id: companyId,
+      p_expected_status: companyStatus,
+      p_expected_profile: expected.data,
+      p_actor_user_id: user.id,
+      p_actor_scope: "company",
+      p_legal_name: input.legal_name,
+      p_trading_name: input.trading_name ?? "",
+      p_abn: abnCheck.abn,
+      p_industry_id: input.industry_id,
+      p_contact_name: input.contact_name,
+      p_contact_email: input.contact_email,
+      p_contact_phone: input.contact_phone,
+      p_primary_region_id: input.primary_region_id,
+      p_operating_region_ids: input.operating_region_ids,
+    },
+    companyProfileSnapshotSchema.extend({
+      company_id: z.string().uuid(),
+      status: z.enum(["Pending", "Active"]),
+    }),
+    "/app/settings",
+    { "23505": "abn_collision", "23514": "invalid", "42501": "save_failed" },
+  );
 
   // The persistent workspace shell also displays the company name. Its layout
   // lives at the (app) route group, so invalidate that file-structure path only
-  // after the profile update and audit have both succeeded.
+  // after the atomic profile update and audit have both succeeded.
   revalidatePath("/(app)", "layout");
   redirect("/app/settings?saved=profile");
+}
+
+/**
+ * Maintain can correct the saved onboarding profile while reviewing a Pending account.
+ * The expected snapshot prevents a stale approval tab from overwriting a newer company
+ * edit; the RPC updates the company, regions and audit event in one transaction.
+ */
+export async function updatePendingCompanyProfileAsMaintain(formData: FormData): Promise<void> {
+  const user = await requireMaintainAdmin();
+  const operatingRegionIds = formData.getAll("operating_region_ids").map(String).filter(Boolean);
+  const decision = companyDecisionSchema.safeParse({
+    company_id: formData.get("company_id"),
+    expected_status: formData.get("expected_status"),
+  });
+  if (!decision.success) companyActionError("/admin/verification", "invalid");
+  const back = `/admin/verification?company=${decision.data.company_id}`;
+
+  let expectedProfile: unknown;
+  try {
+    expectedProfile = JSON.parse(String(formData.get("expected_profile") ?? ""));
+  } catch {
+    companyActionError(back, "invalid");
+  }
+  const expected = companyProfileSnapshotSchema.safeParse(expectedProfile);
+  const parsed = profileSchema.safeParse({
+    legal_name: formData.get("legal_name"),
+    trading_name: formData.get("trading_name") || undefined,
+    abn: formData.get("abn"),
+    industry_id: formData.get("industry_id"),
+    contact_name: formData.get("contact_name"),
+    contact_email: formData.get("contact_email"),
+    contact_phone: formData.get("contact_phone"),
+    primary_region_id: formData.get("primary_region_id"),
+    operating_region_ids: operatingRegionIds,
+  });
+  if (!expected.success || !parsed.success) companyActionError(back, "invalid");
+
+  const input = parsed.data;
+  const abnCheck = await checkAbn(input.abn, decision.data.company_id);
+  if (!abnCheck.ok && abnCheck.reason === "invalid") companyActionError(back, "abn_checksum");
+  if (!abnCheck.ok) companyActionError(back, "abn_collision");
+
+  await companyRpc(
+    "update_company_profile_atomic",
+    {
+      p_company_id: decision.data.company_id,
+      p_expected_status: decision.data.expected_status,
+      p_expected_profile: expected.data,
+      p_actor_user_id: user.id,
+      p_actor_scope: "maintain",
+      p_legal_name: input.legal_name,
+      p_trading_name: input.trading_name ?? "",
+      p_abn: abnCheck.abn,
+      p_industry_id: input.industry_id,
+      p_contact_name: input.contact_name,
+      p_contact_email: input.contact_email,
+      p_contact_phone: input.contact_phone,
+      p_primary_region_id: input.primary_region_id,
+      p_operating_region_ids: input.operating_region_ids,
+    },
+    companyProfileSnapshotSchema.extend({
+      company_id: z.string().uuid(),
+      status: z.literal("Pending"),
+    }),
+    back,
+    { "23505": "abn_collision", "23514": "invalid", "42501": "save_failed" },
+  );
+  revalidatePath("/(app)", "layout");
+  revalidatePath("/admin/verification");
+  redirect(`${back}&saved=profile`);
 }
 
 // ------------------------------------------------------------------ 1.3 / 1.4 documents
@@ -525,7 +593,11 @@ function companyActionError(back: string, code: string): never {
 
 /** Checked database calls only: failure never falls through to an email or success. */
 async function companyRpc<T extends z.ZodType>(
-  name: string, args: Record<string, unknown>, schema: T, back: string,
+  name: string,
+  args: Record<string, unknown>,
+  schema: T,
+  back: string,
+  errorCodes: Record<string, string> = {},
 ): Promise<z.infer<T>> {
   let result: { data: unknown; error: { code?: string; message?: string } | null };
   try {
@@ -534,11 +606,12 @@ async function companyRpc<T extends z.ZodType>(
     companyActionError(back, "save_failed");
   }
   if (result.error) {
-    const code = result.error.code === "40001" ? "stale"
+    const mapped = result.error.code ? errorCodes[result.error.code] : undefined;
+    const code = mapped ?? (result.error.code === "40001" ? "stale"
       : result.error.code === "23503" ? "not_found"
       : result.error.message === "company checklist is incomplete or expired" ? "checklist_incomplete"
       : result.error.code === "23514" ? "invalid_transition"
-      : "save_failed";
+      : "save_failed");
     companyActionError(back, code);
   }
   const parsed = schema.safeParse(result.data);

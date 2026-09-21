@@ -13,6 +13,13 @@ describe("company lifecycle form contracts", () => {
     expect(page).toContain('selected.status === "Pending"');
     expect(page).toContain("<ApprovalSubmitButton");
     expect(page).toContain("outstandingLabels={outstanding.map((item) => item.label)}");
+    expect(page).toContain("action={updatePendingCompanyProfileAsMaintain}");
+    expect(page).toContain("Onboarding company details");
+    for (const name of [
+      "legal_name", "trading_name", "abn", "industry_id", "contact_name",
+      "contact_email", "contact_phone", "primary_region_id", "operating_region_ids",
+    ]) expect(page).toContain(`name=\"${name}\"`);
+    expect(page).toContain('name="expected_profile"');
   });
   it("limits status controls to canonical targets, separately from report filters", () => {
     const page = source("src/app/(admin)/admin/companies/page.tsx");

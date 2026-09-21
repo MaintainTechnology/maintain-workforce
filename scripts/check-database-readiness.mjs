@@ -8,6 +8,7 @@ export const REQUIRED_RPCS = [
   "company_verification_checklist",
   "verify_company_document_atomic",
   "transition_company_status_atomic",
+  "update_company_profile_atomic",
 ];
 
 /** @param {Record<string, string | undefined>} env */
