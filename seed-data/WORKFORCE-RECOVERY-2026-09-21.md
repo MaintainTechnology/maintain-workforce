@@ -43,6 +43,27 @@ user authorized this direct incident repair after those findings were explained;
 missing CI preview fixtures and protection configuration were not fabricated or
 silently marked complete.
 
+## Current admin metadata release
+
+The clarified admin-access policy was deployed as
+`dpl_CDjpejneYp815fFnVZU4uVLV98r2` from committed source
+`8f48d5142491ac88e6209acfef3acb33089ac4b7`. The existing production environment was
+used for the remote Next.js build and TypeScript validation, which passed. The
+artifact was checked before promotion to `https://www.maintainworkforce.com.au`.
+
+Canonical HTTP checks at approximately `2026-09-21T00:58Z` passed: homepage,
+sign-in, sign-up and database health returned 200; the public header retained
+sign-in/sign-up links, and the exact Clerk browser script loaded over HTTPS.
+Signed-out requests to `/auth/continue`, `/app/workers` and
+`/admin/verification` returned 307 to canonical `/signin`.
+
+This release accepts backend-controlled `isAdmin: true` for staff without MFA
+enrollment, while preserving second-factor verification for already-enrolled
+staff. No Clerk plan change or company activation was performed for this release.
+Authenticated approval-action tests passed locally; the designated staff member
+still needs to accept the private invitation and establish their credentials.
+No authenticated real-user browser journey is claimed by these HTTP checks.
+
 ## Initial application release
 
 Production deployment `dpl_6TbVYGkDuyU22wfmU896JDh2MuEb` was built from isolated,
