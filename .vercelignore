@@ -4,6 +4,7 @@
 # Local tooling, reports, and caches are not application source.
 .git
 .vercel
+.temp
 .claude
 .claude-flow
 .impeccable
