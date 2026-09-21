@@ -13,6 +13,7 @@ import { expectedHours, hoursPerWeekFromTotal } from "@/lib/domain/money";
 import { NOTIFICATION_TRIGGERS, notify } from "@/lib/notify";
 import { indicativeRange, supplierBand } from "@/lib/rates";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { workerIntakeFailure } from "@/lib/worker-intake-failure";
 
 // CONCIERGE — spec 16.1. Availability and paperwork arrive by phone and email, not
 // typed in by a logged-in supplying/hiring business (0.3 explicitly allows a company
@@ -545,7 +546,7 @@ const conciergeWorkerSchema = z.object({
   base_region_id: z.uuid("Pick the worker's base region."),
   primary_trade_id: z.uuid("Pick the worker's primary trade."),
   primary_proficiency_id: z.uuid("Pick the worker's proficiency."),
-  start_date: z.string().regex(ISO_DATE, "Give the date this worker joined."),
+  start_date: z.iso.date("Give a valid date this worker joined."),
   // 6.3 / 16.1 — the admin is confirming the company told the worker and obtained
   // consent by phone or email, standing in for the checkbox the company would tick
   // itself; it is still validated with the rest of the record, not assumed.
@@ -620,12 +621,13 @@ export async function conciergeCreateWorker(
   const mobile = normaliseMobile(input.mobile);
 
   // 4.2 — classification must be a pair the catalogue actually offers.
-  const { data: pair } = await admin
+  const { data: pair, error: pairError } = await admin
     .from("trade_role_proficiency")
     .select("trade_role_id")
     .eq("trade_role_id", input.primary_trade_id)
     .eq("proficiency_id", input.primary_proficiency_id)
     .maybeSingle();
+  if (pairError) return workerIntakeFailure(pairError, values, "catalogue");
   if (!pair) {
     return {
       ok: false,
@@ -640,6 +642,9 @@ export async function conciergeCreateWorker(
     admin.from("worker").select("id").eq("email", email).limit(1),
     admin.from("worker").select("id").eq("mobile", mobile).limit(1),
   ]);
+  if (byEmail.error || byMobile.error) {
+    return workerIntakeFailure(byEmail.error ?? byMobile.error, values, "duplicates");
+  }
   if ((byEmail.data?.length ?? 0) > 0 || (byMobile.data?.length ?? 0) > 0) {
     return collisionResult(values);
   }
@@ -666,7 +671,7 @@ export async function conciergeCreateWorker(
 
   if (error || !workerId) {
     if (error?.code === "23505") return collisionResult(values);
-    return { ok: false, values, message: "That worker could not be saved. Try again." };
+    return workerIntakeFailure(error, values);
   }
 
   revalidatePath(`/admin/companies/${companyId}/concierge`);

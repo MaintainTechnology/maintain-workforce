@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { SignOutButton } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 import { WorkspaceHeader, WorkspaceSidebar } from "@/components/workspace-navigation";
-import { requireCompanyAdmin } from "@/lib/auth";
+import { isMaintainAdmin, requireCompanyAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { BTN_GHOST, NAV_FOCUS } from "@/lib/ui";
 
@@ -21,10 +22,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq("id", companyId)
     .maybeSingle();
   const companyName = company?.trading_name?.trim() || company?.legal_name || "Your company";
+  const clerkUser = await currentUser();
   const account = {
     companyName,
     companyStatus,
     email: user.email,
+    canManageWorkforce: isMaintainAdmin(clerkUser?.publicMetadata as Record<string, unknown> | undefined),
     signOut: (
       <SignOutButton redirectUrl="/signin">
         <button type="button" className={`${BTN_GHOST} w-full px-4 text-sm`}>Sign out</button>

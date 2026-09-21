@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyWorkerStatusKnockouts } from "@/lib/match-orchestration";
 import { audit } from "@/lib/audit";
+import { workerIntakeFailure } from "@/lib/worker-intake-failure";
 import type { DocumentStatus, WorkerStatus } from "@/lib/supabase/types";
 
 type WorkerStatusCascadeResult = {
@@ -108,7 +109,7 @@ const workerSchema = z.object({
   base_region_id: z.uuid("Pick the worker's base region."),
   primary_trade_id: z.uuid("Pick the worker's primary trade."),
   primary_proficiency_id: z.uuid("Pick the worker's proficiency."),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Give the date this worker joined."),
+  start_date: z.iso.date("Give a valid date this worker joined."),
   // 6.3 — consent is a precondition of the record existing, so it is validated with
   // the rest of the profile rather than assumed by a disabled submit button.
   consent: z.literal(
@@ -167,12 +168,13 @@ export async function createWorker(
   // 4.2 — worker classification may only use a (trade, proficiency) pair the catalogue
   // declares valid for that trade. Enforced here because the select is data-driven and
   // a hand-rolled POST would otherwise carry any pair it liked.
-  const { data: pair } = await admin
+  const { data: pair, error: pairError } = await admin
     .from("trade_role_proficiency")
     .select("trade_role_id")
     .eq("trade_role_id", input.primary_trade_id)
     .eq("proficiency_id", input.primary_proficiency_id)
     .maybeSingle();
+  if (pairError) return workerIntakeFailure(pairError, values, "catalogue");
   if (!pair) {
     return {
       ok: false,
@@ -188,6 +190,9 @@ export async function createWorker(
     admin.from("worker").select("id").eq("email", email).limit(1),
     admin.from("worker").select("id").eq("mobile", mobile).limit(1),
   ]);
+  if (byEmail.error || byMobile.error) {
+    return workerIntakeFailure(byEmail.error ?? byMobile.error, values, "duplicates");
+  }
   if ((byEmail.data?.length ?? 0) > 0 || (byMobile.data?.length ?? 0) > 0) {
     return collisionResult(values);
   }
@@ -216,7 +221,7 @@ export async function createWorker(
     // The unique indexes on email and mobile are the real guarantee; a request that
     // races the check above lands here and must answer with the same 6.2 wording.
     if (error?.code === "23505") return collisionResult(values);
-    return { ok: false, values, message: "That worker could not be saved. Try again." };
+    return workerIntakeFailure(error, values);
   }
 
   revalidatePath("/app/workers");

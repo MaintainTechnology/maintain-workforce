@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   audit: vi.fn(),
@@ -161,6 +161,7 @@ function workerFormData(concierge = false): FormData {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.spyOn(console, "error").mockImplementation(() => {});
   mocks.getBookingRules.mockResolvedValue({ minimumHoursPerLine: 8, minimumCrewSize: 1 });
   mocks.indicativeRange.mockResolvedValue({ lowCents: 10000, highCents: 12000 });
   mocks.supplierBand.mockResolvedValue({ lowCents: 9000, highCents: 11000 });
@@ -169,7 +170,96 @@ beforeEach(() => {
   mocks.createAdminClient.mockReturnValue(client);
 });
 
+afterEach(() => vi.restoreAllMocks());
+
+function noWorkerCollision() {
+  const client = mocks.createAdminClient();
+  client.from = vi.fn((table: string) => {
+    const query = queryFor(table);
+    if (table === "worker") query.data = [];
+    return query;
+  });
+}
+
 describe("transactional intake server actions", () => {
+  it.each([false, true])("surfaces missing worker setup and preserves the form (concierge=%s)", async (concierge) => {
+    noWorkerCollision();
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: "PGRST202", message: "private database internals" },
+    });
+    const action = concierge ? conciergeCreateWorker : createWorker;
+
+    const result = await action(null, workerFormData(concierge));
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: "Worker setup needs attention from Maintain. Your details have been kept. Please contact Maintain support.",
+      values: { first_name: "Alex", consent: "on", start_date: "2026-09-01" },
+    });
+    expect(JSON.stringify(result)).not.toContain("private database internals");
+    expect(console.error).toHaveBeenCalledWith(
+      "[worker-intake] Could not complete worker intake",
+      { stage: "save", code: "PGRST202" },
+    );
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("rejects an impossible calendar date before a database write (concierge=%s)", async (concierge) => {
+    const form = workerFormData(concierge);
+    form.set("start_date", "2026-02-30");
+    const action = concierge ? conciergeCreateWorker : createWorker;
+
+    await expect(action(null, form)).resolves.toMatchObject({
+      ok: false,
+      errors: { start_date: "Give a valid date this worker joined." },
+      values: { start_date: "2026-02-30", consent: "on" },
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("requires consent before creating a worker (concierge=%s)", async (concierge) => {
+    const form = workerFormData(concierge);
+    form.delete("consent");
+    const action = concierge ? conciergeCreateWorker : createWorker;
+    await expect(action(null, form)).resolves.toMatchObject({
+      ok: false,
+      errors: { consent: expect.stringContaining("Confirm") },
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("reports catalogue read failures without blaming the chosen proficiency (concierge=%s)", async (concierge) => {
+    const client = mocks.createAdminClient();
+    client.from = vi.fn((table: string) => {
+      const query = queryFor(table);
+      if (table === "trade_role_proficiency") {
+        query.maybeSingle = vi.fn(async () => ({ data: null, error: { code: "PGRST205" } }));
+      }
+      return query;
+    });
+    const action = concierge ? conciergeCreateWorker : createWorker;
+
+    await expect(action(null, workerFormData(concierge))).resolves.toMatchObject({
+      ok: false,
+      message: expect.stringContaining("Worker setup needs attention"),
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns a useful message for worker options removed after the form loaded", async () => {
+    noWorkerCollision();
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: "23514", message: "worker region is not active" },
+    });
+    await expect(createWorker(null, workerFormData())).resolves.toMatchObject({
+      ok: false,
+      message: expect.stringContaining("Some selected worker options are no longer available"),
+      values: { consent: "on" },
+    });
+  });
+
   it("checks a capacity RPC failure before any post-commit delivery", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { code: "23514", message: "overlap" } });
     const formData = new FormData();
