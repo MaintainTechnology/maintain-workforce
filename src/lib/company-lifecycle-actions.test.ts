@@ -67,25 +67,75 @@ describe("company lifecycle action boundaries", () => {
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
-  it("approval surfaces a checklist failure without an email or separate audit", async () => {
-    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "23514", message: "company checklist is incomplete or expired" } });
-    await expect(approveCompany(form())).rejects.toMatchObject({ url: expect.stringContaining("error=checklist_incomplete") });
+  it("approval surfaces a stale decision without an email or separate audit", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "40001", message: "company status changed; refresh before retrying" } });
+    await expect(approveCompany(form())).rejects.toMatchObject({ url: expect.stringContaining("error=stale") });
     expect(mocks.notify).not.toHaveBeenCalled();
     expect(mocks.audit).not.toHaveBeenCalled();
     expect(mocks.from).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("approval uses a Pending-only atomic RPC and server-derived actor", async () => {
+  it("approval uses the Maintain decision RPC without marking outstanding evidence verified", async () => {
     await expect(approveCompany(form({ actor_user_id: "forged" }))).rejects.toMatchObject({ url: "/admin/verification?saved=approved" });
-    expect(mocks.rpc).toHaveBeenCalledWith("transition_company_status_atomic", {
-      p_company_id: company, p_expected_status: "Pending", p_next_status: "Active", p_actor_user_id: "maintain-actor",
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("approve_company_as_maintain_atomic", {
+      p_company_id: company, p_expected_status: "Pending", p_actor_user_id: "maintain-actor",
     });
-    expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ to: "company@example.test", companyId: company, actionPath: "/app" }));
+    expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({
+      to: "company@example.test", companyId: company, actionPath: "/app",
+      subject: "Your company account is active",
+      body: "Maintain has approved your company account. You can now list spare capacity and post requirements.",
+    }));
     expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.audit).not.toHaveBeenCalled();
+    expect(mocks.notify.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.rpc.mock.invocationCallOrder[0]);
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/(app)", "layout");
     expect(mocks.revalidatePath.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.rpc.mock.invocationCallOrder[0]);
     expect(mocks.revalidatePath.mock.invocationCallOrder[0]).toBeLessThan(mocks.redirect.mock.invocationCallOrder[0]);
+  });
+
+  it("activates from Companies through the same Maintain approval RPC", async () => {
+    await expect(setCompanyStatus(form({ status: "Active", actor_user_id: "forged" }))).rejects.toMatchObject({ url: "/admin/companies?saved=status" });
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("approve_company_as_maintain_atomic", {
+      p_company_id: company, p_expected_status: "Pending", p_actor_user_id: "maintain-actor",
+    });
+    expect(mocks.notify).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      subject: "Your company account is active",
+      body: "Maintain has approved your company account. You can now list spare capacity and post requirements.",
+    }));
+    expect(mocks.notify.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.rpc.mock.invocationCallOrder[0]);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.audit).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/(app)", "layout");
+  });
+
+  it.each(["Active", "Suspended", "Closed"])("approval rejects a displayed %s status", async (expected_status) => {
+    await expect(approveCompany(form({ expected_status }))).rejects.toMatchObject({ url: "/admin/verification?error=invalid" });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.notify).not.toHaveBeenCalled();
+  });
+
+  it.each([approveCompany, setCompanyStatus])("rejects malformed account identifiers before any approval write", async (action) => {
+    await expect(action(form({ company_id: "invalid", status: "Active" }))).rejects.toMatchObject({ url: expect.stringContaining("error=invalid") });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.notify).not.toHaveBeenCalled();
+  });
+
+  it.each([null, {}, { ...outcome, status_before: "Closed" }, { ...outcome, status_after: "Suspended" }])("does not report approval for an invalid transaction result", async (data) => {
+    mocks.rpc.mockResolvedValueOnce({ data, error: null });
+    await expect(approveCompany(form())).rejects.toMatchObject({ url: expect.stringContaining("error=save_failed") });
+    expect(mocks.notify).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("keeps terminal-state protection on the standard transition path", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "23514", message: "Closed is terminal" } });
+    await expect(setCompanyStatus(form({ expected_status: "Closed", status: "Active" }))).rejects.toMatchObject({ url: expect.stringContaining("error=invalid_transition") });
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("transition_company_status_atomic", {
+      p_company_id: company, p_expected_status: "Closed", p_next_status: "Active", p_actor_user_id: "maintain-actor",
+    });
+    expect(mocks.notify).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
 
   it("does not create a document-shaped verification flag", async () => {
@@ -141,6 +191,9 @@ describe("company lifecycle action boundaries", () => {
     }, error: null });
     mocks.notify.mockRejectedValueOnce(new Error("email unavailable"));
     await expect(setCompanyStatus(form({ expected_status: "Active", status: "Suspended" }))).rejects.toMatchObject({ url: "/admin/companies?saved=status" });
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("transition_company_status_atomic", {
+      p_company_id: company, p_expected_status: "Active", p_next_status: "Suspended", p_actor_user_id: "maintain-actor",
+    });
     expect(mocks.notify).toHaveBeenCalledTimes(2);
     expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ companyId: other, to: "buyer@example.test", entityId: match }));
     expect(mocks.audit).not.toHaveBeenCalled();

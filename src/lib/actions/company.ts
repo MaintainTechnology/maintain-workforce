@@ -637,6 +637,10 @@ const companyTransitionResult = z.object({
     buyer_email: z.string(),
   })),
 });
+const companyApprovalResult = companyTransitionResult.extend({
+  status_before: z.literal("Pending"),
+  status_after: z.literal("Active"),
+});
 
 function companyActionLocation(back: string, key: string, value: string): string {
   const hashIndex = back.indexOf("#");
@@ -729,7 +733,7 @@ export async function verifyCompanyDocument(formData: FormData): Promise<void> {
 
 // ------------------------------------------------------------------ 1.5 verification decision
 
-/** 1.5 — approving the checklist sets the company Active and notifies it. */
+/** Maintain may activate a Pending account while leaving outstanding evidence unverified. */
 export async function approveCompany(formData: FormData): Promise<void> {
   const user = await requireMaintainAdmin();
   const parsed = companyDecisionSchema.safeParse({
@@ -737,15 +741,15 @@ export async function approveCompany(formData: FormData): Promise<void> {
   });
   if (!parsed.success) companyActionError("/admin/verification", "invalid");
   const companyId = parsed.data.company_id;
-  const result = await companyRpc("transition_company_status_atomic", {
+  const result = await companyRpc("approve_company_as_maintain_atomic", {
     p_company_id: companyId, p_expected_status: parsed.data.expected_status,
-    p_next_status: "Active", p_actor_user_id: user.id,
-  }, companyTransitionResult, `/admin/verification?company=${companyId}`);
+    p_actor_user_id: user.id,
+  }, companyApprovalResult, `/admin/verification?company=${companyId}`);
   await Promise.allSettled([notify({
     trigger: NOTIFICATION_TRIGGERS.COMPANY_VERIFIED,
     to: result.contact_email,
-    subject: "Your company is verified",
-    body: "Verification is complete. You can now list spare capacity and post requirements.",
+    subject: "Your company account is active",
+    body: "Maintain has approved your company account. You can now list spare capacity and post requirements.",
     companyId,
     entityType: "company",
     entityId: companyId,
@@ -810,15 +814,16 @@ export async function setCompanyStatus(formData: FormData): Promise<void> {
   });
   if (!parsed.success) companyActionError("/admin/companies", "invalid");
   const input = parsed.data;
-  const result = await companyRpc("transition_company_status_atomic", {
+  const isApproval = input.expected_status === "Pending" && input.status === "Active";
+  const result = await companyRpc(isApproval ? "approve_company_as_maintain_atomic" : "transition_company_status_atomic", {
     p_company_id: input.company_id, p_expected_status: input.expected_status,
-    p_next_status: input.status, p_actor_user_id: user.id,
-  }, companyTransitionResult, "/admin/companies");
+    ...(isApproval ? {} : { p_next_status: input.status }), p_actor_user_id: user.id,
+  }, isApproval ? companyApprovalResult : companyTransitionResult, "/admin/companies");
   if (result.status_before === "Pending" && result.status_after === "Active") {
     await Promise.allSettled([notify({
       trigger: NOTIFICATION_TRIGGERS.COMPANY_VERIFIED, to: result.contact_email,
-      subject: "Your company is verified",
-      body: "Verification is complete. You can now list spare capacity and post requirements.",
+      subject: "Your company account is active",
+      body: "Maintain has approved your company account. You can now list spare capacity and post requirements.",
       companyId: result.company_id, entityType: "company", entityId: result.company_id, actionPath: "/app",
     })]);
   }

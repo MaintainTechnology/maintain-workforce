@@ -13,6 +13,7 @@ describe("read-only database readiness", () => {
       "create_worker_transactional", "transition_company_status_atomic",
       "update_company_profile_atomic",
       "save_company_document_atomic",
+      "approve_company_as_maintain_atomic",
     ]);
     expect(request).toHaveBeenCalledTimes(1);
     const [url, options] = request.mock.calls[0];

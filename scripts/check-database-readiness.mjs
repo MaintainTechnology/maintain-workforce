@@ -10,6 +10,7 @@ export const REQUIRED_RPCS = [
   "transition_company_status_atomic",
   "update_company_profile_atomic",
   "save_company_document_atomic",
+  "approve_company_as_maintain_atomic",
 ];
 
 /** @param {Record<string, string | undefined>} env */

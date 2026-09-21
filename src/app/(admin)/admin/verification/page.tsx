@@ -44,7 +44,7 @@ export const metadata: Metadata = { title: "Account approvals" };
 const FEEDBACK: Record<string, string> = {
   approved: "Company approved and set Active.",
   rejected: "Rejection recorded and the company notified.",
-  verified: "Checklist item verified. Complete the remaining required items, then select Approve and activate.",
+  verified: "Checklist item verified. You can select Approve and activate whenever you are ready to approve the account.",
   document: "Document file saved. Open it to review the evidence, then select Verify.",
   profile: "Onboarding company details saved.",
 };
@@ -63,7 +63,7 @@ const PROBLEM: Record<string, string> = {
   abn_checksum: "That ABN fails the standard 11-digit checksum.",
   abn_collision: "That ABN is already registered to another company.",
   stale: "The company or document changed. Refresh before trying again; nothing was changed.",
-  checklist_incomplete: "Verify all required, current documents and reference flags before activation.",
+  checklist_incomplete: "The checklist is incomplete. Maintain admins can approve the account with outstanding items.",
   invalid_transition: "That decision is not available. Verify an uploaded, current document and the correct catalogue licence; only Pending companies can be approved or rejected.",
 };
 
@@ -192,8 +192,8 @@ export default async function VerificationPage({
         </span>
       </header>
       <p className="max-w-[62ch] text-body text-on-dark-muted">
-        Review newly registered companies and approve their accounts once the verification checklist is complete.
-        Verify confirms each document. Approve and activate opens the account after all required items are verified.
+        Maintain admins can approve accounts with incomplete information or missing documents.
+        Verify confirms an individual document. Approve and activate opens the account and records your decision.
       </p>
 
       {saved && (
@@ -275,10 +275,10 @@ export default async function VerificationPage({
           </div>
           <p className={`${FIELD_HINT} mt-(--space-2)`}>
             {checklistUnavailable
-              ? "The verification checklist could not be loaded. Refresh before making a decision."
+              ? "The verification checklist could not be loaded. Account approval remains available to Maintain admins."
               : outstanding.length === 0
               ? "Every mandatory checklist item is verified."
-              : `Approval requirements still open: ${outstanding.map((item) => item.label).join(", ")}.`}
+              : `Checklist items still outstanding: ${outstanding.map((item) => item.label).join(", ")}. You can still approve this account.`}
           </p>
 
           <div className="mt-(--space-6) border-t border-hairline pt-(--space-5)">
@@ -658,7 +658,8 @@ export default async function VerificationPage({
               <h3 className="font-display text-h4 font-bold text-on-dark">Approve</h3>
               <p className={FIELD_HINT}>
                 Sets the company Active and emails it. From then on it can list spare
-                capacity and post requirements.
+                capacity and post requirements. Missing information or files do not block
+                admin approval. Document verification statuses stay unchanged.
               </p>
               <input type="hidden" name="company_id" value={selected.id} />
               <input type="hidden" name="expected_status" value={selected.status} />

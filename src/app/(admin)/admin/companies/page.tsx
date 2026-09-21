@@ -28,15 +28,15 @@ import {
 import { BTN_GHOST, H1, H2, LINK } from "@/lib/ui";
 import type { CompanyStatus } from "@/lib/supabase/types";
 
-// Spec 3.2 — company statuses and their effects. Pending → Active (via the Verification
-// queue), Active ⇄ Suspended, any → Closed (terminal). Only a Maintain admin changes a
+// Company statuses and their effects. Pending → Active by Maintain approval,
+// Active ⇄ Suspended, any → Closed (terminal). Only a Maintain admin changes a
 // company's status (1.5), and every change is audited (18.2).
 
 export const metadata: Metadata = { title: "Companies" };
 
 const STATUSES: CompanyStatus[] = ["Pending", "Active", "Suspended", "Closed"];
 const STATUS_TARGETS: Record<CompanyStatus, CompanyStatus[]> = {
-  Pending: ["Closed"],
+  Pending: ["Active", "Closed"],
   Active: ["Suspended", "Closed"],
   Suspended: ["Active", "Closed"],
   Closed: [],
@@ -57,7 +57,7 @@ const PROBLEM: Record<string, string> = {
   not_found: "That company no longer exists.",
   closed_is_terminal: "Closed is terminal — a closed company cannot be reopened.",
   stale: "The company or its matches changed. Refresh before trying again; nothing was changed.",
-  checklist_incomplete: "Complete the current verification checklist before activating this company.",
+  checklist_incomplete: "Maintain admins can approve accounts with outstanding checklist items through Account approvals.",
   invalid_transition: "That status change is not available. Closed companies cannot be reopened.",
   save_failed: "The status change could not be saved. Refresh and try again.",
 };
@@ -66,7 +66,7 @@ const PROBLEM: Record<string, string> = {
 const EFFECTS: Record<CompanyStatus, string> = {
   Pending:
     "Can complete its profile, upload documents and add crew. Cannot list capacity or post requirements, and is absent from matching.",
-  Active: "Full access. Can both sell spare capacity and post requirements (3.3).",
+  Active: "Full access. Can both sell spare capacity and post requirements. Maintain admins can approve incomplete accounts; document verification stays unchanged.",
   Suspended:
     "Read-only for its users. Its crew is excluded from matching, new supply and demand are blocked, its open matches are withdrawn and both parties notified, and engagements in a committing status are flagged for Maintain review.",
   Closed: "Terminal. Set by Maintain only; the account cannot be reopened.",
@@ -210,11 +210,9 @@ export default async function CompaniesPage({
                         <button type="submit" className={BTN_GHOST}>
                           Apply
                         </button>
-                        {company.status === "Pending" && (
-                          <Link className={LINK} href={`/admin/verification?company=${company.id}`}>
-                            Verify to activate
-                          </Link>
-                        )}
+                        <Link className={LINK} href={`/admin/verification?company=${company.id}`}>
+                          {company.status === "Pending" ? "Review and approve" : "Review account"}
+                        </Link>
                       </form>
                     )}
                   </td>

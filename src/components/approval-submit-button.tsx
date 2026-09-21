@@ -13,25 +13,24 @@ export function ApprovalSubmitButton({
   outstandingLabels,
 }: ApprovalSubmitButtonProps) {
   const { pending } = useFormStatus();
-  const blocked = checklistUnavailable || outstandingLabels.length > 0;
-  const disabled = blocked || pending;
-  const explanationId = blocked ? "approval-blocked-reason" : undefined;
+  const hasOutstanding = checklistUnavailable || outstandingLabels.length > 0;
+  const explanationId = hasOutstanding ? "approval-outstanding-items" : undefined;
 
   return (
     <>
       <button
         type="submit"
         className={`${BTN_PRIMARY} self-start`}
-        disabled={disabled}
+        disabled={pending}
         aria-describedby={explanationId}
       >
         {pending ? "Approving…" : "Approve and activate"}
       </button>
-      {blocked && (
-        <p id="approval-blocked-reason" className="max-w-[54ch] text-body-sm text-on-dark-muted">
+      {hasOutstanding && (
+        <p id="approval-outstanding-items" className="max-w-[54ch] text-body-sm text-on-dark-muted">
           {checklistUnavailable
-            ? "Approval is unavailable because the verification checklist could not be loaded. Refresh this page before trying again."
-            : `Approval is locked. Complete these required items first: ${outstandingLabels.join(", ")}.`}
+            ? "Checklist details are unavailable. Maintain admins can still approve this account. The approval decision is audited."
+            : `You can approve with these items outstanding: ${outstandingLabels.join(", ")}. They will remain unverified, and your approval decision will be audited.`}
         </p>
       )}
     </>

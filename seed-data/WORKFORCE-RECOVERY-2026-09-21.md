@@ -222,12 +222,24 @@ MFA must still complete their second factor. For optional MFA configuration, see
    in MFA. If that account already has MFA enabled, verify its second factor in the
    current session. Access checks read current backend public metadata, so stale
    session claims must not prevent newly authorized staff from reaching the panel.
-4. Select the Pending company, review/upload its documents, and verify each
-   required checklist item. Once complete, select **Approve and activate**.
+4. Select the Pending company and review its saved details. Maintain admins can
+   select **Approve and activate** even when information or document files are
+   missing. The Companies screen also offers Active for Pending accounts.
    This commits the Pending → Active transition and audit record atomically;
    notification is attempted afterward; check Notifications for delivery failures.
    All accepted administrators of that company
    then receive the Active company's permissions.
+
+### Admin approval policy update
+
+The owner's September 21 policy allows Maintain admins to activate incomplete
+accounts. `approve_company_as_maintain_atomic` records the approving staff user,
+the approval mode and outstanding checklist requirements in the status-change
+audit. It does not create documents or mark missing evidence verified. Documents
+can be uploaded and verified separately; the account approval button stays
+available while items are outstanding. Customer accounts cannot approve themselves.
+This supersedes the incomplete-checklist rejection behavior described in the
+earlier metadata-correction verification below.
 
 Backend public metadata and unsafe metadata have different trust rules; see
 [Clerk's metadata documentation](https://clerk.com/docs/guides/users/extending).

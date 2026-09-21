@@ -30,12 +30,15 @@ beforeEach(() => {
 });
 
 describe("metadata-authorized company approval", () => {
-  it("allows isAdmin staff without MFA and attributes the atomic transition to the signed-in user", async () => {
+  it("allows isAdmin staff to approve incomplete accounts and attributes the decision to the signed-in user", async () => {
     await expect(approveCompany(approval())).rejects.toMatchObject({ url: "/admin/verification?saved=approved" });
-    expect(io.rpc).toHaveBeenCalledExactlyOnceWith("transition_company_status_atomic", {
-      p_company_id: companyId, p_expected_status: "Pending", p_next_status: "Active", p_actor_user_id: staff.id,
+    expect(io.rpc).toHaveBeenCalledExactlyOnceWith("approve_company_as_maintain_atomic", {
+      p_company_id: companyId, p_expected_status: "Pending", p_actor_user_id: staff.id,
     });
-    expect(io.notify).toHaveBeenCalledOnce();
+    expect(io.notify).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      subject: "Your company account is active",
+      body: "Maintain has approved your company account. You can now list spare capacity and post requirements.",
+    }));
     expect(io.revalidate).toHaveBeenCalledWith("/(app)", "layout");
   });
 
@@ -58,9 +61,9 @@ describe("metadata-authorized company approval", () => {
     expect(io.admin).not.toHaveBeenCalled();
   });
 
-  it("does not turn the metadata flag into permission to bypass an incomplete company checklist", async () => {
-    io.rpc.mockResolvedValue({ data: null, error: { code: "23514", message: "company checklist is incomplete or expired" } });
-    await expect(approveCompany(approval())).rejects.toMatchObject({ url: expect.stringContaining("error=checklist_incomplete") });
+  it("does not turn the metadata flag into permission to overwrite a newer status", async () => {
+    io.rpc.mockResolvedValue({ data: null, error: { code: "40001", message: "company status changed; refresh before retrying" } });
+    await expect(approveCompany(approval())).rejects.toMatchObject({ url: expect.stringContaining("error=stale") });
     expect(io.notify).not.toHaveBeenCalled();
     expect(io.revalidate).not.toHaveBeenCalled();
   });

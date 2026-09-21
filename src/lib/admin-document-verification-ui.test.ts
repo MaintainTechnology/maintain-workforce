@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 type Row = Record<string, unknown>;
 const state = vi.hoisted(() => ({
   tables: {} as Record<string, Row[]>,
+  requirements: [] as Row[],
+  checklistUnavailable: false,
   failingTable: "",
   unavailableFiles: new Set<string>(),
 }));
@@ -51,14 +53,9 @@ function database() {
       };
       return query;
     },
-    rpc: async () => ({
-      data: [
-        { doc_type: "public_liability", label: "Public liability insurance", qualification_id: null, is_required: true, is_verified: false },
-        { doc_type: "workers_comp", label: "Workers compensation", qualification_id: null, is_required: true, is_verified: false },
-        { doc_type: "payment_details", label: "Payment details provided", qualification_id: null, is_required: true, is_verified: false },
-      ],
-      error: null,
-    }),
+    rpc: async () => state.checklistUnavailable
+      ? { data: null, error: { message: "Checklist unavailable" } }
+      : { data: state.requirements, error: null },
     storage: {
       from: () => ({
         createSignedUrl: async (path: string) => state.unavailableFiles.has(path)
@@ -112,6 +109,12 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-21T02:00:00Z"));
   state.failingTable = "";
+  state.checklistUnavailable = false;
+  state.requirements = [
+    { doc_type: "public_liability", label: "Public liability insurance", qualification_id: null, is_required: true, is_verified: false },
+    { doc_type: "workers_comp", label: "Workers compensation", qualification_id: null, is_required: true, is_verified: false },
+    { doc_type: "payment_details", label: "Payment details provided", qualification_id: null, is_required: true, is_verified: false },
+  ];
   state.unavailableFiles.clear();
   state.tables = {
     company: [{
@@ -137,6 +140,37 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); });
 
 describe("admin document verification readiness", () => {
+  it("allows admin activation with missing insurance and an outstanding payment flag", async () => {
+    const html = await renderPage();
+
+    expect(hasDisabled(buttonFor(html, "Approve and activate"))).toBe(false);
+    expect(html).toContain("Public liability insurance, Workers compensation, Payment details provided");
+    expect(html).not.toContain("Approval is locked");
+  });
+
+  it("allows admin activation when a required company licence is outstanding", async () => {
+    state.requirements.push({
+      doc_type: "trade_licence",
+      label: "Electrical contractor licence",
+      qualification_id: "contractor-licence",
+      is_required: true,
+      is_verified: false,
+    });
+    const html = await renderPage();
+
+    expect(html).toContain("Electrical contractor licence");
+    expect(hasDisabled(buttonFor(html, "Approve and activate"))).toBe(false);
+  });
+
+  it("preserves admin approval authority when the checklist cannot be loaded", async () => {
+    state.checklistUnavailable = true;
+    const html = await renderPage();
+
+    expect(html).toContain("verification checklist could not be loaded");
+    expect(hasDisabled(buttonFor(html, "Approve and activate"))).toBe(false);
+    expect(html).not.toContain("Approval is unavailable");
+  });
+
   it("explains a missing file and offers recovery on the existing record", async () => {
     state.tables.company_document = [document("fileless", { file_path: null, expiry_date: "2030-01-21" })];
     const html = await renderPage();
