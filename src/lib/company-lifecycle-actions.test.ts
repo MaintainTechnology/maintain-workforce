@@ -73,6 +73,7 @@ describe("company lifecycle action boundaries", () => {
     expect(mocks.notify).not.toHaveBeenCalled();
     expect(mocks.audit).not.toHaveBeenCalled();
     expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
 
   it("approval uses a Pending-only atomic RPC and server-derived actor", async () => {
@@ -82,6 +83,9 @@ describe("company lifecycle action boundaries", () => {
     });
     expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ to: "company@example.test", companyId: company, actionPath: "/app" }));
     expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/(app)", "layout");
+    expect(mocks.revalidatePath.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.rpc.mock.invocationCallOrder[0]);
+    expect(mocks.revalidatePath.mock.invocationCallOrder[0]).toBeLessThan(mocks.redirect.mock.invocationCallOrder[0]);
   });
 
   it("does not create a document-shaped verification flag", async () => {
@@ -141,11 +145,13 @@ describe("company lifecycle action boundaries", () => {
     expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ companyId: other, to: "buyer@example.test", entityId: match }));
     expect(mocks.audit).not.toHaveBeenCalled();
     expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/(app)", "layout");
   });
 
   it("does not notify or report success for a stale status", async () => {
     mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "40001" } });
     await expect(setCompanyStatus(form({ expected_status: "Active", status: "Suspended" }))).rejects.toMatchObject({ url: expect.stringContaining("error=stale") });
     expect(mocks.notify).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
 });

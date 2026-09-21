@@ -4,8 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase } from "@/test/database";
 
 // Module 6 worker intake, executed against the real migrations. The other intake
-// aggregates already have database coverage; create_worker_transactional did not,
-// which is how a broken worker create reached production.
+// aggregates have database coverage too. This proves the migrated database contract;
+// deployed migration availability is a separate release check.
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
 beforeAll(async () => { db = await createTestDatabase(); }, 30_000);
@@ -44,6 +44,73 @@ async function withFixture(companyStatus: string, test: () => Promise<void>) {
 }
 
 describe("worker intake against the real schema", () => {
+  it.each(["Suspended", "Closed"])("keeps %s companies read-only", async (status) => {
+    await withFixture(status, async () => {
+      await expect(db.query(CREATE_WORKER,
+        [fixtureId(10), "user_clerk_test", false, null, JSON.stringify(workerPayload())]))
+        .rejects.toMatchObject({ code: "42501" });
+    });
+  });
+
+  it.each(["anon", "authenticated"])("does not allow %s callers to choose an arbitrary company", async (role) => {
+    await withFixture("Pending", async () => {
+      await db.exec(`set local role ${role}`);
+      await expect(db.query(CREATE_WORKER,
+        [fixtureId(11), "forged_actor", false, null, JSON.stringify(workerPayload())]))
+        .rejects.toMatchObject({ code: "42501" });
+    });
+  });
+
+  it("requires worker consent in the database", async () => {
+    await withFixture("Pending", async () => {
+      await expect(db.query(CREATE_WORKER, [fixtureId(10), "user_clerk_test", false, null,
+        JSON.stringify(workerPayload({ consent_confirmed: false }))]))
+        .rejects.toMatchObject({ code: "22023" });
+    });
+  });
+
+  it("rolls back the worker when employment creation fails", async () => {
+    await withFixture("Pending", async () => {
+      await db.exec("savepoint worker_attempt");
+      // The worker insert precedes this invalid date cast in the employment insert.
+      await expect(db.query(CREATE_WORKER, [fixtureId(10), "user_clerk_test", false, null,
+        JSON.stringify(workerPayload({ start_date: "2026-02-30" }))]))
+        .rejects.toMatchObject({ code: "22008" });
+      await db.exec("rollback to savepoint worker_attempt");
+      const result = await db.query<{ count: number }>(
+        "select count(*)::int as count from worker where email=$1", [workerPayload().email]);
+      expect(result.rows[0].count).toBe(0);
+    });
+  });
+
+  it("keeps collisions existence-only and does not create a second worker", async () => {
+    await withFixture("Pending", async () => {
+      const args = [fixtureId(10), "user_clerk_test", false, null, JSON.stringify(workerPayload())];
+      await db.query(CREATE_WORKER, args);
+      await db.exec("savepoint duplicate_attempt");
+      await expect(db.query(CREATE_WORKER, args)).rejects.toMatchObject({ code: "23505" });
+      await db.exec("rollback to savepoint duplicate_attempt");
+      const result = await db.query<{ count: number }>(
+        "select count(*)::int as count from worker where email=$1", [workerPayload().email]);
+      expect(result.rows[0].count).toBe(1);
+    });
+  });
+
+  it("records concierge evidence with the worker and consent", async () => {
+    await withFixture("Pending", async () => {
+      const evidence = "Confirmed consent by phone with the company administrator";
+      const result = await db.query<{ id: string }>(CREATE_WORKER,
+        [fixtureId(10), "maintain_admin_test", true, evidence, JSON.stringify(workerPayload())]);
+      const audit = await db.query<{ actor_user_id: string; after_data: Record<string, unknown> }>(
+        "select actor_user_id, after_data from audit_event where entity_id=$1 and action='concierge.worker_created'",
+        [result.rows[0].id]);
+      expect(audit.rows[0]).toMatchObject({
+        actor_user_id: "maintain_admin_test",
+        after_data: { company_id: fixtureId(10), admin_entered: true, evidence_note: evidence },
+      });
+    });
+  });
+
   // 1.3 — a Pending company prepares its crew before verification completes.
   it("creates a worker for a Pending company", async () => {
     await withFixture("Pending", async () => {

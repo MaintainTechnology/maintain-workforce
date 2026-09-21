@@ -27,7 +27,7 @@ export function createAdminClient() {
  */
 async function reportSchemaDrift(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const response = await fetch(input, init);
-  if (response.ok || response.status === 404) return response;
+  if (response.ok) return response;
 
   try {
     const body = (await response.clone().json()) as { code?: unknown; message?: unknown };
@@ -35,8 +35,9 @@ async function reportSchemaDrift(input: RequestInfo | URL, init?: RequestInit): 
     if (body.code === "PGRST202" || body.code === "PGRST205") {
       console.error(
         `[supabase] ${String(body.message)} (${String(body.code)}). The database is behind the ` +
-          "migrations in supabase/migrations: run `supabase db push`, then reload the PostgREST " +
-          "schema cache. Until then this write fails identically on every retry.",
+          "migrations in supabase/migrations. Follow seed-data/PRODUCTION-CUTOVER.md to apply " +
+          "the reviewed missing migrations, then reload the PostgREST schema cache. " +
+          "Until then this write fails identically on every retry.",
       );
     }
   } catch {

@@ -547,7 +547,10 @@ async function companyRpc<T extends z.ZodType>(
 }
 
 function revalidateCompanyLifecycle() {
-  for (const path of ["/admin/verification", "/admin/companies", "/admin/matching", "/admin/engagements", "/app", "/app/settings", "/app/matches"]) {
+  // The company status and verification banner live in the persistent workspace
+  // layout. Invalidating a page alone does not refresh that shared account state.
+  revalidatePath("/(app)", "layout");
+  for (const path of ["/admin/verification", "/admin/companies", "/admin/matching", "/admin/engagements"]) {
     revalidatePath(path);
   }
 }

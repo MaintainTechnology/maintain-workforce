@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 // remains available without relying on hover or a horizontally clipped header.
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // 2.4 — requireMaintainAdmin carries the Clerk session MFA gate, which redirects to
-  // /admin/mfa; running that same gate for /admin/mfa itself would redirect back here
-  // forever while the current session lacks second-factor proof. That route is exempted (the
+  // requireMaintainAdmin checks current-session MFA for admins who have enrolled.
+  // Running that same gate for /admin/mfa would redirect back here forever while the
+  // current session lacks second-factor proof. That route is exempted (the
   // pathname comes from proxy.ts, since layouts get no pathname prop) and does its own
   // claim check instead — see its page.tsx.
   const pathname = (await headers()).get("x-pathname") ?? "";

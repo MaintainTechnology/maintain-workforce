@@ -69,6 +69,6 @@ export async function consumeCompanyInvitation(userId: string): Promise<void> {
 
 export async function setMaintainAdmin(userId: string): Promise<void> {
   await (await clerkClient()).users.updateUserMetadata(userId, {
-    publicMetadata: { role: "maintain_admin" },
+    publicMetadata: { isAdmin: true },
   });
 }

@@ -17,6 +17,7 @@ type WorkspaceAccount = {
   companyName: string;
   companyStatus: CompanyStatus;
   email: string;
+  canManageWorkforce?: boolean;
   signOut: ReactNode;
 };
 
@@ -89,11 +90,16 @@ function NavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function AccountFooter({ email, signOut }: Pick<WorkspaceAccount, "email" | "signOut">) {
+function AccountFooter({ email, signOut, canManageWorkforce }: Pick<WorkspaceAccount, "email" | "signOut" | "canManageWorkforce">) {
   return (
     <div className="border-t border-hairline pt-4">
       <p className="text-xs text-on-dark-faint">Signed in as</p>
       <p className="mt-1 truncate text-sm font-medium text-on-dark-muted" title={email}>{email}</p>
+      {canManageWorkforce && (
+        <Link href="/admin/verification" className={`mt-3 flex min-h-11 items-center justify-center rounded-(--radius-pill) border border-hairline px-4 text-sm font-semibold text-on-dark hover:bg-white/5 ${NAV_FOCUS}`}>
+          Account approvals
+        </Link>
+      )}
       <div className="mt-3">{signOut}</div>
     </div>
   );

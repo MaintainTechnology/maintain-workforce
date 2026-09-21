@@ -11,7 +11,7 @@ import { Icon } from "./icon";
 // persistent root layout stays open across soft navigations, so this closes it
 // whenever the route changes. The panel scales in from its trigger.
 
-export function MobileMenu() {
+export function MobileMenu({ signedIn = false }: { signedIn?: boolean }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
 
@@ -40,17 +40,19 @@ export function MobileMenu() {
             {label}
           </Link>
         ))}
+        {!signedIn && (
+          <Link
+            href={ctas.signIn.href}
+            className={`mt-(--space-2) block min-h-11 content-center rounded-(--radius-pill) border border-hairline px-(--space-3) text-center text-sm font-semibold text-on-dark ${NAV_FOCUS}`}
+          >
+            {ctas.signIn.label}
+          </Link>
+        )}
         <Link
-          href={ctas.signIn.href}
-          className={`mt-(--space-2) block min-h-11 content-center rounded-(--radius-pill) border border-hairline px-(--space-3) text-center text-sm font-semibold text-on-dark ${NAV_FOCUS}`}
-        >
-          {ctas.signIn.label}
-        </Link>
-        <Link
-          href={ctas.signUp.href}
+          href={signedIn ? "/auth/continue" : ctas.signUp.href}
           className={`mt-(--space-2) block min-h-11 content-center rounded-(--radius-pill) bg-primary px-(--space-3) text-center text-sm font-semibold text-primary-ink focus-visible:bg-amber-tint-2 ${NAV_FOCUS}`}
         >
-          {ctas.signUp.label}
+          {signedIn ? "My account" : ctas.signUp.label}
         </Link>
       </div>
     </details>

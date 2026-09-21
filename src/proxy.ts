@@ -17,15 +17,9 @@ const withClerk = clerkMiddleware(async (auth, request) => {
     return authState.redirectToSignIn({ returnBackUrl: request.url });
   }
 
-  if (isAdminRoute) {
-    // This is only an early rejection. requireMaintainAdmin() reads authoritative
-    // Backend API metadata in the layout before any admin data is exposed.
-    const metadata = (authState.sessionClaims?.metadata ??
-      authState.sessionClaims?.publicMetadata) as { role?: string } | undefined;
-    if (metadata?.role && metadata.role !== "maintain_admin") {
-      return NextResponse.redirect(new URL("/app", request.url));
-    }
-  }
+  // Session metadata can still contain the previous role after staff access is
+  // granted in Clerk. Leave role decisions to requireMaintainAdmin(), which reads
+  // Backend API publicMetadata and verifies MFA before any admin data or mutation.
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
