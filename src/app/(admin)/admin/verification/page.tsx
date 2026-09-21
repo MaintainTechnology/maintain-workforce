@@ -8,6 +8,7 @@ import {
   verifyCompanyDocument,
 } from "@/lib/actions/company";
 import { requireMaintainAdmin } from "@/lib/auth";
+import { ApprovalSubmitButton } from "@/components/approval-submit-button";
 import { formatAbn } from "@/lib/domain/abn";
 import {
   CARD,
@@ -25,7 +26,7 @@ import {
   toneFor,
 } from "@/lib/platform-ui";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { BTN_GHOST, BTN_PRIMARY, H1, H2, LINK } from "@/lib/ui";
+import { BTN_GHOST, H1, H2, LINK } from "@/lib/ui";
 
 // Spec 1.4 / 1.5 — the Verification queue. It lists Pending companies and gives each one
 // a checklist: ABN verified, public liability insurance, workers compensation, trade
@@ -420,9 +421,10 @@ export default async function VerificationPage({
               </p>
               <input type="hidden" name="company_id" value={selected.id} />
               <input type="hidden" name="expected_status" value={selected.status} />
-              <button type="submit" className={`${BTN_PRIMARY} self-start`} disabled={outstanding.length > 0 || checklistUnavailable}>
-                Approve and activate
-              </button>
+              <ApprovalSubmitButton
+                checklistUnavailable={checklistUnavailable}
+                outstandingLabels={outstanding.map((item) => item.label)}
+              />
             </form>
 
             <form action={rejectCompany} className="flex flex-col gap-(--space-3)">

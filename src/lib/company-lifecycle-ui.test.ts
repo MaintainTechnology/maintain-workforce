@@ -11,7 +11,8 @@ describe("company lifecycle form contracts", () => {
     expect(page).toContain('name="expected_abn" value={selected.abn ?? ""}');
     expect(page).toContain('name="qualification_id"');
     expect(page).toContain('selected.status === "Pending"');
-    expect(page).toContain('disabled={outstanding.length > 0');
+    expect(page).toContain("<ApprovalSubmitButton");
+    expect(page).toContain("outstandingLabels={outstanding.map((item) => item.label)}");
   });
   it("limits status controls to canonical targets, separately from report filters", () => {
     const page = source("src/app/(admin)/admin/companies/page.tsx");

@@ -23,10 +23,10 @@ export const LABEL =
 // scale(0.97) at --dur-fast (120ms) — the whole pill gives under the pointer;
 // the colour change keeps 200ms. mw-cta nudges a trailing arrow on hover.
 export const BTN_PRIMARY =
-  "mw-cta inline-flex min-h-11 items-center justify-center gap-(--space-2) rounded-(--radius-pill) bg-primary px-(--space-6) py-(--space-3) font-bold text-primary-ink shadow-(--shadow-md) [transition:background-color_var(--dur-base)_var(--ease-out),transform_var(--dur-fast)_var(--ease-out)] hover:bg-amber-tint-2 focus-visible:bg-amber-tint-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark active:scale-[0.97]";
+  "mw-cta inline-flex min-h-11 items-center justify-center gap-(--space-2) rounded-(--radius-pill) bg-primary px-(--space-6) py-(--space-3) font-bold text-primary-ink shadow-(--shadow-md) [transition:background-color_var(--dur-base)_var(--ease-out),transform_var(--dur-fast)_var(--ease-out),opacity_var(--dur-base)_var(--ease-out)] hover:bg-amber-tint-2 focus-visible:bg-amber-tint-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:bg-primary disabled:active:scale-100";
 
 export const BTN_GHOST =
-  "mw-cta inline-flex min-h-11 items-center justify-center gap-(--space-2) rounded-(--radius-pill) border border-hairline px-(--space-6) py-(--space-3) font-bold text-on-dark [transition:background-color_var(--dur-base)_var(--ease-out),transform_var(--dur-fast)_var(--ease-out)] hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark active:scale-[0.97]";
+  "mw-cta inline-flex min-h-11 items-center justify-center gap-(--space-2) rounded-(--radius-pill) border border-hairline px-(--space-6) py-(--space-3) font-bold text-on-dark [transition:background-color_var(--dur-base)_var(--ease-out),transform_var(--dur-fast)_var(--ease-out),opacity_var(--dur-base)_var(--ease-out)] hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:active:scale-100";
 
 // Panel: Black 2 on a hairline, no shadow (Flat-By-Default Rule).
 export const PANEL = "rounded-(--radius-lg) border border-hairline bg-black-2";
@@ -38,4 +38,3 @@ export const LINK =
 // Keyboard focus for bare nav links (buttons and inputs carry their own).
 export const NAV_FOCUS =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark";
-
