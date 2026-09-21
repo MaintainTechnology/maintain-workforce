@@ -1,0 +1,19 @@
+# Runtime configuration is supplied by the existing Vercel project.
+.env*
+
+# Local tooling, reports, and caches are not application source.
+.git
+.vercel
+.claude
+.claude-flow
+.impeccable
+.vscode
+.diagram-design
+node_modules
+.next
+test-results
+playwright-report
+*.tsbuildinfo
+
+# Optimized runtime assets are in public/design-system/graphics/web.
+design-source
