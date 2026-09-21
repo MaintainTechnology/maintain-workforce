@@ -8,6 +8,8 @@ import { assertDeploymentEnvironment } from "./src/lib/deployment-env";
 assertDeploymentEnvironment();
 
 const nextConfig: NextConfig = {
+  // Keep multipart overhead below Vercel's request ceiling; the form caps files at 4 MB.
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   // Lets .mdx files be routes (app/blog/foo/page.mdx) or imported as content.
   pageExtensions: ["ts", "tsx", "md", "mdx"],
   // Routes from the retired Maintain Workforce (labour supplier) site. The

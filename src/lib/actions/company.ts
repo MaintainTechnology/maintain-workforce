@@ -13,6 +13,11 @@ import {
   requireMaintainAdmin,
 } from "@/lib/auth";
 import { findUserByEmail, inviteAdministrator, userHasSignedIn } from "@/lib/clerk";
+import {
+  COMPANY_DOCUMENT_MAX_BYTES,
+  COMPANY_DOCUMENT_MIME_TYPES,
+  COMPANY_DOCUMENT_TYPES,
+} from "@/lib/company-document-policy";
 import { isValidAbn, normaliseAbn } from "@/lib/domain/abn";
 import { notify, NOTIFICATION_TRIGGERS } from "@/lib/notify";
 import { parseRegistrationInput } from "@/lib/registration";
@@ -31,8 +36,6 @@ const MAINTAIN_INBOX =
 
 /** 1.7 — private bucket, path scoped by company id, signed URLs only. */
 const DOCUMENT_BUCKET = "company-documents";
-const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
-const DOCUMENT_MIME = new Set(["application/pdf", "image/jpeg", "image/jpg", "image/png"]);
 
 /**
  * 1.4 — the per-company verification checklist. Items of kind "document" are
@@ -475,12 +478,27 @@ export async function updatePendingCompanyProfileAsMaintain(formData: FormData):
 // ------------------------------------------------------------------ 1.3 / 1.4 documents
 
 const documentSchema = z.object({
-  doc_type: z.enum(CHECKLIST_IDS as unknown as [string, ...string[]]),
+  doc_type: z.enum(COMPANY_DOCUMENT_TYPES),
+  document_id: z.string().uuid().nullable(),
   number: z.string().trim().max(120).optional(),
   issuer: z.string().trim().max(200).optional(),
-  issue_date: z.string().trim().optional(),
-  expiry_date: z.string().trim().optional(),
 });
+
+const documentDatesSchema = z.object({
+  issue_date: z.iso.date().nullable(),
+  expiry_date: z.iso.date().nullable(),
+}).refine(({ issue_date, expiry_date }) => !issue_date || !expiry_date || issue_date <= expiry_date);
+
+const documentSaveResult = z.object({
+  company_id: z.string().uuid(),
+  document_id: z.string().uuid(),
+});
+
+function documentReturnPath(companyId: string, docType: string, documentId?: string | null) {
+  return documentId
+    ? `/admin/verification?company=${companyId}&document=${documentId}#document-${documentId}`
+    : `/admin/verification?company=${companyId}&section=${docType}#checklist-${docType}`;
+}
 
 /**
  * 1.3 — a Pending company can upload compliance documents; 1.4 — each one is a
@@ -494,78 +512,111 @@ export async function uploadCompanyDocument(formData: FormData): Promise<void> {
 
   let actorUserId: string;
   let companyId: string;
+  let expectedStatus: CompanyStatus;
   let back: string;
 
   if (asMaintain) {
     const user = await requireMaintainAdmin();
     actorUserId = user.id;
+    const targetBack = z.string().uuid().safeParse(targetCompanyId).success
+      ? `/admin/verification?company=${targetCompanyId}` : "/admin/verification";
+    const target = z.object({
+      company_id: z.string().uuid(),
+      expected_status: z.enum(["Pending", "Active", "Suspended"]),
+    }).safeParse({ company_id: targetCompanyId, expected_status: formData.get("expected_status") });
+    if (!target.success) companyActionError(targetBack, "invalid");
     companyId = targetCompanyId;
+    expectedStatus = target.data.expected_status;
     back = `/admin/verification?company=${companyId}`;
   } else {
     const context = await requireCompanyAdmin();
-    if (!writable(context.companyStatus)) redirect("/app/settings?error=read_only");
+    if (!writable(context.companyStatus)) companyActionError("/app/settings?section=documents#company-documents", "read_only");
     actorUserId = context.user.id;
     companyId = context.companyId;
-    back = "/app/settings";
+    expectedStatus = context.companyStatus;
+    back = "/app/settings?section=documents#company-documents";
   }
 
   const parsed = documentSchema.safeParse({
     doc_type: formData.get("doc_type"),
+    document_id: formData.get("document_id") || null,
     number: formData.get("number") || undefined,
     issuer: formData.get("issuer") || undefined,
-    issue_date: formData.get("issue_date") || undefined,
-    expiry_date: formData.get("expiry_date") || undefined,
   });
-  if (!parsed.success) redirect(`${back}?error=invalid`);
+  if (!parsed.success) companyActionError(back, "invalid");
   const input = parsed.data;
+  if (asMaintain) back = documentReturnPath(companyId, input.doc_type, input.document_id);
+
+  // Attaching evidence repairs the existing row without accepting changes to its
+  // policy details. A new document validates calendar dates before uploading bytes.
+  const dates = documentDatesSchema.safeParse({
+    issue_date: input.document_id ? null : formData.get("issue_date") || null,
+    expiry_date: input.document_id ? null : formData.get("expiry_date") || null,
+  });
+  if (!dates.success) companyActionError(back, "invalid_dates");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) companyActionError(back, "file_required");
+  if (file.size > COMPANY_DOCUMENT_MAX_BYTES) companyActionError(back, "file_too_large");
+  if (!(COMPANY_DOCUMENT_MIME_TYPES as readonly string[]).includes(file.type)) companyActionError(back, "file_type");
 
   // The company id was established above from the caller's own membership or from the
   // maintain_admin gate, so the service-role client cannot be steered across a tenant
   // boundary here — and Storage has no per-company policy for a user-scoped client to
   // satisfy (1.7).
   const admin = createAdminClient();
-  const file = formData.get("file");
-  let filePath: string | null = null;
-
-  if (file instanceof File && file.size > 0) {
-    if (file.size > DOCUMENT_MAX_BYTES) redirect(`${back}?error=file_too_large`);
-    if (!DOCUMENT_MIME.has(file.type)) redirect(`${back}?error=file_type`);
-
-    // 1.7 — private bucket, path scoped by company id; readers get short-lived signed
-    // URLs minted server-side after the auth gate.
-    const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, "_").slice(-80);
-    const path = `${companyId}/${crypto.randomUUID()}-${safeName}`;
-    const { error } = await admin.storage
+  // 1.7 — private bucket, path scoped by company id; readers get short-lived signed
+  // URLs minted server-side after the auth gate.
+  const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, "_").slice(-80);
+  const filePath = `${companyId}/${crypto.randomUUID()}-${safeName}`;
+  let uploadError: unknown;
+  try {
+    const result = await admin.storage
       .from(DOCUMENT_BUCKET)
-      .upload(path, file, { contentType: file.type, upsert: false });
-    if (error) redirect(`${back}?error=upload_failed`);
-    filePath = path;
+      .upload(filePath, file, { contentType: file.type, upsert: false });
+    uploadError = result.error;
+  } catch {
+    companyActionError(back, "upload_failed");
+  }
+  if (uploadError) companyActionError(back, "upload_failed");
+
+  let result: { data: unknown; error: { code?: string; message?: string } | null };
+  try {
+    result = await admin.rpc("save_company_document_atomic", {
+      p_company_id: companyId,
+      p_expected_status: expectedStatus,
+      p_actor_user_id: actorUserId,
+      p_actor_scope: asMaintain ? "maintain" : "company",
+      p_document_id: input.document_id,
+      p_doc_type: input.doc_type,
+      p_number: input.document_id ? null : input.number ?? null,
+      p_issuer: input.document_id ? null : input.issuer ?? null,
+      p_issue_date: dates.data.issue_date,
+      p_expiry_date: dates.data.expiry_date,
+      p_file_path: filePath,
+    });
+  } catch {
+    // The transaction may have committed before its response was lost. Deleting
+    // the uploaded file here could destroy evidence attached by that transaction.
+    companyActionError(back, "save_failed");
+  }
+  if (result.error) {
+    // Only a definitive database rejection proves this path was not committed.
+    if (["40001", "23503", "23514", "42501", "22007", "22008", "23505", "P0001"].includes(result.error.code ?? "")) {
+      await admin.storage.from(DOCUMENT_BUCKET).remove([filePath]).catch(() => undefined);
+    }
+    companyActionError(back, result.error.code === "40001" ? "stale"
+      : result.error.code === "23503" ? "not_found"
+      : result.error.code === "23514" ? "invalid"
+      : "save_failed");
+  }
+  const saved = documentSaveResult.safeParse(result.data);
+  if (!saved.success || saved.data.company_id !== companyId || (input.document_id && saved.data.document_id !== input.document_id)) {
+    companyActionError(back, "save_failed");
   }
 
-  const { data: row, error: insertError } = await admin
-    .from("company_document")
-    .insert({
-      company_id: companyId,
-      doc_type: input.doc_type,
-      number: input.number ?? null,
-      issuer: input.issuer ?? null,
-      issue_date: input.issue_date || null,
-      expiry_date: input.expiry_date || null,
-      file_path: filePath,
-    })
-    .select("id")
-    .single();
-  if (insertError) redirect(`${back}?error=save_failed`);
-
-  await audit({
-    actor: { userId: actorUserId },
-    action: "company_document.created",
-    entityType: "company_document",
-    entityId: row?.id,
-    after: { company_id: companyId, doc_type: input.doc_type, expiry_date: input.expiry_date ?? null, admin_entered: asMaintain },
-  });
-
-  redirect(`${back}?saved=document`);
+  revalidateCompanyLifecycle();
+  revalidatePath("/app/settings");
+  redirect(companyActionLocation(back, "saved", "document"));
 }
 
 const companyStateSchema = z.enum(["Pending", "Active", "Suspended", "Closed"]);
@@ -587,8 +638,15 @@ const companyTransitionResult = z.object({
   })),
 });
 
+function companyActionLocation(back: string, key: string, value: string): string {
+  const hashIndex = back.indexOf("#");
+  const path = hashIndex === -1 ? back : back.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? "" : back.slice(hashIndex);
+  return `${path}${path.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}${hash}`;
+}
+
 function companyActionError(back: string, code: string): never {
-  redirect(`${back}${back.includes("?") ? "&" : "?"}error=${code}`);
+  redirect(companyActionLocation(back, "error", code));
 }
 
 /** Checked database calls only: failure never falls through to an email or success. */
@@ -609,6 +667,7 @@ async function companyRpc<T extends z.ZodType>(
     const mapped = result.error.code ? errorCodes[result.error.code] : undefined;
     const code = mapped ?? (result.error.code === "40001" ? "stale"
       : result.error.code === "23503" ? "not_found"
+      : result.error.message === "a current uploaded document is required" ? "document_not_ready"
       : result.error.message === "company checklist is incomplete or expired" ? "checklist_incomplete"
       : result.error.code === "23514" ? "invalid_transition"
       : "save_failed");
@@ -631,6 +690,7 @@ function revalidateCompanyLifecycle() {
 /** 1.4 — only reference flags can be created here; real documents are checked by ID. */
 export async function verifyCompanyDocument(formData: FormData): Promise<void> {
   const user = await requireMaintainAdmin();
+  const targetCompanyId = z.string().uuid().safeParse(formData.get("company_id"));
   const parsed = z.object({
     company_id: z.string().uuid(),
     expected_status: companyStateSchema,
@@ -646,9 +706,10 @@ export async function verifyCompanyDocument(formData: FormData): Promise<void> {
     qualification_id: formData.get("qualification_id") || null,
     expected_abn: formData.get("expected_abn") || null,
   });
-  if (!parsed.success) companyActionError("/admin/verification", "invalid");
+  if (!parsed.success) companyActionError(targetCompanyId.success
+    ? `/admin/verification?company=${targetCompanyId.data}` : "/admin/verification", "invalid");
   const input = parsed.data;
-  const back = `/admin/verification?company=${input.company_id}`;
+  const back = documentReturnPath(input.company_id, input.doc_type, input.document_id);
   if (!input.document_id && !["abn_verified", "payment_details"].includes(input.doc_type)) {
     companyActionError(back, "invalid");
   }
@@ -662,7 +723,8 @@ export async function verifyCompanyDocument(formData: FormData): Promise<void> {
     p_expected_abn: input.expected_abn,
   }, z.object({ company_id: z.string().uuid(), document_id: z.string().uuid() }), back);
   revalidateCompanyLifecycle();
-  redirect(`${back}&saved=verified`);
+  revalidatePath("/app/settings");
+  redirect(companyActionLocation(back, "saved", "verified"));
 }
 
 // ------------------------------------------------------------------ 1.5 verification decision

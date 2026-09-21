@@ -11,6 +11,8 @@ import {
 import { requireMaintainAdmin } from "@/lib/auth";
 import { ApprovalSubmitButton } from "@/components/approval-submit-button";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
+import { CompanyDocumentFileInput } from "@/components/company-document-file-input";
+import { companyDocumentIssue } from "@/lib/company-document-policy";
 import { formatAbn } from "@/lib/domain/abn";
 import {
   CARD,
@@ -42,8 +44,8 @@ export const metadata: Metadata = { title: "Account approvals" };
 const FEEDBACK: Record<string, string> = {
   approved: "Company approved and set Active.",
   rejected: "Rejection recorded and the company notified.",
-  verified: "Checklist item verified.",
-  document: "Document uploaded on the company's behalf.",
+  verified: "Checklist item verified. Complete the remaining required items, then select Approve and activate.",
+  document: "Document file saved. Open it to review the evidence, then select Verify.",
   profile: "Onboarding company details saved.",
 };
 
@@ -51,7 +53,10 @@ const PROBLEM: Record<string, string> = {
   invalid: "That request was missing something, so nothing changed.",
   not_found: "That company no longer exists.",
   reason_required: "Record a reason before rejecting.",
-  file_too_large: "Documents are capped at 10 MB.",
+  file_required: "Choose the document file before uploading. Details alone cannot be verified.",
+  file_too_large: "Documents are capped at 4 MB.",
+  invalid_dates: "Check the document dates. Expiry must not be before its issue date.",
+  document_not_ready: "Attach a current document file before verifying. Check the issue and expiry dates below.",
   file_type: "Documents must be PDF, JPG or PNG.",
   upload_failed: "The file could not be stored. Try again.",
   save_failed: "The change could not be saved. Try again.",
@@ -92,6 +97,7 @@ export default async function VerificationPage({
   const selectedId = one("company");
   const saved = FEEDBACK[one("saved")];
   const problem = PROBLEM[one("error")];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Brisbane" });
 
   const admin = createAdminClient();
   const checklist = await companyChecklist();
@@ -133,13 +139,14 @@ export default async function VerificationPage({
     .map((row: { region_id: string }) => row.region_id)
     .sort();
 
-  const { data: documents } = selected
+  const { data: documents, error: documentsError } = selected
     ? await admin
         .from("company_document")
         .select("*")
         .eq("company_id", selected.id)
         .order("created_at", { ascending: false })
-    : { data: [] as never[] };
+    : { data: [] as never[], error: null };
+  if (documentsError) throw new Error("Company documents could not be loaded. Please try again.");
 
   const { data: requirementData, error: checklistError } = selected
     ? await admin.rpc("company_verification_checklist", { p_company_id: selected.id })
@@ -186,7 +193,7 @@ export default async function VerificationPage({
       </header>
       <p className="max-w-[62ch] text-body text-on-dark-muted">
         Review newly registered companies and approve their accounts once the verification checklist is complete.
-        Approved companies can list spare capacity and post requirements.
+        Verify confirms each document. Approve and activate opens the account after all required items are verified.
       </p>
 
       {saved && (
@@ -453,10 +460,13 @@ export default async function VerificationPage({
                 : optional
                   ? "Not required"
                   : item.kind === "document"
-                    ? rows.length === 0 ? "Not submitted" : "Awaiting verification"
+                    ? rows.length === 0 ? "Not submitted"
+                      : rows.every((doc) => !doc.file_path?.trim()) ? "File required"
+                      : rows.some((doc) => !companyDocumentIssue(doc, today) && signed.has(doc.id))
+                        ? "Awaiting verification" : "Needs attention"
                     : item.id === "payment_details" ? "Not confirmed" : "Outstanding";
               return (
-                <div key={item.id} className="border-t border-hairline pt-(--space-4)">
+                <div key={item.id} id={`checklist-${item.id}`} className="scroll-mt-6 border-t border-hairline pt-(--space-4)">
                   <div className="flex flex-wrap items-center gap-(--space-3)">
                     <h3 className="font-display text-h4 font-bold text-on-dark">{item.label}</h3>
                     {optional && <span className={FIELD_HINT}>optional</span>}
@@ -464,6 +474,9 @@ export default async function VerificationPage({
                       {stateLabel}
                     </span>
                   </div>
+                  {one("section") === item.id && (problem || saved) && (
+                    <p role={problem ? "alert" : "status"} className={`${FIELD_HINT} mt-(--space-3)`}>{problem || saved}</p>
+                  )}
 
                   {item.kind === "flag" ? (
                     <div className="mt-(--space-3)">
@@ -482,9 +495,7 @@ export default async function VerificationPage({
                           {item.id === "abn_verified" && (
                             <input type="hidden" name="expected_abn" value={selected.abn ?? ""} />
                           )}
-                          <button type="submit" className={BTN_GHOST}>
-                            Mark {item.label.toLowerCase()}
-                          </button>
+                          <PendingSubmitButton className={BTN_GHOST} idleLabel={`Mark ${item.label.toLowerCase()}`} pendingLabel="Verifying…" />
                         </form>
                       )}
                     </div>
@@ -513,14 +524,18 @@ export default async function VerificationPage({
                             )}
                             {rows.map((doc) => {
                               const status = expiryStatus(doc.expiry_date);
+                              const issue = companyDocumentIssue(doc, today)
+                                ?? (!signed.has(doc.id) ? "The file could not be opened. Refresh before verifying." : null);
+                              const canAttach = !doc.file_path?.trim() && !doc.verified_at && !doc.verified_by && selected.status !== "Closed";
                               return (
-                                <tr key={doc.id}>
+                                <tr key={doc.id} id={`document-${doc.id}`} className="scroll-mt-6">
                                   <td className={`${TD} ${MONO}`}>{doc.number ?? "—"}</td>
                                   <td className={TD}>{doc.issuer ?? "—"}</td>
                                   <td className={`${TD} ${MONO}`}>{formatDate(doc.issue_date)}</td>
                                   <td className={`${TD} ${MONO}`}>{formatDate(doc.expiry_date)}</td>
                                   <td className={TD}>
-                                    {status === "—" ? "—" : <span className={pill(toneFor(status))}>{status}</span>}
+                                    {!doc.file_path?.trim() ? <span className={pill(toneFor("Pending"))}>File required</span>
+                                      : status === "—" ? "No expiry recorded" : <span className={pill(toneFor(status))}>{status}</span>}
                                   </td>
                                   <td className={TD}>
                                     {signed.get(doc.id) ? (
@@ -533,10 +548,14 @@ export default async function VerificationPage({
                                         Open
                                       </a>
                                     ) : (
-                                      "—"
+                                      <span className={FIELD_HINT}>{doc.file_path?.trim() ? "File unavailable" : "No file attached"}</span>
                                     )}
                                   </td>
                                   <td className={TD}>
+                                    {one("document") === doc.id && (problem || saved) && (
+                                      <p role={problem ? "alert" : "status"} className={`${FIELD_HINT} mb-(--space-3)`}>{problem || saved}</p>
+                                    )}
+                                    {issue && <p className={`${FIELD_HINT} mb-(--space-3)`}>{issue}</p>}
                                     {doc.verified_at && (
                                       <span className={`${MONO} text-on-dark-muted`}>
                                         {formatDate(doc.verified_at)}
@@ -564,9 +583,21 @@ export default async function VerificationPage({
                                             </select>
                                           </label>
                                         )}
-                                        <button type="submit" className={BTN_GHOST}>
-                                          Verify
-                                        </button>
+                                        <PendingSubmitButton className={BTN_GHOST} idleLabel="Verify" pendingLabel="Verifying…" disabled={!!issue} />
+                                      </form>
+                                    )}
+                                    {canAttach && (
+                                      <form action={uploadCompanyDocument} className="mt-(--space-3) flex min-w-56 flex-col gap-(--space-3)">
+                                        <input type="hidden" name="as_maintain" value="1" />
+                                        <input type="hidden" name="company_id" value={selected.id} />
+                                        <input type="hidden" name="expected_status" value={selected.status} />
+                                        <input type="hidden" name="document_id" value={doc.id} />
+                                        <input type="hidden" name="doc_type" value={doc.doc_type} />
+                                        <label className={FIELD}>
+                                          <span className={FIELD_LABEL}>Attach the existing document</span>
+                                          <CompanyDocumentFileInput />
+                                        </label>
+                                        <PendingSubmitButton className={BTN_GHOST} idleLabel="Attach file" pendingLabel="Uploading…" />
                                       </form>
                                     )}
                                   </td>
@@ -587,6 +618,7 @@ export default async function VerificationPage({
                       >
                         <input type="hidden" name="as_maintain" value="1" />
                         <input type="hidden" name="company_id" value={selected.id} />
+                        <input type="hidden" name="expected_status" value={selected.status} />
                         <input type="hidden" name="doc_type" value={item.id} />
                         <label className={FIELD}>
                           <span className={FIELD_LABEL}>Number</span>
@@ -606,17 +638,10 @@ export default async function VerificationPage({
                         </label>
                         <label className={FIELD}>
                           <span className={FIELD_LABEL}>File</span>
-                          <input
-                            className={INPUT}
-                            type="file"
-                            name="file"
-                            accept="application/pdf,image/jpeg,image/png"
-                          />
+                          <CompanyDocumentFileInput disabled={selected.status === "Closed"} />
                         </label>
                         <div className="flex items-end">
-                          <button type="submit" className={BTN_GHOST}>
-                            Add
-                          </button>
+                          <PendingSubmitButton className={BTN_GHOST} idleLabel="Upload document" pendingLabel="Uploading…" disabled={selected.status === "Closed"} />
                         </div>
                       </form>
                     </>

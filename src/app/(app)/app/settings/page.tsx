@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
+import { CompanyDocumentFileInput } from "@/components/company-document-file-input";
+import { COMPANY_DOCUMENT_TYPES } from "@/lib/company-document-policy";
 import {
   companyChecklist,
   inviteCompanyAdmin,
@@ -53,8 +55,11 @@ const PROBLEM: Record<string, string> = {
   abn_collision:
     "That ABN was registered by another company before this change was saved. Contact Maintain for help.",
   save_failed: "The change could not be saved. Try again.",
-  stale: "Company details changed after this page loaded. Refresh and review the latest values before saving.",
-  file_too_large: "Documents are capped at 10 MB.",
+  not_found: "That company or document no longer exists. Refresh before trying again.",
+  stale: "The company or document changed after this page loaded. Refresh and review the latest values before saving.",
+  file_required: "Choose a document file before uploading. Details alone cannot be verified.",
+  invalid_dates: "Check the document dates. Expiry must not be before its issue date.",
+  file_too_large: "Documents are capped at 4 MB.",
   file_type: "Documents must be PDF, JPG or PNG.",
   upload_failed: "The file could not be stored. Try again.",
   invalid_email: "That email does not look right.",
@@ -301,11 +306,14 @@ export default async function SettingsPage({
       </section>
 
       {/* -------------------------------------------------- 1.3 / 1.4 documents */}
-      <section className={CARD}>
+      <section id="company-documents" className={`${CARD} scroll-mt-6`}>
         <h2 className={H2}>Compliance documents</h2>
         <p className={`${FIELD_HINT} mt-(--space-2)`}>
-          PDF, JPG or PNG, up to 10 MB. Maintain reads these during verification.
+          PDF, JPG or PNG, up to 4 MB. Attach the actual document so Maintain can review and verify it.
         </p>
+        {(params.section === "documents" || params.saved === "document") && (problem || saved) && (
+          <p role={problem ? "alert" : "status"} className={`${FIELD_HINT} mt-(--space-3)`}>{problem || saved}</p>
+        )}
 
         <div className="mt-(--space-5) overflow-x-auto">
           <table className={TABLE}>
@@ -331,6 +339,7 @@ export default async function SettingsPage({
               {documents.map((doc) => {
                 const status = expiryStatus(doc.expiry_date);
                 const label = checklist.find((item) => item.id === doc.doc_type)?.label ?? doc.doc_type;
+                const isDocument = COMPANY_DOCUMENT_TYPES.some((type) => type === doc.doc_type);
                 return (
                   <tr key={doc.id}>
                     <td className={TD}>{label}</td>
@@ -338,7 +347,9 @@ export default async function SettingsPage({
                     <td className={TD}>{doc.issuer ?? "—"}</td>
                     <td className={`${TD} ${MONO}`}>{formatDate(doc.expiry_date)}</td>
                     <td className={TD}>
-                      {status === "—" ? "—" : <span className={pill(toneFor(status))}>{status}</span>}
+                      {isDocument && !doc.file_path?.trim()
+                        ? <span className={pill(toneFor("Pending"))}>File required</span>
+                        : status === "—" ? "—" : <span className={pill(toneFor(status))}>{status}</span>}
                     </td>
                     <td className={`${TD} ${MONO}`}>{doc.verified_at ? formatDate(doc.verified_at) : "—"}</td>
                     <td className={TD}>
@@ -352,7 +363,18 @@ export default async function SettingsPage({
                           Open
                         </a>
                       ) : (
-                        "—"
+                        <span className={FIELD_HINT}>{doc.file_path?.trim() ? "File unavailable" : isDocument ? "No file attached" : "—"}</span>
+                      )}
+                      {isDocument && !doc.file_path?.trim() && !doc.verified_at && !doc.verified_by && !readOnly && (
+                        <form action={uploadCompanyDocument} className="mt-(--space-3) flex min-w-56 flex-col gap-(--space-3)">
+                          <input type="hidden" name="document_id" value={doc.id} />
+                          <input type="hidden" name="doc_type" value={doc.doc_type} />
+                          <label className={FIELD}>
+                            <span className={FIELD_LABEL}>Attach the existing document</span>
+                            <CompanyDocumentFileInput />
+                          </label>
+                          <PendingSubmitButton className={BTN_GHOST} idleLabel="Attach file" pendingLabel="Uploading…" />
+                        </form>
                       )}
                     </td>
                   </tr>
@@ -403,19 +425,11 @@ export default async function SettingsPage({
 
           <label className={FIELD}>
             <span className={FIELD_LABEL}>File</span>
-            <input
-              className={INPUT}
-              type="file"
-              name="file"
-              accept="application/pdf,image/jpeg,image/png"
-              disabled={readOnly}
-            />
+            <CompanyDocumentFileInput disabled={readOnly} />
           </label>
 
           <div className="md:col-span-2">
-            <button type="submit" className={BTN_PRIMARY} disabled={readOnly}>
-              Upload document
-            </button>
+            <PendingSubmitButton className={BTN_PRIMARY} idleLabel="Upload document" pendingLabel="Uploading…" disabled={readOnly} />
           </div>
         </form>
       </section>
