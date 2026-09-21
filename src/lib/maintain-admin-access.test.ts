@@ -26,7 +26,7 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.admin }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.client }));
 
 const { proxy } = await import("../proxy");
-const { requireMaintainAdmin } = await import("./auth");
+const { requireMaintainAdmin, isMaintainAdmin } = await import("./auth");
 const { default: ContinueAfterAuthentication } = await import("../app/auth/continue/page");
 const { default: AppLayout } = await import("../app/(app)/layout");
 
@@ -34,8 +34,8 @@ const staff = {
   id: "user_staff",
   primaryEmailAddress: { emailAddress: "staff@example.test" },
   emailAddresses: [],
-  publicMetadata: { role: "maintain_admin" },
-  twoFactorEnabled: true,
+  publicMetadata: { isAdmin: true },
+  twoFactorEnabled: false,
 };
 const membership = {
   company_id: "11111111-1111-4111-8111-111111111111",
@@ -43,7 +43,7 @@ const membership = {
   company: { status: "Pending" },
 };
 
-function session(metadata = { role: "company_admin" }) {
+function session(metadata: Record<string, unknown> = { role: "company_admin" }) {
   return {
     userId: staff.id,
     factorVerificationAge: [0, 0],
@@ -74,7 +74,8 @@ beforeEach(() => {
 });
 
 describe("Maintain admin metadata activation", () => {
-  it("lets a newly granted backend role reach verification despite stale session metadata", async () => {
+  it("lets isAdmin staff without MFA reach verification despite stale session metadata", async () => {
+    mocks.auth.mockResolvedValue({ ...session(), factorVerificationAge: [0, -1] });
     const response = await proxy(
       new NextRequest("https://workforce.example/admin/verification"), {} as NextFetchEvent,
     );
@@ -86,14 +87,38 @@ describe("Maintain admin metadata activation", () => {
   });
 
   it("rejects a revoked backend role even when the session still claims staff access", async () => {
-    mocks.auth.mockResolvedValue(session({ role: "maintain_admin" }));
+    mocks.auth.mockResolvedValue(session({ isAdmin: true }));
     mocks.currentUser.mockResolvedValue({ ...staff, publicMetadata: {} });
 
     await expect(requireMaintainAdmin()).rejects.toMatchObject({ url: "/app" });
     expect(mocks.admin).not.toHaveBeenCalled();
   });
 
-  it("requires current-session MFA after an administrator role is granted", async () => {
+  it("still accepts legacy staff roles when the explicit isAdmin flag is absent", async () => {
+    mocks.currentUser.mockResolvedValue({ ...staff, publicMetadata: { role: "maintain_admin" } });
+    await expect(requireMaintainAdmin()).resolves.toEqual({ id: staff.id, email: "staff@example.test" });
+  });
+
+  it.each([false, "true", "false", 1, 0, null])("denies an explicit non-boolean-true isAdmin value (%j), even with a legacy role", async (isAdmin) => {
+    mocks.currentUser.mockResolvedValue({ ...staff, publicMetadata: { isAdmin, role: "maintain_admin" } });
+    await expect(requireMaintainAdmin()).rejects.toMatchObject({ url: "/app" });
+    expect(mocks.admin).not.toHaveBeenCalled();
+  });
+
+  it("does not trust user-editable metadata or nested claims as public admin permission", async () => {
+    mocks.currentUser.mockResolvedValue({ ...staff, publicMetadata: {}, unsafeMetadata: { isAdmin: true } });
+    await expect(requireMaintainAdmin()).rejects.toMatchObject({ url: "/app" });
+    expect(isMaintainAdmin({ metadata: { isAdmin: true }, user_metadata: { role: "maintain_admin" } })).toBe(false);
+  });
+
+  it("rejects a user that disappears during the backend access check", async () => {
+    mocks.currentUser.mockResolvedValueOnce(staff).mockResolvedValueOnce(staff).mockResolvedValueOnce(null);
+    await expect(requireMaintainAdmin()).rejects.toMatchObject({ url: "/app" });
+    expect(mocks.admin).not.toHaveBeenCalled();
+  });
+
+  it("requires current-session MFA for an administrator who already enabled it", async () => {
+    mocks.currentUser.mockResolvedValue({ ...staff, twoFactorEnabled: true });
     mocks.auth.mockResolvedValue({ ...session(), factorVerificationAge: [0, -1] });
     await expect(requireMaintainAdmin()).rejects.toMatchObject({ url: "/admin/mfa" });
     expect(mocks.admin).not.toHaveBeenCalled();

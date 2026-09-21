@@ -35,15 +35,12 @@ export async function getUser(): Promise<SessionUser | null> {
   return { id: userId, email };
 }
 
-export function isMaintainAdmin(claims: Record<string, unknown> | undefined): boolean {
-  const metadata = (claims?.publicMetadata ?? claims?.metadata ?? claims?.app_metadata) as
-    | Record<string, unknown>
-    | undefined;
-  return (
-    claims?.role === "maintain_admin" ||
-    claims?.maintain_admin === true ||
-    metadata?.role === "maintain_admin"
-  );
+/** Pass backend-read Clerk publicMetadata only; never unsafe metadata or form fields. */
+export function isMaintainAdmin(publicMetadata: Record<string, unknown> | undefined): boolean {
+  if (!publicMetadata) return false;
+  // An explicit flag is authoritative, including revocation of a legacy admin.
+  if (Object.hasOwn(publicMetadata, "isAdmin")) return publicMetadata.isAdmin === true;
+  return publicMetadata.role === "maintain_admin" || publicMetadata.maintain_admin === true;
 }
 
 async function hasMaintainAdminRole(): Promise<boolean> {
@@ -186,7 +183,10 @@ export async function requireMaintainAdminAtAal1(): Promise<SessionUser> {
 export async function requireMaintainAdmin(): Promise<SessionUser> {
   const sessionUser = await requireMaintainAdminAtAal1();
   const [user, { factorVerificationAge }] = await Promise.all([currentUser(), auth()]);
-  if (!user?.twoFactorEnabled || !hasVerifiedClerkSecondFactor(factorVerificationAge)) {
+  // Metadata grants staff access on every Clerk plan. Preserve the second-factor
+  // requirement for an account that has opted into MFA; enrollment is optional.
+  if (!user || !isMaintainAdmin(user.publicMetadata as Record<string, unknown>)) redirect("/app");
+  if (user.twoFactorEnabled && !hasVerifiedClerkSecondFactor(factorVerificationAge)) {
     redirect("/admin/mfa");
   }
   return sessionUser;

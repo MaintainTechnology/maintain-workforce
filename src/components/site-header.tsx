@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import { ctas, nav } from "@/lib/site";
 import { BTN_PRIMARY, NAV_FOCUS } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -10,6 +13,8 @@ import { MobileMenu } from "./mobile-menu";
 // in this bar may take the accent.
 
 export function SiteHeader() {
+  const { isSignedIn } = useAuth();
+
   return (
     <header className="sticky top-0 z-(--z-sticky) border-b border-hairline bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-[68px] w-full max-w-[1200px] items-center justify-between gap-(--space-4) px-(--space-4) max-[389px]:gap-(--space-2) max-[389px]:px-(--space-3) sm:px-(--space-5)">
@@ -43,26 +48,28 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-(--space-3)">
-          <Link
-            href={ctas.signIn.href}
-            className="hidden min-h-11 items-center px-(--space-3) text-sm font-semibold text-on-dark-muted transition-colors duration-(--dur-base) ease-(--ease-out) hover:text-on-dark sm:inline-flex"
-          >
-            {ctas.signIn.label}
-          </Link>
+          {!isSignedIn && (
+            <Link
+              href={ctas.signIn.href}
+              className="hidden min-h-11 items-center px-(--space-3) text-sm font-semibold text-on-dark-muted transition-colors duration-(--dur-base) ease-(--ease-out) hover:text-on-dark sm:inline-flex"
+            >
+              {ctas.signIn.label}
+            </Link>
+          )}
           {/* One button, responsive label: BTN_PRIMARY carries inline-flex, so
               a second hidden/sm:inline-flex copy would fight it for display
               and both would render. The CTA persists at every width (spec). */}
           <Link
-            href={ctas.signUp.href}
+            href={isSignedIn ? "/auth/continue" : ctas.signUp.href}
             className={cn(
               BTN_PRIMARY,
               "whitespace-nowrap px-(--space-4) text-sm max-[389px]:px-(--space-3)",
             )}
           >
-            <span className="hidden sm:inline">{ctas.signUp.label}</span>
-            <span className="sm:hidden">Register</span>
+            <span className="hidden sm:inline">{isSignedIn ? "My account" : ctas.signUp.label}</span>
+            <span className="sm:hidden">{isSignedIn ? "My account" : "Register"}</span>
           </Link>
-          <MobileMenu />
+          <MobileMenu signedIn={isSignedIn === true} />
         </div>
       </div>
     </header>

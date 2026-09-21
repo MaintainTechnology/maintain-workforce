@@ -43,7 +43,7 @@ user authorized this direct incident repair after those findings were explained;
 missing CI preview fixtures and protection configuration were not fabricated or
 silently marked complete.
 
-## Application release
+## Initial application release
 
 Production deployment `dpl_6TbVYGkDuyU22wfmU896JDh2MuEb` was built from isolated,
 committed source `004ba087b995b0c1b8a907655921aaba16dbcd30`. It includes the reviewed
@@ -128,10 +128,22 @@ after approval; changes do not push into another person's already-open tab.
 
 ## Grant staff approval access using Clerk
 
-The user selected **Clerk admin role, then approval in the dashboard**. Company
-status stays in the database. Customer metadata cannot activate a company.
+The user clarified the access contract after the initial recovery on 21 September:
+Clerk's server-controlled `publicMetadata.isAdmin` must be the boolean `true` to
+grant staff approval access. Existing `publicMetadata.role = maintain_admin`
+grants remain compatible when `isAdmin` is absent. An explicit `isAdmin: false`
+revokes access even if a legacy role remains. A present malformed value, including
+the string `"true"`, does not grant access. The server reads current Clerk user metadata; client
+state, stale session metadata and user-editable unsafe metadata do not grant access.
 
-### Designated staff setup and remaining blocker
+Authenticated staff without MFA enrollment can use the admin panel on the current
+Clerk plan. Staff who already have MFA enabled must verify their second factor in
+the current session. This corrected policy supersedes the earlier blanket MFA
+requirement and plan blocker below; no paid plan change is required or authorized.
+Company status stays in the database, and staff still review the required documents
+before approving a company. Setting `isAdmin` does not itself activate a company.
+
+### Initial designated staff setup and superseded MFA blocker
 
 The user authorized `info@maintainworkforce.com.au` for staff access. An exact-email
 production lookup found no existing Clerk user and no pending invitation. A
@@ -142,19 +154,23 @@ recovery action. No existing user's role was modified and no email was sent.
 The acceptance URL is held only in the ignored, access-restricted local recovery
 directory, with a private setup page; it must not be committed or deployed.
 
-This is a prepared invitation, not usable admin access yet. The staff member must
-accept it and establish their own credentials. Production Clerk currently has no
-MFA strategy enabled. Its dashboard blocks authenticator MFA on the Hobby plan
-and requires Pro; the checkout presented 25 due today and 25 per month, without
-add-ons. The user explicitly chose to keep the current plan. The unpurchased
-checkout was cancelled, no charge was made, and no MFA security check was removed.
-Dashboard approvals therefore remain blocked until the production instance can
-offer MFA and the staff member enrolls and verifies a second factor.
+At the initial setup, this was a prepared invitation. The staff member must accept
+it and establish their own credentials. The initial code required MFA for every
+staff account. Production Clerk had no MFA strategy enabled, and its dashboard
+required Pro for authenticator MFA; the checkout presented 25 due today and 25 per
+month, without add-ons. The user chose to keep the current plan. The unpurchased
+checkout was cancelled and no charge was made. These are historical observations,
+not a requirement to upgrade or a current blocker for staff without MFA enrollment.
 
-For a future authorized plan change, enable authenticator applications and backup
-codes in Clerk's production MFA settings. Global mandatory MFA for customers is
-not needed: the application already requires it specifically for Maintain staff.
-See [Clerk MFA configuration](https://clerk.com/docs/guides/configure/auth-strategies/sign-up-sign-in-options#multi-factor-authentication).
+The user's subsequent clarification above replaces that blanket requirement.
+The initial pending invitation was replaced with a three-day invitation carrying
+`publicMetadata.isAdmin = true`, verified by backend readback and audit event 23.
+The old invitation was revoked, and the private local setup page was updated with
+the replacement acceptance link. No invitation email was sent. The designated
+email is still awaiting signup; no existing user was modified. Legacy roles remain
+accepted for existing accounts, but new grants use `isAdmin`. Any staff member already enrolled in
+MFA must still complete their second factor. For optional MFA configuration, see
+[Clerk MFA configuration](https://clerk.com/docs/guides/configure/auth-strategies/sign-up-sign-in-options#multi-factor-authentication).
 
 ### Normal grant and approval procedure
 
@@ -165,7 +181,7 @@ See [Clerk MFA configuration](https://clerk.com/docs/guides/configure/auth-strat
 2. Grant the backend-controlled public metadata value:
 
    ```json
-   { "role": "maintain_admin" }
+   { "isAdmin": true }
    ```
 
    Preserve unrelated metadata. Do not place this in unsafe metadata, and do not
@@ -180,10 +196,11 @@ See [Clerk MFA configuration](https://clerk.com/docs/guides/configure/auth-strat
    The script records the role grant in `audit_event` and attempts to restore the
    previous metadata if that audit write fails. A manual Clerk Dashboard edit
    has the same role effect but does not produce this application audit entry.
-3. Sign in and open `/admin/verification`. Staff must enroll in MFA and verify a
-   second factor in their current session. A role alone does not bypass MFA.
-   Role checks read current backend public metadata, so a stale session role
-   must not prevent new staff from reaching the MFA check.
+3. Sign in and open `/admin/verification`. An authenticated staff account with
+   `isAdmin: true` can use the approval panel without buying an MFA plan or enrolling
+   in MFA. If that account already has MFA enabled, verify its second factor in the
+   current session. Access checks read current backend public metadata, so stale
+   session claims must not prevent newly authorized staff from reaching the panel.
 4. Select the Pending company, review/upload its documents, and verify each
    required checklist item. Once complete, select **Approve and activate**.
    This commits the Pending → Active transition and audit record atomically;
@@ -212,7 +229,19 @@ grants. These were not changed during the incident migration. Advisor references
 [mutable search paths](https://supabase.github.io/splinter/0011_function_search_path_mutable/),
 and [extensions in public](https://supabase.github.io/splinter/0014_extension_in_public/).
 
-## Local verification
+## Verification of the metadata access correction
+
+- `npm run verify` passed: TypeScript, ESLint, 1,075 tests, and vocabulary checks.
+- Ten live RLS tests remain skipped because live fixtures are not configured.
+- Tests exercise the real approval action with backend `isAdmin: true`, no MFA
+  enrollment, the signed-in audit actor, and rejection of incomplete checklists.
+- Negative cases cover signed-out access, self-edited metadata, forged form data,
+  string flags, explicit revocation over legacy roles, and missing MFA proof for
+  already-enrolled staff. Desktop/mobile account links and grant rollback pass.
+- Independent source review found no actionable issues. No database migration or
+  company activation is part of this metadata correction.
+
+## Initial local verification
 
 - `npm run verify` passed: TypeScript, ESLint, 1,049 tests, and vocabulary checks.
 - `npm run build` passed with the current local environment.

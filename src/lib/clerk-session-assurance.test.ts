@@ -118,10 +118,11 @@ describe("Clerk Maintain admin session assurance", () => {
     });
   });
 
-  it("still requires MFA enrollment", async () => {
-    mocks.currentUser.mockResolvedValue({ ...staffUser, twoFactorEnabled: false });
+  it("allows backend-authorized staff without optional MFA enrollment", async () => {
+    mocks.currentUser.mockResolvedValue({ ...staffUser, publicMetadata: { isAdmin: true }, twoFactorEnabled: false });
+    mocks.auth.mockResolvedValue(sessionWithAges([0, -1]));
 
-    await expect(requireMaintainAdmin()).rejects.toThrow("REDIRECT:/admin/mfa");
+    await expect(requireMaintainAdmin()).resolves.toEqual({ id: staffUser.id, email: "staff@example.com" });
   });
 
   it("still rejects signed-out and non-admin users", async () => {
@@ -164,12 +165,10 @@ describe("Clerk MFA recovery page", () => {
     expect(html).not.toContain("data-clerk-profile");
   });
 
-  it("keeps Clerk enrollment available without granting access", async () => {
+  it("lets unenrolled staff continue without a mandatory enrollment loop", async () => {
     mocks.currentUser.mockResolvedValue({ ...staffUser, twoFactorEnabled: false });
     mocks.auth.mockResolvedValue(sessionWithAges([0, -1]));
-    const page = await AdminMfaPage({ searchParams: Promise.resolve({}) });
-
-    expect(renderToStaticMarkup(page)).toContain("data-clerk-profile");
+    await expect(AdminMfaPage({ searchParams: Promise.resolve({}) })).rejects.toThrow("REDIRECT:/admin");
   });
 
   it("continues only when both enrollment and current-session proof exist", async () => {

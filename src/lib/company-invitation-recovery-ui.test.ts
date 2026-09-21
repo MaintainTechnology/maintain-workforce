@@ -163,10 +163,11 @@ describe("invitation-recovery page authorization", () => {
     expect(mocks.reissue).not.toHaveBeenCalled();
   });
 
-  it("still requires second-factor enrollment", async () => {
-    mocks.currentUser.mockResolvedValue({ ...staff, twoFactorEnabled: false });
-    await expect(page()).rejects.toMatchObject({ url: "/admin/mfa" });
-    expect(mocks.listCompanies).not.toHaveBeenCalled();
+  it("allows an isAdmin account without optional second-factor enrollment", async () => {
+    mocks.currentUser.mockResolvedValue({ ...staff, publicMetadata: { isAdmin: true }, twoFactorEnabled: false });
+    mocks.auth.mockResolvedValue({ userId: staff.id, factorVerificationAge: [0, -1] });
+    expect(renderToStaticMarkup(await page())).toContain(buttonText);
+    expect(mocks.listCompanies).toHaveBeenCalledOnce();
   });
 
   it("requires the Maintain role even with verified second-factor evidence", async () => {

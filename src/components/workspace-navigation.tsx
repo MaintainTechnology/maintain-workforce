@@ -97,7 +97,7 @@ function AccountFooter({ email, signOut, canManageWorkforce }: Pick<WorkspaceAcc
       <p className="mt-1 truncate text-sm font-medium text-on-dark-muted" title={email}>{email}</p>
       {canManageWorkforce && (
         <Link href="/admin/verification" className={`mt-3 flex min-h-11 items-center justify-center rounded-(--radius-pill) border border-hairline px-4 text-sm font-semibold text-on-dark hover:bg-white/5 ${NAV_FOCUS}`}>
-          Maintain admin
+          Account approvals
         </Link>
       )}
       <div className="mt-3">{signOut}</div>

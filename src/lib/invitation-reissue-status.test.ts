@@ -236,11 +236,22 @@ describe("invitation reissue company write boundary", () => {
   it.each([
     { label: "enrollment without session proof", enrolled: true, ages: [0, -1] },
     { label: "missing session claims", enrolled: true, ages: undefined },
-    { label: "no MFA enrollment", enrolled: false, ages: [0, 0] },
   ])("denies Maintain admins with $label before invitation effects", async ({ enrolled, ages }) => {
     maintainSession(enrolled, ages);
     expect(await destination()).toBe("/admin/mfa");
     expect(io.from).not.toHaveBeenCalled();
     expectNoInvitationEffects();
+  });
+
+  it("allows isAdmin staff who have not enabled MFA through the same audited action", async () => {
+    maintainSession(false, [0, -1]);
+    io.currentUser.mockResolvedValue({
+      id: STAFF_ID, primaryEmailAddress: { emailAddress: "staff@example.test" },
+      publicMetadata: { isAdmin: true }, twoFactorEnabled: false,
+    });
+    expect(await destination()).toBe("/admin/companies?saved=invited");
+    expect(io.membership).not.toHaveBeenCalled();
+    expect(io.createInvitation).toHaveBeenCalledOnce();
+    expect(io.auditInsert).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ actor_user_id: STAFF_ID }));
   });
 });

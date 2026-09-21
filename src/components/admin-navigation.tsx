@@ -9,7 +9,7 @@ import { NAV_FOCUS } from "@/lib/ui";
 const NAV = [
   { href: "/admin", label: "Marketplace" },
   { href: "/admin/leads", label: "Leads" },
-  { href: "/admin/verification", label: "Verification" },
+  { href: "/admin/verification", label: "Account approvals" },
   { href: "/admin/companies", label: "Companies" },
   { href: "/admin/workers", label: "Workers" },
   { href: "/admin/matching", label: "Matching" },

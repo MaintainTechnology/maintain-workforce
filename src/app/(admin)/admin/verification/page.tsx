@@ -34,7 +34,7 @@ import { BTN_GHOST, BTN_PRIMARY, H1, H2, LINK } from "@/lib/ui";
 // notifies it; rejecting records a reason and notifies it. Only a Maintain admin can do
 // either (1.5).
 
-export const metadata: Metadata = { title: "Verification" };
+export const metadata: Metadata = { title: "Account approvals" };
 
 const FEEDBACK: Record<string, string> = {
   approved: "Company approved and set Active.",
@@ -133,11 +133,15 @@ export default async function VerificationPage({
   return (
     <div className={`${PAGE} flex flex-col gap-(--space-6)`}>
       <header className="flex flex-wrap items-baseline gap-(--space-4)">
-        <h1 className={H1}>Verification</h1>
+        <h1 className={H1}>Account approvals</h1>
         <span className={`${MONO} text-body text-on-dark-muted`}>
           {(pending ?? []).length} companies Pending
         </span>
       </header>
+      <p className="max-w-[62ch] text-body text-on-dark-muted">
+        Review newly registered companies and approve their accounts once the verification checklist is complete.
+        Approved companies can list spare capacity and post requirements.
+      </p>
 
       {saved && (
         <p role="status" className={`${CARD} text-body text-on-dark`}>

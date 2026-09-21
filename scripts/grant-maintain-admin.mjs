@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Maintain administrator access is assigned only through this audited runbook step.
-// The role lives in Clerk publicMetadata, which cannot be changed by the user.
+// The isAdmin flag lives in Clerk publicMetadata, which cannot be changed by the user.
 //
 //   node scripts/grant-maintain-admin.mjs someone@maintainworkforce.com.au \
 //     --by ops@maintainworkforce.com.au
@@ -82,11 +82,11 @@ async function main() {
   const previousPublicMetadata = structuredClone(target.publicMetadata ?? {});
   const nextPublicMetadata = {
     ...previousPublicMetadata,
-    role: "maintain_admin",
+    isAdmin: true,
   };
 
   await clerk.users.updateUserMetadata(target.id, {
-    publicMetadata: { role: "maintain_admin" },
+    publicMetadata: { isAdmin: true },
   });
 
   let auditFailure;
@@ -128,7 +128,7 @@ async function main() {
         `CRITICAL: restoring the previous Clerk publicMetadata also failed: ${messageFrom(rollbackFailure)}`,
       );
       console.error(
-        `The role state for ${targetEmail} is uncertain and requires immediate manual review.`,
+        `The admin access state for ${targetEmail} is uncertain and requires immediate manual review.`,
       );
     } else {
       console.error(
@@ -141,7 +141,7 @@ async function main() {
   }
 
   console.log(
-    `maintain_admin granted to ${targetEmail} (${target.id}), attributed to ${operatorEmail} (${operator.id}).`,
+    `isAdmin: true granted to ${targetEmail} (${target.id}), attributed to ${operatorEmail} (${operator.id}).`,
   );
 }
 
