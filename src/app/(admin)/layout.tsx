@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SignOutButton } from "@clerk/nextjs";
 import { headers } from "next/headers";
 import { AdminNavigation } from "@/components/admin-navigation";
+import { WorkspaceViewSwitch } from "@/components/workspace-view-switch";
 import { requireMaintainAdmin } from "@/lib/auth";
 import { BTN_GHOST, NAV_FOCUS, SHELL } from "@/lib/ui";
 
@@ -33,9 +34,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin" className={`inline-flex min-h-11 items-center font-display text-h3 font-extrabold text-on-dark ${NAV_FOCUS}`}>
             Maintain admin
           </Link>
-          <SignOutButton redirectUrl="/signin">
-            <button type="submit" className={BTN_GHOST}>Sign out</button>
-          </SignOutButton>
+          <div className="flex flex-wrap items-center gap-(--space-3)">
+            <WorkspaceViewSwitch view="admin" />
+            <SignOutButton redirectUrl="/signin">
+              <button type="submit" className={BTN_GHOST}>Sign out</button>
+            </SignOutButton>
+          </div>
         </div>
         <div className={`${SHELL} pb-(--space-3)`}>
           <AdminNavigation />

@@ -494,6 +494,113 @@ const documentSaveResult = z.object({
   document_id: z.string().uuid(),
 });
 
+const documentSnapshotSchema = z.object({
+  number: z.string().nullable(),
+  issuer: z.string().nullable(),
+  issue_date: z.iso.date().nullable(),
+  expiry_date: z.iso.date().nullable(),
+}).strict();
+
+class DocumentSubmissionError extends Error {
+  constructor(readonly back: string, readonly code: string) { super(code); }
+}
+
+function documentSubmissionError(back: string, code: string): never {
+  throw new DocumentSubmissionError(back, code);
+}
+
+const DOCUMENT_PROBLEMS: Record<string, string> = {
+  invalid: "Check the document details and try again.",
+  invalid_dates: "Check the document dates. Expiry must not be before its issue date.",
+  read_only: "This account is read-only, so nothing was changed.",
+  stale: "The company or document changed. Refresh and review the latest details before saving.",
+  not_found: "That company or document no longer exists. Refresh before trying again.",
+  file_required: "Choose a document file before uploading, or select Save details.",
+  file_too_large: "Choose a document no larger than 4 MB.",
+  file_type: "Choose a PDF, JPG or PNG document.",
+  upload_failed: "The file could not be stored. Choose the file again and retry.",
+  save_failed: "The save could not be confirmed. Your inputs are retained; retry or refresh to check the saved record.",
+};
+
+/** Save metadata independently; Upload then attaches evidence to that exact draft. */
+export async function saveCompanyDocumentForm(
+  _previous: FormResult | null,
+  formData: FormData,
+): Promise<FormResult> {
+  const values = echo(formData, ["document_id", "doc_type", "number", "issuer", "issue_date", "expiry_date", "expected_document"]);
+  const fail = (code: string): FormResult => ({ ok: false, message: DOCUMENT_PROBLEMS[code] ?? DOCUMENT_PROBLEMS.save_failed, values });
+  const asMaintain = formData.get("as_maintain") === "1";
+  let companyId: string;
+  let actorUserId: string;
+  let expectedStatus: CompanyStatus;
+  if (asMaintain) {
+    const user = await requireMaintainAdmin();
+    const target = z.object({ company_id: z.string().uuid(), expected_status: z.enum(["Pending", "Active", "Suspended"]) })
+      .safeParse({ company_id: formData.get("company_id"), expected_status: formData.get("expected_status") });
+    if (!target.success) return fail("invalid");
+    companyId = target.data.company_id;
+    expectedStatus = target.data.expected_status;
+    actorUserId = user.id;
+  } else {
+    const context = await requireCompanyAdmin();
+    if (!writable(context.companyStatus)) return fail("read_only");
+    companyId = context.companyId;
+    expectedStatus = context.companyStatus;
+    actorUserId = context.user.id;
+  }
+  const intent = formData.get("intent");
+  if (intent !== "details" && intent !== "upload") return fail("invalid");
+  const parsed = documentSchema.extend({ document_id: z.string().uuid() }).safeParse({
+    doc_type: values.doc_type, document_id: values.document_id, number: values.number, issuer: values.issuer,
+  });
+  if (!parsed.success) return fail("invalid");
+  const dates = documentDatesSchema.safeParse({ issue_date: values.issue_date || null, expiry_date: values.expiry_date || null });
+  if (!dates.success) return fail("invalid_dates");
+  let expected: unknown = null;
+  try { expected = values.expected_document ? JSON.parse(values.expected_document) : null; } catch { return fail("invalid"); }
+  const snapshot = documentSnapshotSchema.nullable().safeParse(expected);
+  if (!snapshot.success) return fail("invalid");
+  if (intent === "details" && ![parsed.data.number, parsed.data.issuer, dates.data.issue_date, dates.data.expiry_date].some(Boolean)) {
+    return { ok: false, message: "Enter document details before saving.", values };
+  }
+  if (intent === "upload") {
+    const file = formData.get("file");
+    if (!(file instanceof File) || !file.size) return fail("file_required");
+    if (file.size > COMPANY_DOCUMENT_MAX_BYTES) return fail("file_too_large");
+    if (!(COMPANY_DOCUMENT_MIME_TYPES as readonly string[]).includes(file.type)) return fail("file_type");
+  }
+
+  const admin = createAdminClient();
+  let result;
+  try {
+    result = await admin.rpc("save_company_document_details_atomic", {
+      p_company_id: companyId, p_expected_status: expectedStatus, p_actor_user_id: actorUserId,
+      p_actor_scope: asMaintain ? "maintain" : "company", p_document_id: parsed.data.document_id,
+      p_doc_type: parsed.data.doc_type, p_number: parsed.data.number ?? null, p_issuer: parsed.data.issuer ?? null,
+      p_issue_date: dates.data.issue_date, p_expiry_date: dates.data.expiry_date, p_expected_document: snapshot.data,
+    });
+  } catch { return fail("save_failed"); }
+  if (result.error) return fail(result.error.code === "40001" || result.error.code === "23505" ? "stale"
+    : result.error.code === "23503" ? "not_found" : result.error.code === "23514" ? "invalid" : "save_failed");
+  const saved = documentSaveResult.extend({ snapshot: documentSnapshotSchema }).safeParse(result.data);
+  if (!saved.success || saved.data.company_id !== companyId || saved.data.document_id !== parsed.data.document_id) return fail("save_failed");
+  values.expected_document = JSON.stringify(saved.data.snapshot);
+  revalidateCompanyLifecycle();
+  revalidatePath("/app/settings");
+  if (intent === "upload") {
+    try {
+      formData.set("expected_document", values.expected_document);
+      await uploadCompanyDocumentInternal(formData);
+      values.file_saved = "1";
+      return { ok: true, message: "Document details and file saved. Awaiting verification.", values };
+    } catch (error) {
+      if (!(error instanceof DocumentSubmissionError)) throw error;
+      return { ...fail(error.code), message: `Details saved. ${DOCUMENT_PROBLEMS[error.code] ?? DOCUMENT_PROBLEMS.save_failed}` };
+    }
+  }
+  return { ok: true, message: "Document details saved. Attach a file when ready; this document remains unverified.", values };
+}
+
 function documentReturnPath(companyId: string, docType: string, documentId?: string | null) {
   return documentId
     ? `/admin/verification?company=${companyId}&document=${documentId}#document-${documentId}`
@@ -507,6 +614,17 @@ function documentReturnPath(companyId: string, docType: string, documentId?: str
  * is why the company id is a parameter rather than always the caller's own.
  */
 export async function uploadCompanyDocument(formData: FormData): Promise<void> {
+  let back: string;
+  try {
+    back = await uploadCompanyDocumentInternal(formData);
+  } catch (error) {
+    if (!(error instanceof DocumentSubmissionError)) throw error;
+    companyActionError(error.back, error.code);
+  }
+  redirect(companyActionLocation(back, "saved", "document"));
+}
+
+async function uploadCompanyDocumentInternal(formData: FormData): Promise<string> {
   const asMaintain = String(formData.get("as_maintain") ?? "") === "1";
   const targetCompanyId = String(formData.get("company_id") ?? "");
 
@@ -524,13 +642,13 @@ export async function uploadCompanyDocument(formData: FormData): Promise<void> {
       company_id: z.string().uuid(),
       expected_status: z.enum(["Pending", "Active", "Suspended"]),
     }).safeParse({ company_id: targetCompanyId, expected_status: formData.get("expected_status") });
-    if (!target.success) companyActionError(targetBack, "invalid");
+    if (!target.success) documentSubmissionError(targetBack, "invalid");
     companyId = targetCompanyId;
     expectedStatus = target.data.expected_status;
     back = `/admin/verification?company=${companyId}`;
   } else {
     const context = await requireCompanyAdmin();
-    if (!writable(context.companyStatus)) companyActionError("/app/settings?section=documents#company-documents", "read_only");
+    if (!writable(context.companyStatus)) documentSubmissionError("/app/settings?section=documents#company-documents", "read_only");
     actorUserId = context.user.id;
     companyId = context.companyId;
     expectedStatus = context.companyStatus;
@@ -543,7 +661,7 @@ export async function uploadCompanyDocument(formData: FormData): Promise<void> {
     number: formData.get("number") || undefined,
     issuer: formData.get("issuer") || undefined,
   });
-  if (!parsed.success) companyActionError(back, "invalid");
+  if (!parsed.success) documentSubmissionError(back, "invalid");
   const input = parsed.data;
   if (asMaintain) back = documentReturnPath(companyId, input.doc_type, input.document_id);
 
@@ -553,11 +671,16 @@ export async function uploadCompanyDocument(formData: FormData): Promise<void> {
     issue_date: input.document_id ? null : formData.get("issue_date") || null,
     expiry_date: input.document_id ? null : formData.get("expiry_date") || null,
   });
-  if (!dates.success) companyActionError(back, "invalid_dates");
+  if (!dates.success) documentSubmissionError(back, "invalid_dates");
+  let expectedDocument: unknown = null;
+  if (input.document_id) {
+    try { expectedDocument = JSON.parse(String(formData.get("expected_document") ?? "")); } catch { documentSubmissionError(back, "invalid"); }
+    if (!documentSnapshotSchema.safeParse(expectedDocument).success) documentSubmissionError(back, "invalid");
+  }
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) companyActionError(back, "file_required");
-  if (file.size > COMPANY_DOCUMENT_MAX_BYTES) companyActionError(back, "file_too_large");
-  if (!(COMPANY_DOCUMENT_MIME_TYPES as readonly string[]).includes(file.type)) companyActionError(back, "file_type");
+  if (!(file instanceof File) || file.size === 0) documentSubmissionError(back, "file_required");
+  if (file.size > COMPANY_DOCUMENT_MAX_BYTES) documentSubmissionError(back, "file_too_large");
+  if (!(COMPANY_DOCUMENT_MIME_TYPES as readonly string[]).includes(file.type)) documentSubmissionError(back, "file_type");
 
   // The company id was established above from the caller's own membership or from the
   // maintain_admin gate, so the service-role client cannot be steered across a tenant
@@ -575,13 +698,13 @@ export async function uploadCompanyDocument(formData: FormData): Promise<void> {
       .upload(filePath, file, { contentType: file.type, upsert: false });
     uploadError = result.error;
   } catch {
-    companyActionError(back, "upload_failed");
+    documentSubmissionError(back, "upload_failed");
   }
-  if (uploadError) companyActionError(back, "upload_failed");
+  if (uploadError) documentSubmissionError(back, "upload_failed");
 
   let result: { data: unknown; error: { code?: string; message?: string } | null };
   try {
-    result = await admin.rpc("save_company_document_atomic", {
+    result = await admin.rpc(input.document_id ? "attach_company_document_with_snapshot_atomic" : "save_company_document_atomic", {
       p_company_id: companyId,
       p_expected_status: expectedStatus,
       p_actor_user_id: actorUserId,
@@ -593,30 +716,31 @@ export async function uploadCompanyDocument(formData: FormData): Promise<void> {
       p_issue_date: dates.data.issue_date,
       p_expiry_date: dates.data.expiry_date,
       p_file_path: filePath,
+      ...(input.document_id ? { p_expected_document: expectedDocument } : {}),
     });
   } catch {
     // The transaction may have committed before its response was lost. Deleting
     // the uploaded file here could destroy evidence attached by that transaction.
-    companyActionError(back, "save_failed");
+    documentSubmissionError(back, "save_failed");
   }
   if (result.error) {
     // Only a definitive database rejection proves this path was not committed.
     if (["40001", "23503", "23514", "42501", "22007", "22008", "23505", "P0001"].includes(result.error.code ?? "")) {
       await admin.storage.from(DOCUMENT_BUCKET).remove([filePath]).catch(() => undefined);
     }
-    companyActionError(back, result.error.code === "40001" ? "stale"
+    documentSubmissionError(back, result.error.code === "40001" ? "stale"
       : result.error.code === "23503" ? "not_found"
       : result.error.code === "23514" ? "invalid"
       : "save_failed");
   }
   const saved = documentSaveResult.safeParse(result.data);
   if (!saved.success || saved.data.company_id !== companyId || (input.document_id && saved.data.document_id !== input.document_id)) {
-    companyActionError(back, "save_failed");
+    documentSubmissionError(back, "save_failed");
   }
 
   revalidateCompanyLifecycle();
   revalidatePath("/app/settings");
-  redirect(companyActionLocation(back, "saved", "document"));
+  return back;
 }
 
 const companyStateSchema = z.enum(["Pending", "Active", "Suspended", "Closed"]);

@@ -9,6 +9,13 @@ revokes old tenant aggregate insert privileges. Older application versions can f
 against this schema. Do not assume backward compatibility or rely on a Vercel-only
 rollback to reverse database changes.
 
+The document Save details workflow requires
+`20260922000100_company_document_details.sql` before the matching application is
+promoted. Its `save_company_document_details_atomic` RPC saves unverified details;
+the `attach_company_document_with_snapshot_atomic` RPC then attaches a file to the
+same record only if its details are still the ones shown to the uploader. Confirm
+`npm run check:database-readiness` exposes both new RPCs before enabling this workflow.
+
 ## Before requesting approval
 
 1. Enforce protected-main review/status checks, GitHub `production` environment

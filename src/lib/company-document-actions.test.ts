@@ -18,7 +18,7 @@ vi.mock("@/lib/audit", () => ({ audit: mocks.audit }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.admin }));
 vi.mock("@/lib/notify", () => ({ notify: vi.fn(), NOTIFICATION_TRIGGERS: {} }));
 
-const { uploadCompanyDocument, verifyCompanyDocument } = await import("./actions/company");
+const { uploadCompanyDocument, verifyCompanyDocument, saveCompanyDocumentForm } = await import("./actions/company");
 const companyId = "19191919-0000-4000-8000-000000000010";
 const documentId = "19191919-0000-4000-8000-000000000020";
 const adminSection = `/admin/verification?company=${companyId}&section=public_liability`;
@@ -131,12 +131,22 @@ describe("company document evidence saves", () => {
   });
 
   it("attaches a file to the exact existing row without overwriting policy metadata", async () => {
-    await expect(uploadCompanyDocument(form({ document_id: documentId, issue_date: "invalid", expiry_date: "invalid" }))).rejects.toMatchObject({
+    const expectedDocument = { number: "PL-100", issuer: "Insurance Co", issue_date: "2026-01-21", expiry_date: "2030-01-21" };
+    await expect(uploadCompanyDocument(form({ document_id: documentId, expected_document: JSON.stringify(expectedDocument), issue_date: "invalid", expiry_date: "invalid" }))).rejects.toMatchObject({
       url: `${adminDocument}&saved=document#document-${documentId}`,
     });
-    expect(mocks.rpc).toHaveBeenCalledWith("save_company_document_atomic", expect.objectContaining({
+    expect(mocks.rpc).toHaveBeenCalledWith("attach_company_document_with_snapshot_atomic", expect.objectContaining({
       p_document_id: documentId, p_number: null, p_issuer: null, p_issue_date: null, p_expiry_date: null,
+      p_expected_document: expectedDocument,
     }));
+  });
+
+  it("rejects attachment without the displayed metadata snapshot before storing a file", async () => {
+    await expect(uploadCompanyDocument(form({ document_id: documentId }))).rejects.toMatchObject({
+      url: `${adminDocument}&error=invalid#document-${documentId}`,
+    });
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("removes the uploaded object after a definite database rejection", async () => {
@@ -182,5 +192,84 @@ describe("document verification feedback", () => {
     await expect(verifyCompanyDocument(form({ doc_type: "payment_details" }))).rejects.toMatchObject({
       url: `/admin/verification?company=${companyId}&section=payment_details&saved=verified#checklist-payment_details`,
     });
+  });
+});
+
+describe("document details can be saved before evidence", () => {
+  const snapshot = { number: "PL-100", issuer: "Insurance Co", issue_date: "2026-01-21", expiry_date: "2030-01-21" };
+  const draft = (fields: Record<string, string | undefined> = {}, file: File | null = null) =>
+    form({ document_id: documentId, intent: "details", ...fields }, file);
+  const saved = () => ({ data: { company_id: companyId, document_id: documentId, snapshot }, error: null });
+
+  it("saves details without a file, returns their snapshot and refreshes both views", async () => {
+    mocks.rpc.mockResolvedValueOnce(saved());
+    const result = await saveCompanyDocumentForm(null, draft());
+    expect(result).toMatchObject({ ok: true, values: { document_id: documentId, expected_document: JSON.stringify(snapshot) } });
+    expect(result.message).toContain("remains unverified");
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("save_company_document_details_atomic", {
+      p_company_id: companyId, p_expected_status: "Pending", p_actor_user_id: "maintain-actor", p_actor_scope: "maintain",
+      p_document_id: documentId, p_doc_type: "public_liability", p_number: "PL-100", p_issuer: "Insurance Co",
+      p_issue_date: "2026-01-21", p_expiry_date: "2030-01-21", p_expected_document: null,
+    });
+    expect(mocks.storage).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/app/settings");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/verification");
+  });
+
+  it("authenticates an admin and derives the customer tenant independently of submitted fields", async () => {
+    mocks.maintain.mockRejectedValueOnce(new Error("forbidden"));
+    await expect(saveCompanyDocumentForm(null, draft())).rejects.toThrow("forbidden");
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    mocks.rpc.mockResolvedValueOnce(saved());
+    await saveCompanyDocumentForm(null, draft({ as_maintain: "0", company_id: "forged", expected_status: "Closed" }));
+    expect(mocks.rpc).toHaveBeenCalledWith("save_company_document_details_atomic", expect.objectContaining({
+      p_company_id: companyId, p_expected_status: "Pending", p_actor_user_id: "company-actor", p_actor_scope: "company",
+    }));
+  });
+
+  it.each(["Suspended", "Closed"])("prevents %s customers saving draft details", async (companyStatus) => {
+    mocks.company.mockResolvedValueOnce({ user: { id: "company-actor" }, companyId, companyStatus });
+    expect(await saveCompanyDocumentForm(null, draft({ as_maintain: "0" }))).toMatchObject({ ok: false, message: expect.stringContaining("read-only") });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { issue_date: "2026-02-30" }, { issue_date: "2031-01-01", expiry_date: "2030-01-01" },
+    { expected_document: "bad JSON" }, { doc_type: "payment_details" }, { document_id: "bad" },
+    { number: "", issuer: "", issue_date: "", expiry_date: "" },
+  ])("retains failed inputs without saving invalid details", async (fields) => {
+    const data = draft(fields);
+    const result = await saveCompanyDocumentForm(null, data);
+    expect(result.ok).toBe(false);
+    for (const [key, value] of Object.entries(fields)) expect(result.values?.[key]).toBe(value);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns stale errors with the entered values and original snapshot intact", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "40001" } });
+    const result = await saveCompanyDocumentForm(null, draft({ number: "Changed", expected_document: JSON.stringify(snapshot) }));
+    expect(result).toMatchObject({ ok: false, message: expect.stringContaining("Refresh"), values: { number: "Changed", expected_document: JSON.stringify(snapshot) } });
+  });
+
+  it("uploads onto the same saved draft id, with no duplicate metadata row", async () => {
+    mocks.rpc.mockResolvedValueOnce(saved());
+    const result = await saveCompanyDocumentForm(null, draft({ intent: "upload", expected_document: JSON.stringify(snapshot) }, new File(["policy"], "policy.pdf", { type: "application/pdf" })));
+    expect(result).toMatchObject({ ok: true, values: { document_id: documentId, file_saved: "1" } });
+    expect(mocks.rpc.mock.calls[0][0]).toBe("save_company_document_details_atomic");
+    expect(mocks.rpc.mock.calls[1]).toEqual(["attach_company_document_with_snapshot_atomic", expect.objectContaining({ p_document_id: documentId, p_number: null, p_issuer: null, p_expected_document: snapshot })]);
+  });
+
+  it("keeps saved details and their snapshot when the subsequent upload fails", async () => {
+    mocks.rpc.mockResolvedValueOnce(saved());
+    mocks.upload.mockResolvedValueOnce({ data: null, error: { message: "offline" } });
+    const result = await saveCompanyDocumentForm(null, draft({ intent: "upload" }, new File(["policy"], "policy.pdf", { type: "application/pdf" })));
+    expect(result).toMatchObject({ ok: false, message: expect.stringContaining("Details saved."), values: { number: "PL-100", expected_document: JSON.stringify(snapshot) } });
+    expect(result.values?.file_saved).toBeUndefined();
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("validates the upload before creating even a draft row", async () => {
+    expect(await saveCompanyDocumentForm(null, draft({ intent: "upload" }))).toMatchObject({ ok: false, message: expect.stringContaining("Choose a document file") });
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 });

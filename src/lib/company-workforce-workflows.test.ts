@@ -132,7 +132,7 @@ describe("company workforce lifecycle controls — MVP 1.3 and 3.2", () => {
     expect(renderToStaticMarkup(await NewWorkerPage())).toContain('name="first_name"');
     const record = renderToStaticMarkup(await detail());
     expect(record).toContain("Mark inactive");
-    expect(record).toContain("Record qualification");
+    expect(record).toContain("Save qualification");
     const transfers = renderToStaticMarkup(await TransfersPage({ searchParams: Promise.resolve({}) }));
     expect(transfers).toContain("Approve transfer");
     expect(transfers).toContain("Decline transfer");

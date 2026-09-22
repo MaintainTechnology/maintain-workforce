@@ -3,7 +3,7 @@
 import { COMPANY_DOCUMENT_MAX_BYTES, COMPANY_DOCUMENT_MIME_TYPES } from "@/lib/company-document-policy";
 import { FIELD_HINT, INPUT } from "@/lib/platform-ui";
 
-export function CompanyDocumentFileInput({ disabled = false }: { disabled?: boolean }) {
+export function CompanyDocumentFileInput({ disabled = false, required = true }: { disabled?: boolean; required?: boolean }) {
   return (
     <>
       <input
@@ -11,7 +11,7 @@ export function CompanyDocumentFileInput({ disabled = false }: { disabled?: bool
         type="file"
         name="file"
         accept="application/pdf,image/jpeg,image/png"
-        required
+        required={required}
         disabled={disabled}
         onChange={(event) => {
           const input = event.currentTarget;

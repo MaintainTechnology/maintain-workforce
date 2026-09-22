@@ -21,14 +21,20 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string): never => { throw Object.assign(new Error(url), { url }); },
   usePathname: () => "/app",
 }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-pathname": "/admin" }) }));
 vi.mock("@/lib/clerk", () => ({ consumeCompanyInvitation: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.admin }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.client }));
+vi.mock("@/app/onboarding/onboarding-form", () => ({
+  OnboardingForm: () => createElement("form", { "aria-label": "Company setup" }),
+}));
 
 const { proxy } = await import("../proxy");
-const { requireMaintainAdmin, isMaintainAdmin } = await import("./auth");
+const { requireMaintainAdmin, requireCompanyAdmin, isMaintainAdmin } = await import("./auth");
 const { default: ContinueAfterAuthentication } = await import("../app/auth/continue/page");
 const { default: AppLayout } = await import("../app/(app)/layout");
+const { default: OnboardingPage } = await import("../app/onboarding/page");
+const { default: AdminLayout } = await import("../app/(admin)/layout");
 
 const staff = {
   id: "user_staff",
@@ -61,6 +67,9 @@ beforeEach(() => {
   mocks.company.mockResolvedValue({ data: { legal_name: "Test Company", trading_name: "" }, error: null });
   mocks.admin.mockReturnValue({
     from: (table: string) => {
+      if (table === "industry" || table === "region") {
+        return { select: () => ({ eq: () => ({ order: async () => ({ data: [] }) }) }) };
+      }
       if (table !== "company_user") throw new Error(`Unexpected admin table: ${table}`);
       return { select: () => ({ eq: () => ({ maybeSingle: mocks.membership }) }) };
     },
@@ -152,16 +161,18 @@ describe("Maintain admin metadata activation", () => {
 });
 
 describe("workspace activation access and status", () => {
-  it("exposes Verification to existing company users granted staff access on desktop and mobile", async () => {
+  it("exposes the separate admin view to staff on desktop and mobile", async () => {
     const html = renderToStaticMarkup(await AppLayout({ children: createElement("p", null, "Workspace content") }));
-    expect([...html.matchAll(/href="\/admin\/verification"/g)]).toHaveLength(2);
+    expect([...html.matchAll(/href="\/admin"/g)]).toHaveLength(3);
+    expect(html).toContain('aria-label="Switch to admin view"');
     expect(html).toContain("Verification is in progress");
   });
 
   it("does not show staff navigation for customer accounts or client-editable role metadata", async () => {
     mocks.currentUser.mockResolvedValue({ ...staff, publicMetadata: {}, unsafeMetadata: { role: "maintain_admin" } });
     const html = renderToStaticMarkup(await AppLayout({ children: null }));
-    expect(html).not.toContain('href="/admin/verification"');
+    expect(html).not.toContain('href="/admin"');
+    expect(html).not.toContain("Switch to admin view");
   });
 
   it("removes the Pending banner when the workspace reloads after approval", async () => {
@@ -172,5 +183,51 @@ describe("workspace activation access and status", () => {
     const after = renderToStaticMarkup(await AppLayout({ children: null }));
     expect(after).not.toContain("Verification is in progress");
     expect(after).toContain("Active</span>");
+  });
+});
+
+describe("admin and end-user view separation", () => {
+  it("provides a visible user-view switch in the admin header", async () => {
+    const html = renderToStaticMarkup(await AdminLayout({ children: null }));
+    expect(html).toContain('aria-label="Switch to user view"');
+    expect(html).toContain('href="/app"');
+  });
+
+  it("lets staff without a company reach setup instead of looping back to admin", async () => {
+    mocks.membership.mockResolvedValue({ data: null, error: null });
+    await expect(requireCompanyAdmin()).rejects.toMatchObject({ url: "/onboarding" });
+    const html = renderToStaticMarkup(await OnboardingPage());
+    expect(html).toContain("Set up your user workspace");
+    expect(html).toContain('aria-label="Company setup"');
+    expect(html).toContain('aria-label="Switch to admin view"');
+  });
+
+  it("uses the staff member's accepted company membership for user view", async () => {
+    await expect(requireCompanyAdmin()).resolves.toMatchObject({
+      companyId: membership.company_id,
+      companyStatus: "Pending",
+      user: { id: staff.id },
+    });
+    await expect(OnboardingPage()).rejects.toMatchObject({ url: "/app" });
+  });
+
+  it("does not bypass invitation acceptance for staff switching to user view", async () => {
+    mocks.membership.mockResolvedValue({ data: { ...membership, accepted_at: null }, error: null });
+    await expect(requireCompanyAdmin()).rejects.toMatchObject({ url: "/accept-invitation" });
+    await expect(OnboardingPage()).rejects.toMatchObject({ url: "/accept-invitation" });
+  });
+
+  it("keeps customer setup separate from staff navigation", async () => {
+    mocks.membership.mockResolvedValue({ data: null, error: null });
+    mocks.currentUser.mockResolvedValue({ ...staff, publicMetadata: {} });
+    const html = renderToStaticMarkup(await OnboardingPage());
+    expect(html).toContain("Step 2 of 2");
+    expect(html).not.toContain('href="/admin"');
+  });
+
+  it("requires sign-in for company setup", async () => {
+    mocks.auth.mockResolvedValue({ ...session(), userId: null });
+    await expect(OnboardingPage()).rejects.toMatchObject({ url: "/signup" });
+    expect(mocks.admin).not.toHaveBeenCalled();
   });
 });

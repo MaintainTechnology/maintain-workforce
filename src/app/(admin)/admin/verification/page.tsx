@@ -12,6 +12,7 @@ import { requireMaintainAdmin } from "@/lib/auth";
 import { ApprovalSubmitButton } from "@/components/approval-submit-button";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { CompanyDocumentFileInput } from "@/components/company-document-file-input";
+import { CompanyDocumentForm } from "@/components/company-document-form";
 import { companyDocumentIssue } from "@/lib/company-document-policy";
 import { formatAbn } from "@/lib/domain/abn";
 import {
@@ -518,7 +519,7 @@ export default async function VerificationPage({
                             {rows.length === 0 && (
                               <tr>
                                 <td className={TD} colSpan={7}>
-                                  <span className="text-on-dark-muted">Nothing uploaded.</span>
+                                  <span className="text-on-dark-muted">No documents saved yet.</span>
                                 </td>
                               </tr>
                             )}
@@ -534,7 +535,7 @@ export default async function VerificationPage({
                                   <td className={`${TD} ${MONO}`}>{formatDate(doc.issue_date)}</td>
                                   <td className={`${TD} ${MONO}`}>{formatDate(doc.expiry_date)}</td>
                                   <td className={TD}>
-                                    {!doc.file_path?.trim() ? <span className={pill(toneFor("Pending"))}>File required</span>
+                                    {!doc.file_path?.trim() ? <><span className={pill(toneFor("Pending"))}>File required</span><span className={`mt-(--space-2) block ${FIELD_HINT}`}>Details saved; unverified.</span></>
                                       : status === "—" ? "No expiry recorded" : <span className={pill(toneFor(status))}>{status}</span>}
                                   </td>
                                   <td className={TD}>
@@ -587,12 +588,19 @@ export default async function VerificationPage({
                                       </form>
                                     )}
                                     {canAttach && (
+                                      <details className="mt-(--space-3)">
+                                        <summary className="cursor-pointer py-(--space-2) font-semibold">Edit saved details</summary>
+                                        <CompanyDocumentForm key={doc.id} documentId={doc.id} document={doc} companyId={selected.id} companyStatus={selected.status} detailsOnly />
+                                      </details>
+                                    )}
+                                    {canAttach && (
                                       <form action={uploadCompanyDocument} className="mt-(--space-3) flex min-w-56 flex-col gap-(--space-3)">
                                         <input type="hidden" name="as_maintain" value="1" />
                                         <input type="hidden" name="company_id" value={selected.id} />
                                         <input type="hidden" name="expected_status" value={selected.status} />
                                         <input type="hidden" name="document_id" value={doc.id} />
                                         <input type="hidden" name="doc_type" value={doc.doc_type} />
+                                        <input type="hidden" name="expected_document" value={JSON.stringify({ number: doc.number, issuer: doc.issuer, issue_date: doc.issue_date, expiry_date: doc.expiry_date })} />
                                         <label className={FIELD}>
                                           <span className={FIELD_LABEL}>Attach the existing document</span>
                                           <CompanyDocumentFileInput />
@@ -611,39 +619,16 @@ export default async function VerificationPage({
                       {/* 16.1 — paperwork arrives by phone and email, so Maintain can
                           upload it on the company's behalf. The row is audited with the
                           acting admin. */}
-                      <form
-                        action={uploadCompanyDocument}
-                        encType="multipart/form-data"
-                        className="mt-(--space-4) grid gap-(--space-3) md:grid-cols-6"
-                      >
-                        <input type="hidden" name="as_maintain" value="1" />
-                        <input type="hidden" name="company_id" value={selected.id} />
-                        <input type="hidden" name="expected_status" value={selected.status} />
-                        <input type="hidden" name="doc_type" value={item.id} />
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Number</span>
-                          <input className={`${INPUT} ${MONO}`} name="number" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Issuer</span>
-                          <input className={INPUT} name="issuer" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Issued</span>
-                          <input className={INPUT} type="date" name="issue_date" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Expires</span>
-                          <input className={INPUT} type="date" name="expiry_date" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>File</span>
-                          <CompanyDocumentFileInput disabled={selected.status === "Closed"} />
-                        </label>
-                        <div className="flex items-end">
-                          <PendingSubmitButton className={BTN_GHOST} idleLabel="Upload document" pendingLabel="Uploading…" disabled={selected.status === "Closed"} />
-                        </div>
-                      </form>
+                      <div className="mt-(--space-4)">
+                        <CompanyDocumentForm
+                          key={`${selected.id}:${item.id}`}
+                          documentId={crypto.randomUUID()}
+                          docType={item.id}
+                          companyId={selected.id}
+                          companyStatus={selected.status}
+                          disabled={selected.status === "Closed"}
+                        />
+                      </div>
                     </>
                   )}
                 </div>

@@ -1,4 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { isValidElement, type ReactNode } from "react";
+import { CompanyDocumentForm } from "@/components/company-document-form";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Row = Record<string, unknown>;
@@ -22,6 +24,7 @@ vi.mock("@/lib/actions/company", () => ({
   rejectCompany: vi.fn(),
   updatePendingCompanyProfileAsMaintain: vi.fn(),
   uploadCompanyDocument: vi.fn(),
+  saveCompanyDocumentForm: vi.fn(),
   verifyCompanyDocument: vi.fn(),
   companyChecklist: async () => [
     { id: "abn_verified", label: "ABN verified", kind: "flag", optional: false },
@@ -69,6 +72,12 @@ function database() {
 const VerificationPage = (await import("@/app/(admin)/admin/verification/page")).default;
 const page = () => VerificationPage({ searchParams: Promise.resolve({ company: "company" }) });
 const renderPage = async () => renderToStaticMarkup(await page());
+
+function documentFormKeys(node: ReactNode): string[] {
+  if (Array.isArray(node)) return node.flatMap(documentFormKeys);
+  if (!isValidElement<{ children?: ReactNode }>(node)) return [];
+  return node.type === CompanyDocumentForm ? [String(node.key)] : documentFormKeys(node.props.children);
+}
 
 function document(id: string, values: Row = {}): Row {
   return {
@@ -140,6 +149,15 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); });
 
 describe("admin document verification readiness", () => {
+  it("preserves form identity on refresh but resets drafts when switching companies", async () => {
+    const first = documentFormKeys(await page());
+    expect(first).toHaveLength(4);
+    expect(documentFormKeys(await page())).toEqual(first);
+    state.tables.company[0].id = "second-company";
+    const second = documentFormKeys(await page());
+    expect(second).toHaveLength(4);
+    expect(second.every((key) => !first.includes(key))).toBe(true);
+  });
   it("allows admin activation with missing insurance and an outstanding payment flag", async () => {
     const html = await renderPage();
 
@@ -227,7 +245,7 @@ describe("admin document verification readiness", () => {
     expect(row).not.toContain("Attach file");
   });
 
-  it("requires a file on every new-document and recovery form", async () => {
+  it("offers explicit details saves without a file while requiring evidence for attachments", async () => {
     state.tables.company_document = [document("fileless", { file_path: null })];
     const html = await renderPage();
     const uploadForms = [...html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)]
@@ -235,7 +253,13 @@ describe("admin document verification readiness", () => {
 
     expect(uploadForms).toHaveLength(5);
     for (const form of uploadForms) {
-      expect(form).toMatch(/<input\b[^>]*type="file"[^>]*required=""/);
+      if (form.includes(">Attach file</button>")) {
+        expect(form).toMatch(/<input\b[^>]*type="file"[^>]*required=""/);
+      } else {
+        expect(form).not.toMatch(/<input\b[^>]*type="file"[^>]*required=""/);
+        expect(form).toContain(">Save details</button>");
+        expect(form).toContain(">Upload document</button>");
+      }
       expect(form).toContain('accept="application/pdf,image/jpeg,image/png"');
       expect(form).toContain("PDF, JPG or PNG. Maximum 4 MB.");
     }
