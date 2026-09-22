@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { ADMIN_NAV } from "./admin-navigation";
 
 function source(path: string): string {
   return readFileSync(join(process.cwd(), path), "utf8");
@@ -46,6 +47,7 @@ describe("notification retry contract (15.1)", () => {
     const page = source("src/app/(admin)/admin/notifications/page.tsx");
     const layout = source("src/app/(admin)/layout.tsx");
     const navigation = source("src/components/admin-navigation.tsx");
+    const pagination = source("src/components/admin-page.tsx");
     const authAt = page.indexOf("await requireMaintainAdmin()");
     const serviceAt = page.indexOf("createAdminClient()");
 
@@ -56,9 +58,14 @@ describe("notification retry contract (15.1)", () => {
     expect(page).toContain("Legacy row");
     expect(page).toContain('{ count: "exact" }');
     expect(page).toContain(".range(from, from + PAGE_SIZE - 1)");
-    expect(page).toContain("Previous");
-    expect(page).toContain("Next");
-    expect(layout).toContain("<AdminNavigation />");
-    expect(navigation).toContain('{ href: "/admin/notifications", label: "Notifications" }');
+    expect(page).toContain("<Pagination");
+    expect(page).toContain('previousHref={page > 1 ? `/admin/notifications?page=${page - 1}` : undefined}');
+    expect(page).toContain('nextHref={page < totalPages ? `/admin/notifications?page=${page + 1}` : undefined}');
+    expect(pagination).toContain("Previous");
+    expect(pagination).toContain("Next");
+    expect(layout).toContain("<AdminSidebar {...account} />");
+    expect(layout).toContain("<AdminTopBar {...account} />");
+    expect(navigation).toContain("ADMIN_NAV.map");
+    expect(ADMIN_NAV).toContainEqual(expect.objectContaining({ href: "/admin/notifications", label: "Notifications" }));
   });
 });

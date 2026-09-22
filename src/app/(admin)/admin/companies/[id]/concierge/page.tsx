@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Notice, PageHeader } from "@/components/admin-page";
 
 import { requireMaintainAdmin } from "@/lib/auth";
 import { getBookingRules } from "@/lib/config";
 import { formatAbn } from "@/lib/domain/abn";
-import { CARD, MONO, PAGE, pill, toneFor } from "@/lib/platform-ui";
+import { CARD, SECTION_TITLE, pill, toneFor } from "@/lib/admin-ui";
 import { indicativeRangeMap, supplierBandMap } from "@/lib/rates";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { BTN_GHOST, H1, H2, LINK } from "@/lib/ui";
+import { BTN_GHOST_SM } from "@/lib/ui";
 import { ConciergeCapacityForm, type CrewOption } from "./capacity-form";
 import { ConciergeDemandForm, type SkillOption, type TradeProficiency } from "./demand-form";
 import { ConciergeWorkerForm } from "./worker-form";
@@ -162,29 +163,19 @@ export default async function CompanyConciergePage({
   const qualifications = (qualificationData ?? []) as { id: string; name: string }[];
 
   return (
-    <div className={`${PAGE} flex flex-col gap-(--space-6)`}>
-      <div>
-        <Link href="/admin/companies" className={LINK}>
-          Back to companies
-        </Link>
-        <header className="mt-(--space-4) flex flex-wrap items-baseline gap-(--space-4)">
-          <h1 className={H1}>Concierge — {company.legal_name}</h1>
+    <div className="flex flex-col gap-(--space-6)">
+      <PageHeader
+        title={`Concierge — ${company.legal_name}`}
+        back={{ href: "/admin/companies", label: "Back to companies" }}
+        lead="Enter the information supplied by this company by phone or email. Each save includes your evidence note and is audited under your account."
+        meta={<>
           <span className={pill(toneFor(company.status))}>{company.status}</span>
-          <span className={`${MONO} text-body text-on-dark-muted`}>
-            {company.abn ? formatAbn(company.abn) : "ABN not provided"}
-          </span>
-        </header>
-        <p className="mt-(--space-3) max-w-[70ch] text-body-lg text-on-dark-muted">
-          Everything below is entered on {company.legal_name}&rsquo;s behalf from what they gave by
-          phone or email (16.1). Each write is flagged admin-entered, carries the evidence note you
-          record, and is audited under your account.
-        </p>
-      </div>
+          <span>{company.abn ? formatAbn(company.abn) : "ABN not provided"}</span>
+        </>}
+      />
 
       {saved && (
-        <p role="status" className={`${CARD} text-body text-on-dark`}>
-          {saved}
-        </p>
+        <Notice tone="ok">{saved}</Notice>
       )}
 
       {company.status !== "Active" ? (
@@ -195,7 +186,7 @@ export default async function CompanyConciergePage({
       ) : null}
 
       <section className={CARD}>
-        <h2 className={H2}>List capacity</h2>
+        <h2 className={SECTION_TITLE}>List capacity</h2>
         <p className="mt-(--space-2) max-w-[60ch] text-body-sm text-on-dark-muted">
           One line, naming the crew on it — 9.1–9.4.
         </p>
@@ -213,7 +204,7 @@ export default async function CompanyConciergePage({
       </section>
 
       <section className={CARD}>
-        <h2 className={H2}>Post a requirement</h2>
+        <h2 className={SECTION_TITLE}>Post a requirement</h2>
         <p className="mt-(--space-2) max-w-[60ch] text-body-sm text-on-dark-muted">
           One line, with what the site needs — 10.1–10.3.
         </p>
@@ -237,7 +228,7 @@ export default async function CompanyConciergePage({
       </section>
 
       <section className={CARD}>
-        <h2 className={H2}>Add a worker</h2>
+        <h2 className={SECTION_TITLE}>Add a worker</h2>
         <p className="mt-(--space-2) max-w-[60ch] text-body-sm text-on-dark-muted">
           Facts only, and the company&rsquo;s own consent confirmation — 6.1–6.4.
         </p>
@@ -254,7 +245,7 @@ export default async function CompanyConciergePage({
       </section>
 
       <div>
-        <Link href="/admin/companies" className={BTN_GHOST}>
+        <Link href="/admin/companies" className={BTN_GHOST_SM}>
           Done
         </Link>
       </div>

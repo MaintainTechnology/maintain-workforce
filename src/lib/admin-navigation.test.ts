@@ -5,11 +5,11 @@ import { describe, expect, it, vi } from "vitest";
 const navigation = vi.hoisted(() => ({ pathname: "/admin" }));
 vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname }));
 
-const { AdminNavigation } = await import("../components/admin-navigation");
+const { AdminSidebar } = await import("../components/admin-navigation");
 
 function render(pathname: string) {
   navigation.pathname = pathname;
-  return renderToStaticMarkup(createElement(AdminNavigation));
+  return renderToStaticMarkup(createElement(AdminSidebar, { email: "staff@example.test", signOut: null }));
 }
 
 function currentLink(html: string) {
@@ -21,7 +21,8 @@ describe("Maintain admin navigation", () => {
   it("keeps every admin workspace reachable from the dashboard", () => {
     const html = render("/admin");
     expect(html).toContain('aria-label="Maintain admin"');
-    expect([...html.matchAll(/<a\b/g)]).toHaveLength(11);
+    const navigationHtml = html.match(/<nav aria-label="Maintain admin">[\s\S]*?<\/nav>/)?.[0] ?? "";
+    expect([...navigationHtml.matchAll(/<a\b/g)]).toHaveLength(11);
     for (const path of ["companies", "workers", "matching", "engagements", "transfers", "notifications"]) {
       expect(html).toContain(`href="/admin/${path}"`);
     }

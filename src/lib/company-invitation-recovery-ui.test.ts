@@ -22,7 +22,7 @@ vi.mock("@/lib/admin-reporting", async (importOriginal) => ({
 
 const CompaniesPage = (await import("../app/(admin)/admin/companies/page")).default;
 const companyId = "22222222-2222-4222-8222-222222222222";
-const buttonText = "Re-issue first administrator invitation";
+const buttonText = "Re-issue first invitation";
 const staff = {
   id: "user_MaintainAdmin", primaryEmailAddress: { emailAddress: "maintain@example.test" },
   emailAddresses: [], publicMetadata: { role: "maintain_admin" }, twoFactorEnabled: true,
@@ -145,7 +145,7 @@ describe("first company-administrator invitation recovery control", () => {
     const tree = await page();
     const html = renderToStaticMarkup(tree);
     expect(html).not.toContain(buttonText);
-    expect(html).toContain("Re-send legacy@example.test");
+    expect(html).toContain('title="Re-send to legacy@example.test"');
     expect(invitationForms(tree).map(hiddenValues)).toEqual([{ company_id: companyId, email: "legacy@example.test" }]);
     expect(mocks.reissue).not.toHaveBeenCalled();
   });

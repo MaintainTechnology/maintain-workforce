@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { Notice, PageHeader, TableFrame } from "@/components/admin-page";
 import { requireMaintainAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { H1, H2, LABEL, PANEL, BTN_PRIMARY } from "@/lib/ui";
-import { MONO, TABLE, TH, TD, pill } from "@/lib/platform-ui";
+import { LABEL, PANEL, BTN_PRIMARY, BTN_GHOST_SM } from "@/lib/ui";
+import { INPUT, MONO, SECTION_TITLE, TABLE, TH, TD, pill } from "@/lib/admin-ui";
 import {
   createIndustry,
   createProficiency,
@@ -34,10 +35,7 @@ type Item = { id: string; name: string; is_active: boolean };
 type Trade = Item & { industry_id: string };
 type Prof = Item & { rank: number };
 
-const INPUT =
-  "min-h-11 w-full rounded-(--radius-md) border border-hairline bg-black-2 px-(--space-3) py-(--space-2) text-body text-on-dark placeholder:text-on-dark-faint focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
-const SMALL_BTN =
-  "inline-flex min-h-11 items-center justify-center rounded-(--radius-pill) border border-hairline px-(--space-4) py-(--space-2) text-sm font-bold text-on-dark hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark";
+const SMALL_BTN = BTN_GHOST_SM;
 
 export default async function CataloguePage({
   searchParams,
@@ -88,21 +86,16 @@ export default async function CataloguePage({
   const skillRows: (Item & { trade_role_id: string })[] = skills.data ?? [];
 
   return (
-    <div className="flex flex-col gap-(--space-7)">
-      <header>
-        <h1 className={H1}>Catalogue</h1>
-        <p className="mt-(--space-3) max-w-[70ch] text-body-lg text-on-dark-muted">
-          Reference data for the whole exchange. Everything here is data, not code — a new
-          trade, skill or qualification goes live without a deployment. Items are never
-          deleted once they are in use; deactivating one hides it from new entry and leaves
-          it on the records that already carry it.
-        </p>
-      </header>
+    <div className="flex flex-col gap-(--space-6)">
+      <PageHeader
+        title="Catalogue"
+        lead="Manage the industries, trades, skills and qualifications used across the exchange. Hide an item from new entry while preserving it on existing records."
+      />
 
-      <Notice ok={params.ok} error={params.error} />
+      {(params.ok || params.error) && <Notice tone={params.error ? "error" : "ok"}>{params.error ?? params.ok}</Notice>}
 
       {/* 4.1 Industry → TradeRole → Skill ------------------------------------------ */}
-      <div className="grid gap-(--space-5) lg:grid-cols-3">
+      <div className="grid gap-(--space-5) md:grid-cols-2 2xl:grid-cols-3">
         <CatalogueColumn
           title="Industries"
           table="industry"
@@ -112,8 +105,8 @@ export default async function CataloguePage({
           addLabel="Industry name"
         />
 
-        <section className={`${PANEL} p-(--space-5)`}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">Trades</h2>
+        <section className={`${PANEL} min-w-0 p-(--space-5)`}>
+          <h2 className={SECTION_TITLE}>Trades</h2>
           <p className={`${LABEL} mt-(--space-2)`}>Each trade belongs to one industry</p>
           <form action={createTradeRole} className="mt-(--space-4) flex flex-col gap-(--space-3)">
             <input type="hidden" name="return_to" value={here} />
@@ -141,8 +134,8 @@ export default async function CataloguePage({
           <ItemTable items={tradeRows} table="trade_role" here={here} />
         </section>
 
-        <section className={`${PANEL} p-(--space-5)`}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">Skills</h2>
+        <section className={`${PANEL} min-w-0 p-(--space-5)`}>
+          <h2 className={SECTION_TITLE}>Skills</h2>
           <p className={`${LABEL} mt-(--space-2)`}>Tags a worker or a requirement can carry</p>
           <form action={createSkill} className="mt-(--space-4) flex flex-col gap-(--space-3)">
             <input type="hidden" name="return_to" value={here} />
@@ -172,7 +165,7 @@ export default async function CataloguePage({
       </div>
 
       {/* 4.1 / 4.4 / 4.5 flat catalogues ------------------------------------------- */}
-      <div className="grid gap-(--space-5) lg:grid-cols-3">
+      <div className="grid gap-(--space-5) md:grid-cols-2 2xl:grid-cols-3">
         <CatalogueColumn
           title="Qualifications"
           table="qualification"
@@ -182,8 +175,8 @@ export default async function CataloguePage({
           addLabel="Qualification name"
         />
 
-        <section className={`${PANEL} p-(--space-5)`}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">Proficiencies</h2>
+        <section className={`${PANEL} min-w-0 p-(--space-5)`}>
+          <h2 className={SECTION_TITLE}>Proficiencies</h2>
           {/* 4.5 — the rank orders the levels and drives the 11.1 higher-proficiency toggle. */}
           <p className={`${LABEL} mt-(--space-2)`}>Rank orders the levels, lowest first</p>
           <form action={createProficiency} className="mt-(--space-4) flex flex-col gap-(--space-3)">
@@ -209,26 +202,28 @@ export default async function CataloguePage({
               Add proficiency
             </button>
           </form>
-          <table className={`${TABLE} mt-(--space-4)`}>
-            <thead>
-              <tr>
-                <th className={TH}>Level</th>
-                <th className={TH}>Rank</th>
-                <th className={TH}>State</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(proficiencies.data ?? []).map((p: Prof) => (
-                <tr key={p.id}>
-                  <td className={TD}>{p.name}</td>
-                  <td className={`${TD} ${MONO}`}>{p.rank}</td>
-                  <td className={TD}>
-                    <ActiveToggle table="proficiency" item={p} here={here} />
-                  </td>
+          <TableFrame inset className="mt-(--space-4)">
+            <table className={TABLE}>
+              <thead>
+                <tr>
+                  <th className={TH}>Level</th>
+                  <th className={TH}>Rank</th>
+                  <th className={TH}>State</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(proficiencies.data ?? []).map((p: Prof) => (
+                  <tr key={p.id}>
+                    <td className={TD}>{p.name}</td>
+                    <td className={`${TD} ${MONO}`}>{p.rank}</td>
+                    <td className={TD}>
+                      <ActiveToggle table="proficiency" item={p} here={here} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableFrame>
         </section>
 
         <CatalogueColumn
@@ -242,11 +237,11 @@ export default async function CataloguePage({
       </div>
 
       {/* 4.2 + 4.5 per-trade mapping ------------------------------------------------ */}
-      <section className={`${PANEL} p-(--space-6)`}>
-        <h2 className={H2}>Trade mapping</h2>
+      <section className={`${PANEL} min-w-0 p-(--space-6)`}>
+        <h2 className={SECTION_TITLE}>Trade mapping</h2>
         <p className="mt-(--space-3) max-w-[70ch] text-body text-on-dark-muted">
-          Which proficiency levels a trade supports (4.2), and which qualifications it
-          requires (4.5). Worker classification, requirement lines and rate bands may only
+          Which proficiency levels a trade supports, and which qualifications it
+          requires. Worker classification, requirement lines and rate bands may only
           use the combinations set here. A mandatory worker-level qualification defines
           what &ldquo;expired mandatory qualification&rdquo; means for that trade; a
           mandatory company-level one names the compliance document the supplying business
@@ -273,107 +268,110 @@ export default async function CataloguePage({
 
         {!focusTrade ? (
           <p className="mt-(--space-5) text-body text-on-dark-muted">
-            Add an industry and a trade first — the founders&rsquo; catalogue loads through
-            the seed script, and this screen maintains it afterwards.
+            Add an industry and a trade above to configure their proficiency levels and qualifications.
           </p>
         ) : (
-          <div className="mt-(--space-6) grid gap-(--space-6) lg:grid-cols-2">
+          <div className="mt-(--space-6) grid gap-(--space-6) xl:grid-cols-2">
             <div>
               <h3 className="font-display text-h4 font-bold text-on-dark">
                 Proficiency levels for {focusTrade.name}
               </h3>
-              <table className={`${TABLE} mt-(--space-4)`}>
-                <thead>
-                  <tr>
-                    <th className={TH}>Level</th>
-                    <th className={TH}>Rank</th>
-                    <th className={TH}>Supported</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(proficiencies.data ?? []).map((p: Prof) => {
-                    const on = enabledProfs.has(p.id);
-                    return (
-                      <tr key={p.id}>
-                        <td className={TD}>{p.name}</td>
-                        <td className={`${TD} ${MONO}`}>{p.rank}</td>
-                        <td className={TD}>
-                          <form action={setTradeProficiency}>
-                            <input type="hidden" name="return_to" value={here} />
-                            <input type="hidden" name="trade_role_id" value={focusTrade.id} />
-                            <input type="hidden" name="proficiency_id" value={p.id} />
-                            <input type="hidden" name="enabled" value={on ? "false" : "true"} />
-                            <button type="submit" className={SMALL_BTN}>
-                              {on ? "Remove" : "Enable"}
-                            </button>
-                          </form>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <TableFrame inset className="mt-(--space-4)">
+                <table className={TABLE}>
+                  <thead>
+                    <tr>
+                      <th className={TH}>Level</th>
+                      <th className={TH}>Rank</th>
+                      <th className={TH}>Supported</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(proficiencies.data ?? []).map((p: Prof) => {
+                      const on = enabledProfs.has(p.id);
+                      return (
+                        <tr key={p.id}>
+                          <td className={TD}>{p.name}</td>
+                          <td className={`${TD} ${MONO}`}>{p.rank}</td>
+                          <td className={TD}>
+                            <form action={setTradeProficiency}>
+                              <input type="hidden" name="return_to" value={here} />
+                              <input type="hidden" name="trade_role_id" value={focusTrade.id} />
+                              <input type="hidden" name="proficiency_id" value={p.id} />
+                              <input type="hidden" name="enabled" value={on ? "false" : "true"} />
+                              <button type="submit" className={SMALL_BTN}>
+                                {on ? "Remove" : "Enable"}
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </TableFrame>
             </div>
 
             <div>
               <h3 className="font-display text-h4 font-bold text-on-dark">
                 Qualifications for {focusTrade.name}
               </h3>
-              <table className={`${TABLE} mt-(--space-4)`}>
-                <thead>
-                  <tr>
-                    <th className={TH}>Qualification</th>
-                    <th className={TH}>Worker level</th>
-                    <th className={TH}>Company level</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(qualifications.data ?? []).map((q: Item) => (
-                    <tr key={q.id}>
-                      <td className={TD}>{q.name}</td>
-                      {(["worker", "company"] as const).map((level) => {
-                        const row = mapped.get(`${q.id}:${level}`);
-                        return (
-                          <td className={TD} key={level}>
-                            <div className="flex flex-col gap-(--space-2)">
-                              <span className={pill(row?.is_mandatory ? "overdue" : "neutral")}>
-                                {row ? (row.is_mandatory ? "Mandatory" : "Optional") : "Not required"}
-                              </span>
-                              <form action={setTradeQualification} className="flex gap-(--space-2)">
-                                <input type="hidden" name="return_to" value={here} />
-                                <input type="hidden" name="trade_role_id" value={focusTrade.id} />
-                                <input type="hidden" name="qualification_id" value={q.id} />
-                                <input type="hidden" name="level" value={level} />
-                                <input
-                                  type="hidden"
-                                  name="is_mandatory"
-                                  value={row?.is_mandatory ? "false" : "true"}
-                                />
-                                <input type="hidden" name="enabled" value="true" />
-                                <button type="submit" className={SMALL_BTN}>
-                                  {row?.is_mandatory ? "Make optional" : "Make mandatory"}
-                                </button>
-                              </form>
-                              {row && (
-                                <form action={setTradeQualification}>
+              <TableFrame inset className="mt-(--space-4)">
+                <table className={TABLE}>
+                  <thead>
+                    <tr>
+                      <th className={TH}>Qualification</th>
+                      <th className={TH}>Worker level</th>
+                      <th className={TH}>Company level</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(qualifications.data ?? []).map((q: Item) => (
+                      <tr key={q.id}>
+                        <td className={TD}>{q.name}</td>
+                        {(["worker", "company"] as const).map((level) => {
+                          const row = mapped.get(`${q.id}:${level}`);
+                          return (
+                            <td className={TD} key={level}>
+                              <div className="flex flex-col gap-(--space-2)">
+                                <span className={pill(row?.is_mandatory ? "overdue" : "neutral")}>
+                                  {row ? (row.is_mandatory ? "Mandatory" : "Optional") : "Not required"}
+                                </span>
+                                <form action={setTradeQualification} className="flex gap-(--space-2)">
                                   <input type="hidden" name="return_to" value={here} />
                                   <input type="hidden" name="trade_role_id" value={focusTrade.id} />
                                   <input type="hidden" name="qualification_id" value={q.id} />
                                   <input type="hidden" name="level" value={level} />
-                                  <input type="hidden" name="enabled" value="false" />
+                                  <input
+                                    type="hidden"
+                                    name="is_mandatory"
+                                    value={row?.is_mandatory ? "false" : "true"}
+                                  />
+                                  <input type="hidden" name="enabled" value="true" />
                                   <button type="submit" className={SMALL_BTN}>
-                                    Remove
+                                    {row?.is_mandatory ? "Make optional" : "Make mandatory"}
                                   </button>
                                 </form>
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                                {row && (
+                                  <form action={setTradeQualification}>
+                                    <input type="hidden" name="return_to" value={here} />
+                                    <input type="hidden" name="trade_role_id" value={focusTrade.id} />
+                                    <input type="hidden" name="qualification_id" value={q.id} />
+                                    <input type="hidden" name="level" value={level} />
+                                    <input type="hidden" name="enabled" value="false" />
+                                    <button type="submit" className={SMALL_BTN}>
+                                      Remove
+                                    </button>
+                                  </form>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableFrame>
             </div>
           </div>
         )}
@@ -383,23 +381,6 @@ export default async function CataloguePage({
 }
 
 /* ------------------------------------------------------------------ pieces ---- */
-
-function Notice({ ok, error }: { ok?: string; error?: string }) {
-  if (!ok && !error) return null;
-  return (
-    <p
-      role="status"
-      className="flex items-center gap-(--space-3) rounded-(--radius-md) border border-hairline bg-black-2 px-(--space-4) py-(--space-3) text-body text-on-dark"
-    >
-      {/* Dot-and-Label: the hue rides on the dot, the sentence stays white (DESIGN.md). */}
-      <span
-        aria-hidden="true"
-        className={`size-2 shrink-0 rounded-(--radius-pill) ${error ? "bg-status-critical" : "bg-status-active"}`}
-      />
-      {error ?? ok}
-    </p>
-  );
-}
 
 function CatalogueColumn({
   title,
@@ -417,8 +398,8 @@ function CatalogueColumn({
   addLabel: string;
 }) {
   return (
-    <section className={`${PANEL} p-(--space-5)`}>
-      <h2 className="font-display text-h3 font-bold text-on-dark">{title}</h2>
+    <section className={`${PANEL} min-w-0 p-(--space-5)`}>
+      <h2 className={SECTION_TITLE}>{title}</h2>
       <form action={addAction} className="mt-(--space-4) flex flex-col gap-(--space-3)">
         <input type="hidden" name="return_to" value={here} />
         <label className="sr-only" htmlFor={`${table}-name`}>
@@ -438,48 +419,50 @@ function ItemTable({ items, table, here }: { items: Item[]; table: string; here:
   if (items.length === 0) {
     return (
       <p className="mt-(--space-4) text-body text-on-dark-muted">
-        Nothing yet — loaded by the seed script from the founders&rsquo; spreadsheet.
+        No items yet. Add the first one using the form above.
       </p>
     );
   }
   return (
-    <table className={`${TABLE} mt-(--space-4)`}>
-      <thead>
-        <tr>
-          <th className={TH}>Name</th>
-          <th className={TH}>State</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((item) => (
-          <tr key={item.id}>
-            <td className={TD}>
-              {/* 4.1 — editing is a data change; the row is the edit surface. */}
-              <form action={renameCatalogueItem} className="flex gap-(--space-2)">
-                <input type="hidden" name="return_to" value={here} />
-                <input type="hidden" name="table" value={table} />
-                <input type="hidden" name="id" value={item.id} />
-                <label className="sr-only" htmlFor={`${table}-${item.id}-name`}>
-                  Name
-                </label>
-                <input
-                  id={`${table}-${item.id}-name`}
-                  name="name"
-                  defaultValue={item.name}
-                  className={INPUT}
-                />
-                <button type="submit" className={SMALL_BTN}>
-                  Save
-                </button>
-              </form>
-            </td>
-            <td className={TD}>
-              <ActiveToggle table={table} item={item} here={here} />
-            </td>
+    <TableFrame inset className="mt-(--space-4)">
+      <table className={TABLE}>
+        <thead>
+          <tr>
+            <th className={TH}>Name</th>
+            <th className={TH}>State</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <td className={TD}>
+                {/* 4.1 — editing is a data change; the row is the edit surface. */}
+                <form action={renameCatalogueItem} className="flex gap-(--space-2)">
+                  <input type="hidden" name="return_to" value={here} />
+                  <input type="hidden" name="table" value={table} />
+                  <input type="hidden" name="id" value={item.id} />
+                  <label className="sr-only" htmlFor={`${table}-${item.id}-name`}>
+                    Name
+                  </label>
+                  <input
+                    id={`${table}-${item.id}-name`}
+                    name="name"
+                    defaultValue={item.name}
+                    className={INPUT}
+                  />
+                  <button type="submit" className={SMALL_BTN}>
+                    Save
+                  </button>
+                </form>
+              </td>
+              <td className={TD}>
+                <ActiveToggle table={table} item={item} here={here} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableFrame>
   );
 }
 

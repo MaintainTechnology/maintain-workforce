@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Notice, PageHeader, Pagination, TableEmpty, TableFrame } from "@/components/admin-page";
+import { Icon } from "@/components/icon";
 import { reissueInvitation, setCompanyStatus } from "@/lib/actions/company";
 import {
   companyExportHref,
@@ -11,21 +13,18 @@ import {
 import { requireMaintainAdmin } from "@/lib/auth";
 import { formatAbn } from "@/lib/domain/abn";
 import {
-  CARD,
   FIELD,
-  FIELD_HINT,
   FIELD_LABEL,
-  INPUT,
-  MONO,
-  PAGE,
+  INPUT_SM,
+  SUBSECTION_TITLE,
   TABLE,
   TD,
   TH,
   formatDate,
   pill,
   toneFor,
-} from "@/lib/platform-ui";
-import { BTN_GHOST, H1, H2, LINK } from "@/lib/ui";
+} from "@/lib/admin-ui";
+import { BTN_GHOST_SM, LINK, NAV_FOCUS, PANEL } from "@/lib/ui";
 import type { CompanyStatus } from "@/lib/supabase/types";
 
 // Company statuses and their effects. Pending → Active by Maintain approval,
@@ -72,6 +71,8 @@ const EFFECTS: Record<CompanyStatus, string> = {
   Closed: "Terminal. Set by Maintain only; the account cannot be reopened.",
 };
 
+type Membership = { user_id: string; invited_email: string | null; accepted_at: string | null };
+
 export default async function CompaniesPage({
   searchParams,
 }: {
@@ -92,238 +93,204 @@ export default async function CompaniesPage({
   const exportHref = companyExportHref(filters);
 
   return (
-    <div className={`${PAGE} flex flex-col gap-(--space-6)`}>
-      <header className="flex flex-wrap items-center gap-(--space-4)">
-        <h1 className={H1}>Companies</h1>
-        <span className={`${MONO} text-body text-on-dark-muted`}>
-          {companies.length} shown · page {pagination.page}
-        </span>
-        <a href={exportHref} className={`${BTN_GHOST} ml-auto`}>
-          Export CSV
-        </a>
-      </header>
+    <div className="flex flex-col gap-(--space-6)">
+      <PageHeader
+        title="Companies"
+        lead="Every registered company, its status, and the controls that change it. Status changes are audited and take effect immediately."
+        meta={
+          <>
+            <span>{companies.length} shown</span>
+            <span aria-hidden="true" className="text-on-dark-faint">·</span>
+            <span>Page {pagination.page}</span>
+            {status && (
+              <>
+                <span aria-hidden="true" className="text-on-dark-faint">·</span>
+                <span>Filtered to {status}</span>
+              </>
+            )}
+          </>
+        }
+        actions={
+          <a href={exportHref} className={BTN_GHOST_SM}>
+            Export CSV
+          </a>
+        }
+      />
 
-      {saved && (
-        <p role="status" className={`${CARD} text-body text-on-dark`}>
-          {saved}
-        </p>
-      )}
-      {problem && (
-        <p role="alert" className={`${CARD} text-body text-on-dark`}>
-          {problem}
-        </p>
-      )}
+      {saved && <Notice tone="ok">{saved}</Notice>}
+      {problem && <Notice tone="error">{problem}</Notice>}
 
-      <section className={CARD}>
-        <form method="get" className="flex flex-wrap items-end gap-(--space-4)">
-          <label className={FIELD}>
-            <span className={FIELD_LABEL}>Status</span>
-            <select className={INPUT} name="status" defaultValue={status}>
-              <option value="">Any status</option>
-              {STATUSES.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit" className={BTN_GHOST}>
-            Apply filter
-          </button>
-          <Link href="/admin/companies" className={LINK}>
+      <form method="get" className="flex flex-wrap items-end gap-(--space-3)" aria-label="Company filters">
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>Status</span>
+          <select className={`${INPUT_SM} w-44`} name="status" defaultValue={status}>
+            <option value="">Any status</option>
+            {STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className={BTN_GHOST_SM}>
+          Apply filter
+        </button>
+        {status && (
+          <Link href="/admin/companies" className={`${LINK} text-sm`}>
             Clear
           </Link>
-        </form>
-      </section>
+        )}
+      </form>
 
-      <section className={CARD}>
-        <div className="overflow-x-auto">
-          <table className={TABLE}>
-            <thead>
-              <tr>
-                <th className={TH}>Registered</th>
-                <th className={TH}>Company</th>
-                <th className={TH}>ABN</th>
-                <th className={TH}>Contact</th>
-                <th className={TH}>Status</th>
-                <th className={TH}>Change status</th>
-                <th className={TH}>Pending invitations</th>
-                <th className={TH}>Concierge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companies.length === 0 && (
-                <tr>
-                  <td className={TD} colSpan={8}>
-                    <span className="text-on-dark-muted">No companies match this filter.</span>
-                  </td>
-                </tr>
-              )}
-              {companies.map((company) => (
+      <TableFrame>
+        <table className={TABLE}>
+          <thead>
+            <tr>
+              <th className={TH}>Registered</th>
+              <th className={TH}>Company</th>
+              <th className={TH}>Contact</th>
+              <th className={TH}>Status</th>
+              <th className={TH}>Invitations</th>
+              <th className={TH}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {companies.length === 0 && (
+              <TableEmpty colSpan={6}>No companies match this filter.</TableEmpty>
+            )}
+            {companies.map((company) => {
+              const memberships = (company.company_user ?? []) as Membership[];
+              const pendingInvites = memberships.filter((m) => m.invited_email && !m.accepted_at);
+              // Clerk binds the first membership only after acceptance. A loginless
+              // company still needs a manual invitation recovery path.
+              const canReissueFirst =
+                pendingInvites.length === 0 &&
+                (company.status === "Pending" || company.status === "Active") &&
+                memberships.length === 0 &&
+                Boolean(company.contact_email?.trim());
+
+              return (
                 <tr key={company.id}>
-                  <td className={`${TD} ${MONO}`}>{formatDate(company.created_at)}</td>
-                  <td className={TD}>
-                    {company.legal_name}
+                  <td className={`${TD} whitespace-nowrap tabular-nums text-on-dark-muted`}>{formatDate(company.created_at)}</td>
+                  <td className={`${TD} min-w-[16rem]`}>
+                    <span className="font-semibold">{company.legal_name}</span>
                     {company.trading_name && (
-                      <>
-                        <br />
-                        <span className="text-body-sm text-on-dark-muted">
-                          trading as {company.trading_name}
-                        </span>
-                      </>
+                      <span className="block text-xs text-on-dark-muted">trading as {company.trading_name}</span>
                     )}
-                  </td>
-                  <td className={`${TD} ${MONO}`}>
-                    {company.abn ? formatAbn(company.abn) : "—"}
-                  </td>
-                  <td className={TD}>
-                    {company.contact_name ?? "—"}
-                    <br />
-                    <span className={`${MONO} text-body-sm text-on-dark-muted`}>
-                      {company.contact_email}
+                    <span className="mt-(--space-1) block text-xs tabular-nums text-on-dark-faint">
+                      {company.abn ? `ABN ${formatAbn(company.abn)}` : "ABN not provided"}
                     </span>
+                  </td>
+                  <td className={`${TD} min-w-[12rem]`}>
+                    {company.contact_name ?? "—"}
+                    <span className="block text-xs text-on-dark-muted [overflow-wrap:anywhere]">{company.contact_email}</span>
                   </td>
                   <td className={TD}>
                     <span className={pill(toneFor(company.status))}>{company.status}</span>
                   </td>
                   <td className={TD}>
-                    {company.status === "Closed" ? (
-                      <span className="text-on-dark-muted">terminal</span>
-                    ) : (
-                      <form action={setCompanyStatus} className="flex flex-wrap items-center gap-(--space-2)">
+                    {pendingInvites.length > 0 ? (
+                      <div className="flex flex-col items-start gap-(--space-2)">
+                        {pendingInvites.map((membership) => (
+                          <form key={membership.user_id} action={reissueInvitation}>
+                            <input type="hidden" name="company_id" value={company.id} />
+                            <input type="hidden" name="email" value={membership.invited_email ?? ""} />
+                            <button type="submit" className={BTN_GHOST_SM} title={`Re-send to ${membership.invited_email}`}>
+                              Re-send
+                              <span className="max-w-[14ch] truncate font-normal text-on-dark-muted">{membership.invited_email}</span>
+                            </button>
+                          </form>
+                        ))}
+                      </div>
+                    ) : canReissueFirst ? (
+                      <form action={reissueInvitation}>
                         <input type="hidden" name="company_id" value={company.id} />
-                        <input type="hidden" name="expected_status" value={company.status} />
-                        <select
-                          className={INPUT}
-                          name="status"
-                          defaultValue=""
-                          required
-                          aria-label={`Status for ${company.legal_name}`}
-                        >
-                          <option value="" disabled>Choose action</option>
-                          {STATUS_TARGETS[company.status].map((value) => (
-                            <option key={value} value={value}>
-                              {value}
-                            </option>
-                          ))}
-                        </select>
-                        <button type="submit" className={BTN_GHOST}>
-                          Apply
+                        <input type="hidden" name="email" value={company.contact_email} />
+                        <button type="submit" className={BTN_GHOST_SM}>
+                          Re-issue first invitation
                         </button>
-                        <Link className={LINK} href={`/admin/verification?company=${company.id}`}>
-                          {company.status === "Pending" ? "Review and approve" : "Review account"}
-                        </Link>
                       </form>
+                    ) : (
+                      <span className="text-on-dark-muted">None pending</span>
                     )}
                   </td>
-                  <td className={TD}>
-                    {(company.company_user ?? []).filter(
-                      (membership: { invited_email: string | null; accepted_at: string | null }) =>
-                        membership.invited_email && !membership.accepted_at,
-                    ).length === 0 ? (
-                      // Clerk binds the first membership only after acceptance. A
-                      // loginless company still needs a manual invitation recovery path.
-                      (company.status === "Pending" || company.status === "Active") &&
-                      (company.company_user ?? []).length === 0 && company.contact_email?.trim() ? (
-                        <form action={reissueInvitation}>
+                  <td className={`${TD} min-w-[16rem]`}>
+                    <div className="flex flex-col items-start gap-(--space-2)">
+                      {company.status === "Closed" ? (
+                        <span className="text-on-dark-muted">Closed is terminal</span>
+                      ) : (
+                        <form action={setCompanyStatus} className="flex items-center gap-(--space-2)">
                           <input type="hidden" name="company_id" value={company.id} />
-                          <input type="hidden" name="email" value={company.contact_email} />
-                          <button type="submit" className={BTN_GHOST}>
-                            Re-issue first administrator invitation
+                          <input type="hidden" name="expected_status" value={company.status} />
+                          <select
+                            className={`${INPUT_SM} w-36`}
+                            name="status"
+                            defaultValue=""
+                            required
+                            aria-label={`Change status for ${company.legal_name}`}
+                          >
+                            <option value="" disabled>Set status…</option>
+                            {STATUS_TARGETS[company.status].map((value) => (
+                              <option key={value} value={value}>
+                                {value}
+                              </option>
+                            ))}
+                          </select>
+                          <button type="submit" className={BTN_GHOST_SM}>
+                            Apply
                           </button>
                         </form>
-                      ) : (
-                        <span className="text-on-dark-muted">None</span>
-                      )
-                    ) : (
-                      <div className="flex flex-col items-start gap-(--space-2)">
-                        {(company.company_user ?? [])
-                          .filter(
-                            (membership: {
-                              invited_email: string | null;
-                              accepted_at: string | null;
-                            }) => membership.invited_email && !membership.accepted_at,
-                          )
-                          .map(
-                            (membership) => (
-                              <form key={membership.user_id} action={reissueInvitation}>
-                                <input type="hidden" name="company_id" value={company.id} />
-                                <input
-                                  type="hidden"
-                                  name="email"
-                                  value={membership.invited_email ?? ""}
-                                />
-                                <button type="submit" className={BTN_GHOST}>
-                                  Re-send {membership.invited_email}
-                                </button>
-                              </form>
-                            ),
-                          )}
+                      )}
+                      <div className="flex flex-wrap items-center gap-x-(--space-4) text-sm">
+                        {company.status !== "Closed" && (
+                          <Link className={`inline-flex min-h-11 items-center gap-(--space-1) font-semibold text-on-dark-muted hover:text-on-dark ${NAV_FOCUS}`} href={`/admin/verification?company=${company.id}`}>
+                            {company.status === "Pending" ? "Review and approve" : "Review account"}
+                            <Icon name="i-arrow-right" className="size-4" />
+                          </Link>
+                        )}
+                        {/* 16.1 — the concierge entry point for a company that phones or
+                            emails its capacity, requirements and crew in rather than
+                            logging in itself (0.3). */}
+                        <Link className={`inline-flex min-h-11 items-center gap-(--space-1) font-semibold text-on-dark-muted hover:text-on-dark ${NAV_FOCUS}`} href={`/admin/companies/${company.id}/concierge`}>
+                          Concierge
+                          <Icon name="i-arrow-right" className="size-4" />
+                        </Link>
                       </div>
-                    )}
-                  </td>
-                  <td className={TD}>
-                    {/* 16.1 — the concierge entry point for a company that phones or
-                        emails its capacity, requirements and crew in rather than
-                        logging in itself (0.3). */}
-                    <Link className={LINK} href={`/admin/companies/${company.id}/concierge`}>
-                      Concierge
-                    </Link>
+                    </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <nav
-          aria-label="Companies pagination"
-          className="mt-(--space-4) flex flex-wrap items-center justify-between gap-(--space-3)"
-        >
-          <span className={`${MONO} text-body-sm text-on-dark-muted`}>
-            Page {pagination.page}
-          </span>
-          <div className="flex items-center gap-(--space-2)">
-            {pagination.hasPrevious ? (
-              <Link
-                className={BTN_GHOST}
-                href={companyPageHref(filters, pagination.page - 1)}
-              >
-                Previous
-              </Link>
-            ) : (
-              <span className="text-body-sm text-on-dark-muted" aria-disabled="true">
-                Previous
-              </span>
-            )}
-            {pagination.hasNext ? (
-              <Link
-                className={BTN_GHOST}
-                href={companyPageHref(filters, pagination.page + 1)}
-              >
-                Next
-              </Link>
-            ) : (
-              <span className="text-body-sm text-on-dark-muted" aria-disabled="true">
-                Next
-              </span>
-            )}
-          </div>
-        </nav>
-      </section>
+              );
+            })}
+          </tbody>
+        </table>
+      </TableFrame>
 
-      <section className={CARD}>
-        <h2 className={H2}>What each status means</h2>
-        <dl className="mt-(--space-4) grid gap-(--space-4) md:grid-cols-2">
+      <Pagination
+        label="Companies pagination"
+        summary={<>Page {pagination.page} · {companies.length} shown</>}
+        previousHref={pagination.hasPrevious ? companyPageHref(filters, pagination.page - 1) : undefined}
+        nextHref={pagination.hasNext ? companyPageHref(filters, pagination.page + 1) : undefined}
+      />
+
+      <details className={`group ${PANEL}`}>
+        <summary className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-(--space-4) rounded-(--radius-lg) px-(--space-5) py-(--space-4) [&::-webkit-details-marker]:hidden ${NAV_FOCUS}`}>
+          <span>
+            <span className={SUBSECTION_TITLE}>What each status means</span>
+            <span className="mt-(--space-1) block text-sm text-on-dark-muted">The effect of every status on the company, its crew and its open matches.</span>
+          </span>
+          <Icon name="i-arrow-right" className="size-4 shrink-0 text-on-dark-muted transition-transform duration-(--dur-base) ease-(--ease-out) group-open:rotate-90" />
+        </summary>
+        <dl className="grid gap-(--space-5) border-t border-hairline px-(--space-5) py-(--space-5) md:grid-cols-2">
           {STATUSES.map((value) => (
             <div key={value}>
               <dt>
                 <span className={pill(toneFor(value))}>{value}</span>
               </dt>
-              <dd className={`${FIELD_HINT} mt-(--space-2) max-w-[60ch]`}>{EFFECTS[value]}</dd>
+              <dd className="mt-(--space-2) max-w-[60ch] text-sm leading-relaxed text-on-dark-muted">{EFFECTS[value]}</dd>
             </div>
           ))}
         </dl>
-      </section>
+      </details>
     </div>
   );
 }

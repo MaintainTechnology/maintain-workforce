@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import { ActionForm } from "@/components/action-form";
+import { Fact, FactList, PageHeader, SectionHeader } from "@/components/admin-page";
 import {
   cancelEngagement,
   completeEngagement,
@@ -11,8 +12,8 @@ import {
 } from "@/lib/actions/engagement";
 import { getAdminEngagement } from "@/lib/admin-engagement-reporting";
 import { formatCentsExGst } from "@/lib/domain/money";
-import { CARD, FIELD, FIELD_HINT, FIELD_LABEL, INPUT, MONO, formatWindow, pill, toneFor } from "@/lib/platform-ui";
-import { H1, LINK } from "@/lib/ui";
+import { CHECKBOX, CHECK_OPTION, FIELD, FIELD_LABEL, INPUT, formatWindow, pill, toneFor } from "@/lib/admin-ui";
+import { PANEL } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "Engagement controls" };
 
@@ -32,41 +33,43 @@ export default async function AdminEngagementDetailPage({
   const canComplete = engagement.status === "Active" || engagement.status === "Disputed";
   const canDispute = engagement.status === "Active" || engagement.status === "Completed";
   const canRecordOutcome = engagement.status === "Completed";
+  const awaitingTrigger = engagement.status === "Awaiting Commercial";
 
   return (
     <div className="flex flex-col gap-(--space-6)">
-      <div>
-        <Link href="/admin/engagements" className={LINK}>
-          Back to engagements
-        </Link>
-        <div className="mt-(--space-4) flex flex-wrap items-end justify-between gap-(--space-4)">
-          <div>
-            <h1 className={H1}>Engagement controls</h1>
-            <p className="mt-(--space-3) text-body-lg text-on-dark-muted">
-              {engagement.supplier_company_name} → {engagement.buyer_company_name}
-            </p>
-          </div>
+      <PageHeader
+        back={{ href: "/admin/engagements", label: "Back to engagements" }}
+        title="Engagement controls"
+        lead={`${engagement.supplier_company_name} → ${engagement.buyer_company_name}`}
+        meta={
+          <>
+            <span>{engagement.trade_role_name} · {engagement.proficiency_name}</span>
+            <span aria-hidden="true" className="text-on-dark-faint">·</span>
+            <span>{formatWindow(engagement.start_date, engagement.end_date)}</span>
+          </>
+        }
+        actions={
           <span className={pill(toneFor(engagement.overdue ? "Overdue" : engagement.status))}>
             {engagement.overdue ? "Overdue" : engagement.status}
           </span>
-        </div>
-      </div>
+        }
+      />
 
       {engagement.compliance_review_count > 0 && (
-        <section className={CARD} aria-labelledby="engagement-compliance-heading">
-          <h2 id="engagement-compliance-heading" className="font-display text-h3 font-bold text-on-dark">
-            Maintain compliance review
-          </h2>
-          <p className={`mt-(--space-2) ${FIELD_HINT}`}>
-            {engagement.compliance_review_count} compliance issue{engagement.compliance_review_count === 1 ? " requires" : "s require"} review.
-            This commitment has not been automatically cancelled. Review the affected records and agree the next steps.
-          </p>
-          <ul className="mt-(--space-4) flex list-disc flex-col gap-(--space-3) pl-(--space-5)">
+        <section className={`${PANEL} p-(--space-5)`} aria-labelledby="engagement-compliance-heading">
+          <div className="flex items-start gap-(--space-3)">
+            <span aria-hidden="true" className="mt-[0.55em] size-2 shrink-0 rounded-(--radius-pill) bg-status-critical" />
+            <SectionHeader
+              title={<span id="engagement-compliance-heading">Maintain compliance review</span>}
+              hint={`${engagement.compliance_review_count} compliance issue${engagement.compliance_review_count === 1 ? " requires" : "s require"} review. This commitment has not been automatically cancelled. Review the affected records and agree the next steps.`}
+            />
+          </div>
+          <ul className="mt-(--space-4) divide-y divide-hairline">
             {engagement.compliance_issues.map((issue) => (
-              <li key={`${issue.source_type}/${issue.source_id}`} className="text-body text-on-dark">
+              <li key={`${issue.source_type}/${issue.source_id}`} className="py-(--space-3) text-sm text-on-dark">
                 {issue.reason}
-                <span className="mt-(--space-1) block break-all text-body-sm text-on-dark-muted">
-                  {issue.source_type === "company" ? "Company" : "Worker"} record: {issue.source_id}
+                <span className="mt-(--space-1) block text-xs tabular-nums text-on-dark-muted [overflow-wrap:anywhere]">
+                  {issue.source_type === "company" ? "Company" : "Worker"} record {issue.source_id}
                 </span>
               </li>
             ))}
@@ -74,72 +77,40 @@ export default async function AdminEngagementDetailPage({
         </section>
       )}
 
-      <section className={CARD}>
-        <h2 className="font-display text-h3 font-bold text-on-dark">Commercial snapshot</h2>
-        <dl className="mt-(--space-4) grid gap-(--space-4) sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <dt className="text-label uppercase tracking-[0.08em] text-on-dark-faint">Trade</dt>
-            <dd className="mt-(--space-1) text-body text-on-dark">
-              {engagement.trade_role_name} · {engagement.proficiency_name}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-label uppercase tracking-[0.08em] text-on-dark-faint">Window</dt>
-            <dd className={`mt-(--space-1) text-body text-on-dark ${MONO}`}>
-              {formatWindow(engagement.start_date, engagement.end_date)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-label uppercase tracking-[0.08em] text-on-dark-faint">Crew</dt>
-            <dd className={`mt-(--space-1) text-body text-on-dark ${MONO}`}>
-              {engagement.worker_count}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-label uppercase tracking-[0.08em] text-on-dark-faint">Supplier rate</dt>
-            <dd className={`mt-(--space-1) text-body text-on-dark ${MONO}`}>
-              {formatCentsExGst(engagement.supplier_rate_cents)} /hr
-            </dd>
-          </div>
-          <div>
-            <dt className="text-label uppercase tracking-[0.08em] text-on-dark-faint">Buyer rate</dt>
-            <dd className={`mt-(--space-1) text-body text-on-dark ${MONO}`}>
-              {formatCentsExGst(engagement.buyer_rate_cents)} /hr
-            </dd>
-          </div>
-          <div>
-            <dt className="text-label uppercase tracking-[0.08em] text-on-dark-faint">Payment</dt>
-            <dd className={`mt-(--space-1) text-body text-on-dark ${MONO}`}>
-              {engagement.payment_status}
-              {engagement.external_payment_ref ? ` · ${engagement.external_payment_ref}` : ""}
-            </dd>
-          </div>
-        </dl>
+      <section className={`${PANEL} p-(--space-5)`} aria-labelledby="snapshot-heading">
+        <SectionHeader title={<span id="snapshot-heading">Commercial snapshot</span>} hint="Frozen when the engagement was created. Rates are per hour, ex GST." />
+        <FactList columns={3} className="mt-(--space-5)">
+          <Fact label="Trade" value={`${engagement.trade_role_name} · ${engagement.proficiency_name}`} />
+          <Fact label="Window" value={formatWindow(engagement.start_date, engagement.end_date)} numeric />
+          <Fact label="Crew" value={engagement.worker_count} numeric />
+          <Fact label="Supplier rate" value={`${formatCentsExGst(engagement.supplier_rate_cents)} /hr`} numeric />
+          <Fact label="Buyer rate" value={`${formatCentsExGst(engagement.buyer_rate_cents)} /hr`} numeric />
+          <Fact
+            label="Payment"
+            value={`${engagement.payment_status}${engagement.external_payment_ref ? ` · ${engagement.external_payment_ref}` : ""}`}
+            numeric
+          />
+        </FactList>
       </section>
 
-      {canChangePayment && (
-        <section className={CARD}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">
-            {engagement.status === "Awaiting Commercial" ? "Commercial trigger" : "Payment record"}
-          </h2>
-          <p className={`mt-(--space-2) ${FIELD_HINT}`}>
-            {engagement.status === "Awaiting Commercial"
+      <div className="grid gap-(--space-5) lg:grid-cols-2">
+        {canChangePayment && (
+          <Control
+            title={awaitingTrigger ? "Commercial trigger" : "Payment record"}
+            hint={awaitingTrigger
               ? "Pre-authorisation confirms the engagement and reveals the parties to one another."
               : "Record an off-platform payment-state change against the engagement audit trail."}
-          </p>
-          <div className="mt-(--space-4)">
+            emphasis={awaitingTrigger}
+          >
             <ActionForm
               action={recordPaymentStatus}
-              submitLabel={
-                engagement.status === "Awaiting Commercial"
-                  ? "Record pre-authorised"
-                  : "Record payment change"
-              }
+              submitLabel={awaitingTrigger ? "Record pre-authorised" : "Record payment change"}
               pendingLabel="Recording payment…"
+              tone={awaitingTrigger ? "primary" : "ghost"}
             >
               <input type="hidden" name="engagement_id" value={engagement.id} />
               <input type="hidden" name="expected_status" value={engagement.status} />
-              {engagement.status === "Awaiting Commercial" ? (
+              {awaitingTrigger ? (
                 <input type="hidden" name="payment_status" value="pre-authorised" />
               ) : (
                 <label className={FIELD}>
@@ -162,19 +133,15 @@ export default async function AdminEngagementDetailPage({
                 />
               </label>
             </ActionForm>
-          </div>
-        </section>
-      )}
+          </Control>
+        )}
 
-      {canComplete && (
-        <section className={CARD}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">
-            {engagement.status === "Disputed" ? "Resolve as completed" : "Complete engagement"}
-          </h2>
-          <p className={`mt-(--space-2) ${FIELD_HINT}`}>
-            For an early completion, enter the actual final date inside the original window.
-          </p>
-          <div className="mt-(--space-4)">
+        {canComplete && (
+          <Control
+            title={engagement.status === "Disputed" ? "Resolve as completed" : "Complete engagement"}
+            hint="For an early completion, enter the actual final date inside the original window."
+            emphasis={!awaitingTrigger}
+          >
             <ActionForm
               action={completeEngagement}
               submitLabel={engagement.status === "Disputed" ? "Resolve as completed" : "Complete engagement"}
@@ -189,26 +156,65 @@ export default async function AdminEngagementDetailPage({
                   name="end_date"
                   min={engagement.start_date}
                   max={engagement.end_date}
-                  className={INPUT}
+                  className={`${INPUT} tabular-nums`}
                 />
               </label>
-              <label className={FIELD}>
-                <span className={FIELD_LABEL}>Actual hours</span>
-                <input type="number" name="actual_hours" min="0" step="0.25" className={INPUT} />
-              </label>
-              <label className={FIELD}>
-                <span className={FIELD_LABEL}>Actual value (cents, ex GST)</span>
-                <input type="number" name="actual_value_cents" min="0" step="1" className={INPUT} />
-              </label>
+              <div className="grid gap-(--space-3) sm:grid-cols-2">
+                <label className={FIELD}>
+                  <span className={FIELD_LABEL}>Actual hours</span>
+                  <input type="number" name="actual_hours" min="0" step="0.25" className={`${INPUT} tabular-nums`} />
+                </label>
+                <label className={FIELD}>
+                  <span className={FIELD_LABEL}>Actual value (cents, ex GST)</span>
+                  <input type="number" name="actual_value_cents" min="0" step="1" className={`${INPUT} tabular-nums`} />
+                </label>
+              </div>
             </ActionForm>
-          </div>
-        </section>
-      )}
+          </Control>
+        )}
 
-      {canDispute && (
-        <section className={CARD}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">Record a dispute</h2>
-          <div className="mt-(--space-4)">
+        {canRecordOutcome && (
+          <Control
+            title="Record actual outcome"
+            hint="Add or correct the actual hours and value after automatic completion."
+            emphasis
+          >
+            <ActionForm
+              action={recordEngagementOutcome}
+              submitLabel="Record engagement outcome"
+              pendingLabel="Recording outcome…"
+            >
+              <input type="hidden" name="engagement_id" value={engagement.id} />
+              <div className="grid gap-(--space-3) sm:grid-cols-2">
+                <label className={FIELD}>
+                  <span className={FIELD_LABEL}>Actual hours</span>
+                  <input
+                    type="number"
+                    name="actual_hours"
+                    min="0"
+                    step="0.25"
+                    defaultValue={engagement.actual_hours ?? ""}
+                    className={`${INPUT} tabular-nums`}
+                  />
+                </label>
+                <label className={FIELD}>
+                  <span className={FIELD_LABEL}>Actual value (cents, ex GST)</span>
+                  <input
+                    type="number"
+                    name="actual_value_cents"
+                    min="0"
+                    step="1"
+                    defaultValue={engagement.actual_value_cents ?? ""}
+                    className={`${INPUT} tabular-nums`}
+                  />
+                </label>
+              </div>
+            </ActionForm>
+          </Control>
+        )}
+
+        {canDispute && (
+          <Control title="Record a dispute" hint="Marks the engagement Disputed and records the notes against its audit trail.">
             <ActionForm action={disputeEngagement} submitLabel="Mark disputed" pendingLabel="Recording dispute…" tone="ghost">
               <input type="hidden" name="engagement_id" value={engagement.id} />
               <input type="hidden" name="expected_status" value={engagement.status} />
@@ -217,54 +223,11 @@ export default async function AdminEngagementDetailPage({
                 <textarea name="dispute_notes" rows={4} className={INPUT} required />
               </label>
             </ActionForm>
-          </div>
-        </section>
-      )}
+          </Control>
+        )}
 
-      {canRecordOutcome && (
-        <section className={CARD}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">Record actual outcome</h2>
-          <p className={`mt-(--space-2) ${FIELD_HINT}`}>
-            Add or correct the actual hours and value after automatic completion.
-          </p>
-          <div className="mt-(--space-4)">
-            <ActionForm
-              action={recordEngagementOutcome}
-              submitLabel="Record engagement outcome"
-              pendingLabel="Recording outcome…"
-            >
-              <input type="hidden" name="engagement_id" value={engagement.id} />
-              <label className={FIELD}>
-                <span className={FIELD_LABEL}>Actual hours</span>
-                <input
-                  type="number"
-                  name="actual_hours"
-                  min="0"
-                  step="0.25"
-                  defaultValue={engagement.actual_hours ?? ""}
-                  className={INPUT}
-                />
-              </label>
-              <label className={FIELD}>
-                <span className={FIELD_LABEL}>Actual value (cents, ex GST)</span>
-                <input
-                  type="number"
-                  name="actual_value_cents"
-                  min="0"
-                  step="1"
-                  defaultValue={engagement.actual_value_cents ?? ""}
-                  className={INPUT}
-                />
-              </label>
-            </ActionForm>
-          </div>
-        </section>
-      )}
-
-      {canCancel && (
-        <section className={CARD}>
-          <h2 className="font-display text-h3 font-bold text-on-dark">Cancel engagement</h2>
-          <div className="mt-(--space-4)">
+        {canCancel && (
+          <Control title="Cancel engagement" hint="Cancellation is recorded with its reason and whether it fell inside the contractual notice window.">
             <ActionForm action={cancelEngagement} submitLabel="Cancel engagement" pendingLabel="Cancelling engagement…" tone="ghost">
               <input type="hidden" name="engagement_id" value={engagement.id} />
               <input type="hidden" name="expected_status" value={engagement.status} />
@@ -272,14 +235,34 @@ export default async function AdminEngagementDetailPage({
                 <span className={FIELD_LABEL}>Cancellation reason</span>
                 <textarea name="reason" rows={4} className={INPUT} required />
               </label>
-              <label className="flex items-start gap-(--space-3) text-body text-on-dark">
-                <input type="checkbox" name="within_notice_window" className="mt-1 size-5" />
+              <label className={`${CHECK_OPTION} w-fit`}>
+                <input type="checkbox" name="within_notice_window" className={CHECKBOX} />
                 Cancellation falls within the contractual notice window
               </label>
             </ActionForm>
-          </div>
-        </section>
-      )}
+          </Control>
+        )}
+      </div>
     </div>
+  );
+}
+
+/** One lifecycle control. `emphasis` spans both columns so the next action leads. */
+function Control({
+  title,
+  hint,
+  emphasis,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  emphasis?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className={`${PANEL} p-(--space-5) ${emphasis ? "lg:col-span-2" : ""}`}>
+      <SectionHeader title={title} hint={hint} />
+      <div className={`mt-(--space-4) ${emphasis ? "lg:max-w-[40rem]" : ""}`}>{children}</div>
+    </section>
   );
 }
