@@ -5,7 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
+<<<<<<< HEAD
 import { useDismissableDetails } from "@/components/use-dismissable-details";
+=======
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 import { WorkspaceViewSwitch } from "@/components/workspace-view-switch";
 import type { CompanyStatus } from "@/lib/supabase/types";
 import { NAV_FOCUS } from "@/lib/ui";

@@ -21,7 +21,7 @@ import {
   formatDate,
   pill,
   toneFor,
-} from "@/lib/platform-ui";
+} from "@/lib/admin-ui";
 import type { WorkerStatus } from "@/lib/supabase/types";
 
 // Maintain's worker register — spec 6.5, 6.6 and 17.3.

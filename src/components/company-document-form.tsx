@@ -3,7 +3,11 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { FormResult } from "@/lib/actions";
 import { saveCompanyDocumentForm } from "@/lib/actions/company";
+<<<<<<< HEAD
 import { FIELD, FIELD_ERROR, FIELD_HINT, FIELD_LABEL, FIELD_OK, INPUT, MONO } from "@/lib/platform-ui";
+=======
+import { FIELD, FIELD_HINT, FIELD_LABEL, INPUT, MONO } from "@/lib/platform-ui";
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 import type { CompanyStatus } from "@/lib/supabase/types";
 import { BTN_GHOST, BTN_PRIMARY } from "@/lib/ui";
 import { CompanyDocumentFileInput } from "./company-document-file-input";
@@ -88,7 +92,14 @@ export function CompanyDocumentForm({
       </label>}
       <div className="flex flex-col gap-(--space-3) md:col-span-2">
         <p className={FIELD_HINT}>Save the details now and attach a file when ready. Saving does not verify the document.{!detailsOnly && " Use Upload document to send the selected file."}</p>
+<<<<<<< HEAD
         {state?.message && <p role={state.ok ? "status" : "alert"} aria-live="polite" className={state.ok ? FIELD_OK : FIELD_ERROR}>{state.message}</p>}
+=======
+        {state?.message && <p role={state.ok ? "status" : "alert"} aria-live="polite" className="flex items-start gap-(--space-2) text-sm font-semibold text-on-dark">
+          <span aria-hidden="true" className={`mt-[0.45em] size-2 shrink-0 rounded-(--radius-pill) ${state.ok ? "bg-status-active" : "bg-status-critical"}`} />
+          <span>{state.message}</span>
+        </p>}
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
         {fileSaved ? <p className={FIELD_HINT}>The saved document is listed above. Refresh this page to add another document.</p> : (
           <div className="flex flex-wrap gap-(--space-3)">
             <button type="submit" name="intent" value="details" formNoValidate disabled={readOnly} aria-busy={pending || undefined} className={companyId ? BTN_GHOST : BTN_PRIMARY}>

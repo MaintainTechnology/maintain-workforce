@@ -2,7 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
 import { LABEL, BTN_GHOST_SM, NAV_FOCUS, PANEL } from "@/lib/ui";
+<<<<<<< HEAD
 import { PAGE_TITLE, SECTION_TITLE } from "@/lib/platform-ui";
+=======
+import { PAGE_TITLE, SECTION_TITLE } from "@/lib/admin-ui";
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 import { cn } from "@/lib/utils";
 
 // The Maintain admin page vocabulary. Every admin screen is built from these few

@@ -1,29 +1,42 @@
 import type { Metadata } from "next";
+<<<<<<< HEAD
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { PageHeader, SectionHeader } from "@/components/admin-page";
 import { Icon } from "@/components/icon";
+=======
+import { AdminDashboardOverview } from "@/components/admin-dashboard-overview";
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 import { requireMaintainAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCommitting } from "@/lib/domain/availability";
-import { formatCentsExGst } from "@/lib/domain/money";
 import { brisbaneToday } from "@/lib/cron";
+<<<<<<< HEAD
 import { LABEL, NAV_FOCUS, PANEL } from "@/lib/ui";
 import { formatDate } from "@/lib/platform-ui";
+=======
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 import { collectReportPages } from "@/lib/admin-reporting";
 import { cn } from "@/lib/utils";
 
 // Maintain marketplace dashboard — spec 14.2.
 //
+<<<<<<< HEAD
 // Basic figures only: supply, demand, matches, engagements, and four marketplace
 // totals. Explicitly not an analytics platform — 14.3's CSV exports are the only
 // reporting facility in MVP, and every number here is a count or a sum of frozen
 // estimates.
+=======
+// Operational overview: supply, demand, matches, engagements and marketplace totals.
+// Explicitly not an analytics platform — 14.3's CSV exports are the only reporting
+// facility in MVP, and every number here is a count or a sum of frozen estimates.
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 //
 // The aggregation happens in TypeScript over modest row sets rather than in SQL views:
 // year-one volumes are ≤200 companies, ≤5,000 workers and ≤500 open lines (11.5), and a
 // readable derivation that matches the spec's own arithmetic beats a clever query.
 //
+<<<<<<< HEAD
 // Layout: a ledger, not a card grid. Supply sits beside demand because that gap is
 // the marketplace; the proposals waiting on a party sit beside it; the commercial
 // book and the cumulative totals run underneath as hairline-divided figures.
@@ -31,8 +44,12 @@ import { cn } from "@/lib/utils";
 // Amber budget (DESIGN.md): one — the Overdue count. An engagement past its start date
 // without the commercial trigger is the only number on this screen that means work may
 // be about to start unpaid.
+=======
+// The overview prioritises overdue engagements, pending approvals, then matching.
+// Read failures reach the route error boundary so an incomplete queue never appears clear.
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 
-export const metadata: Metadata = { title: "Marketplace" };
+export const metadata: Metadata = { title: "Admin dashboard" };
 
 const OPEN_CAPACITY = ["Open", "Partially Committed"];
 const OPEN_DEMAND = ["Open", "Partially Filled"];
@@ -70,7 +87,7 @@ export default async function MarketplaceDashboard() {
   // Historical matches and engagements can exceed the API row cap. Use the same
   // counted pagination as CSV reports; incomplete or failed reads reach the route
   // error boundary instead of producing a partial total or a reassuring zero.
-  const [capacityRows, demandRows, matchRows, engagementRows, companies, workers] = await Promise.all([
+  const [capacityRows, demandRows, matchRows, engagementRows, companies, workers, pendingCompanies] = await Promise.all([
     collectReportPages<CapacityRow>((from, to) => db
       .from("capacity_line")
       .select("id, status, available_from, available_until, hours_per_week, capacity_line_worker (worker_id)", { count: "exact" })
@@ -88,9 +105,11 @@ export default async function MarketplaceDashboard() {
       .order("id").range(from, to), "Dashboard engagements"),
     db.from("company").select("id", { count: "exact", head: true }).eq("status", "Active"),
     db.from("worker").select("id", { count: "exact", head: true }),
+    db.from("company").select("id", { count: "exact", head: true }).eq("status", "Pending"),
   ]);
 
-  if (companies.error || workers.error || companies.count === null || workers.count === null) {
+  if (companies.error || workers.error || pendingCompanies.error
+    || companies.count === null || workers.count === null || pendingCompanies.count === null) {
     throw new Error("Marketplace totals could not be loaded. Please retry.");
   }
 
@@ -171,6 +190,7 @@ export default async function MarketplaceDashboard() {
   );
 
   return (
+<<<<<<< HEAD
     <div className="flex flex-col gap-(--space-6)">
       <PageHeader
         title="Marketplace"
@@ -358,5 +378,33 @@ function Figure({
     </Link>
   ) : (
     <div className={cell}>{body}</div>
+=======
+    <AdminDashboardOverview
+      today={today}
+      metrics={{
+        activeCompanies: companies.count,
+        pendingCompanies: pendingCompanies.count,
+        workers: workers.count,
+        availableWorkers: availableWorkers.size,
+        availableHoursPerWeek: Math.round(availableHoursPerWeek),
+        upcomingCapacity: upcomingLines,
+        openRequirements: demandRows.length,
+        requiredWorkers,
+        requiredHoursPerWeek: Math.round(requiredHoursPerWeek),
+        unfilledDemand,
+        awaitingSupplier,
+        awaitingBuyer,
+        declinedNeedingAttention,
+        awaitingCommercial: awaitingCommercial.length,
+        overdue,
+        confirmed: confirmed.length,
+        upcoming,
+        active,
+        completed,
+        transactionValue,
+        maintainRevenue,
+      }}
+    />
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
   );
 }

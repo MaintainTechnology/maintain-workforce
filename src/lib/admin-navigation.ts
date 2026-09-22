@@ -11,7 +11,11 @@ export type AdminDestination = {
 // breadcrumb. MVP has one maintain_admin role, so every admin sees the same
 // destinations: the working queues first, the registers, then reference data.
 export const ADMIN_NAV: readonly AdminDestination[] = [
+<<<<<<< HEAD
   { href: "/admin", label: "Marketplace", icon: "i-chart", group: "Operations" },
+=======
+  { href: "/admin", label: "Dashboard", icon: "i-chart", group: "Operations" },
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
   { href: "/admin/leads", label: "Leads", icon: "i-phone", group: "Operations" },
   { href: "/admin/verification", label: "Account approvals", icon: "i-shield", group: "Operations" },
   { href: "/admin/matching", label: "Matching", icon: "i-cpu", group: "Operations" },

@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string): never => { throw Object.assign(new Error(url), { url }); },
   usePathname: () => "/app",
 }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-pathname": "/admin" }) }));
 vi.mock("@/lib/clerk", () => ({ consumeCompanyInvitation: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: mocks.admin }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.client }));
@@ -33,7 +34,11 @@ const { requireMaintainAdmin, requireCompanyAdmin, isMaintainAdmin } = await imp
 const { default: ContinueAfterAuthentication } = await import("../app/auth/continue/page");
 const { default: AppLayout } = await import("../app/(app)/layout");
 const { default: OnboardingPage } = await import("../app/onboarding/page");
+<<<<<<< HEAD
 const { AdminTopBar } = await import("@/components/admin-navigation");
+=======
+const { default: AdminLayout } = await import("../app/(admin)/layout");
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 
 const staff = {
   id: "user_staff",
@@ -186,8 +191,13 @@ describe("workspace activation access and status", () => {
 });
 
 describe("admin and end-user view separation", () => {
+<<<<<<< HEAD
   it("provides a visible user-view switch in the admin header", () => {
     const html = renderToStaticMarkup(createElement(AdminTopBar, { email: staff.primaryEmailAddress.emailAddress, signOut: null }));
+=======
+  it("provides a visible user-view switch in the admin header", async () => {
+    const html = renderToStaticMarkup(await AdminLayout({ children: null }));
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
     expect(html).toContain('aria-label="Switch to user view"');
     expect(html).toContain('href="/app"');
   });

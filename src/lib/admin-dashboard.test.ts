@@ -121,6 +121,7 @@ describe("MVP 14.2 marketplace totals", () => {
     db.tables.engagement = indexes.map((index) => engagement(index, { status: index === 1205 ? "Cancelled" : "Completed" }));
     db.tables.company = Array.from({ length: 200 }, (_, index) => ({ id: id(index + 1), status: "Active" }));
     db.tables.company.push({ id: id(9999), status: "Suspended" });
+    db.tables.company.push(...indexes.map((index) => ({ id: id(2000 + index), status: "Pending" })));
     db.tables.worker = Array.from({ length: 1500 }, (_, index) => ({ id: id(index + 1) }));
 
     const html = renderToStaticMarkup(await MarketplaceDashboard());
@@ -128,6 +129,7 @@ describe("MVP 14.2 marketplace totals", () => {
       "Available crew": "1205", "Available hours": "48200", "Upcoming capacity": "0",
       "Open requirements": "1205", "Crew required": "2410", "Hours required": "72300", "Unfilled demand": "2410",
       "Awaiting supplier": "1205", "Completed": "1204", "Active companies": "200", "Crew on the platform": "1500",
+      "Account approvals": "1205",
       "Estimated transaction value": "$120,412.04 ex GST", "Estimated Maintain revenue": "$24,092.04 ex GST",
     })) expect(metric(html, label)).toBe(value);
 
@@ -138,10 +140,12 @@ describe("MVP 14.2 marketplace totals", () => {
     }
     for (const table of ["company", "worker"]) {
       const reads = db.queries.filter((query) => query.table === table);
-      expect(reads).toHaveLength(1);
-      expect(reads[0]).toMatchObject({ method: "HEAD", counted: true });
+      expect(reads).toHaveLength(table === "company" ? 2 : 1);
+      expect(reads.every((read) => read.method === "HEAD" && read.counted)).toBe(true);
     }
     expect(db.queries.find(({ table }) => table === "company")?.params.get("status")).toBe("eq.Active");
+    expect(db.queries.filter(({ table }) => table === "company").map(({ params }) => params.get("status")))
+      .toEqual(["eq.Active", "eq.Pending"]);
   });
 
   it("uses Brisbane dates and links timing subsets separately from engagement statuses", async () => {
@@ -173,11 +177,33 @@ describe("MVP 14.2 marketplace totals", () => {
 
   it("preserves verified empty results as true zeroes", async () => {
     const html = renderToStaticMarkup(await MarketplaceDashboard());
-    for (const label of ["Available crew", "Open requirements", "Awaiting supplier", "Overdue", "Active companies", "Crew on the platform"]) {
+    for (const label of ["Available crew", "Open requirements", "Awaiting supplier", "Overdue", "Active companies", "Crew on the platform", "Account approvals"]) {
       expect(metric(html, label)).toBe("0");
     }
     expect(metric(html, "Estimated transaction value")).toBe("$0.00 ex GST");
-    expect(db.queries).toHaveLength(6);
+    expect(db.queries).toHaveLength(7);
+  });
+
+  it("prioritizes overdue work before approvals, then offers matching when those queues are clear", async () => {
+    db.tables.company = [
+      { id: id(1), status: "Pending" },
+      { id: id(2), status: "Active" },
+      { id: id(3), status: "Rejected" },
+    ];
+    db.tables.engagement = [engagement(1, { status: "Awaiting Commercial" })];
+    const overdueHtml = renderToStaticMarkup(await MarketplaceDashboard());
+    expect(metric(overdueHtml, "Account approvals")).toBe("1");
+    expect(metric(overdueHtml, "Commercial overdue")).toBe("1");
+    expect(overdueHtml.match(/<header\b[\s\S]*?<\/header>/)?.[0]).toContain("Review overdue work");
+
+    db.tables.engagement = [];
+    const approvalsHtml = renderToStaticMarkup(await MarketplaceDashboard());
+    expect(approvalsHtml.match(/<header\b[\s\S]*?<\/header>/)?.[0]).toContain("Review account approvals");
+
+    db.tables.company = [{ id: id(2), status: "Active" }];
+    const clearHtml = renderToStaticMarkup(await MarketplaceDashboard());
+    expect(clearHtml.match(/<header\b[\s\S]*?<\/header>/)?.[0]).toContain("Open matching");
+    expect(clearHtml).toContain("No companies waiting for approval.");
   });
 
   it("requires admin authorization before opening the service client", async () => {
@@ -189,6 +215,13 @@ describe("MVP 14.2 marketplace totals", () => {
 });
 
 describe("marketplace read failures", () => {
+  it.each(["error", "missing count"])("rejects an approvals-only %s instead of showing a cleared queue", async (failure) => {
+    db.state.reply = (query) => query.table === "company" && query.params.get("status") === "eq.Pending"
+      ? failure === "error" ? { error: true } : { count: null }
+      : {};
+    await expect(MarketplaceDashboard()).rejects.toThrow(/totals could not be loaded/i);
+  });
+
   it.each(allTables)("rejects a failed %s read instead of displaying a false zero", async (table) => {
     db.state.reply = (query) => ({ error: query.table === table });
     await expect(MarketplaceDashboard()).rejects.toThrow(/query failed|totals could not be loaded/i);

@@ -36,7 +36,7 @@ import {
   TH,
   TH_NUM,
   pill,
-} from "@/lib/platform-ui";
+} from "@/lib/admin-ui";
 
 // 11.4 — filter, sort and multi-select over candidate lists of up to ~500 rows, as
 // client-side table operations on a SERVER-produced candidate set. The three display
@@ -198,12 +198,20 @@ export function CandidateTable({
                         <button
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
+<<<<<<< HEAD
                           className={`inline-flex min-h-6 items-center gap-(--space-1) uppercase tracking-(--tracking-caps) transition-colors duration-(--dur-fast) hover:text-on-dark ${sorted ? "text-on-dark" : ""} ${NAV_FOCUS}`}
+=======
+                          className={`group -my-(--space-2) inline-flex min-h-11 items-center gap-(--space-1) uppercase tracking-(--tracking-caps) transition-colors duration-(--dur-fast) hover:text-on-dark ${sorted ? "text-on-dark" : ""} ${NAV_FOCUS}`}
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
                         >
                           <table.FlexRender header={header} />
                           <Icon
                             name="i-arrow-right"
+<<<<<<< HEAD
                             className={`size-3 transition-transform duration-(--dur-fast) ${sorted === "asc" ? "-rotate-90" : sorted === "desc" ? "rotate-90" : "rotate-90 opacity-0 group-hover:opacity-100"}`}
+=======
+                            className={`size-3 transition-transform duration-(--dur-fast) ${sorted === "asc" ? "-rotate-90" : sorted === "desc" ? "rotate-90" : "rotate-90 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"}`}
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
                           />
                         </button>
                       )}
@@ -334,7 +342,11 @@ export function CandidateTable({
         <p className={`${FIELD_HINT} tabular-nums`}>
           <span className="font-semibold text-on-dark">{selectedKeys.length}</span> shortlisted across{" "}
           <span className="font-semibold text-on-dark">{lineCount}</span> capacity line{lineCount === 1 ? "" : "s"}. The
+<<<<<<< HEAD
           shortlist proves the shape is feasible; the supplying business chooses who goes.
+=======
+          supplying business confirms which shortlisted crew will go.
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
         </p>
       </div>
     </form>

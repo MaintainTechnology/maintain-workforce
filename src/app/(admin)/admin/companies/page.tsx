@@ -23,7 +23,11 @@ import {
   formatDate,
   pill,
   toneFor,
+<<<<<<< HEAD
 } from "@/lib/platform-ui";
+=======
+} from "@/lib/admin-ui";
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 import { BTN_GHOST_SM, LINK, NAV_FOCUS, PANEL } from "@/lib/ui";
 import type { CompanyStatus } from "@/lib/supabase/types";
 

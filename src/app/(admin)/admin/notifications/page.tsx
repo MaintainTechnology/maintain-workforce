@@ -5,7 +5,11 @@ import { ActionForm } from "@/components/action-form";
 import { retryNotificationAction } from "@/lib/actions/notification";
 import { requireMaintainAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+<<<<<<< HEAD
 import { TABLE, TD, TD_NUM, TH, TH_NUM } from "@/lib/platform-ui";
+=======
+import { TABLE, TD, TD_NUM, TH, TH_NUM } from "@/lib/admin-ui";
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 
 export const metadata: Metadata = { title: "Notification delivery" };
 export const dynamic = "force-dynamic";
@@ -49,7 +53,11 @@ export default async function AdminNotificationsPage({
     <div className="flex flex-col gap-(--space-6)">
       <PageHeader
         title="Notification delivery"
+<<<<<<< HEAD
         lead="Failed email never rolls back its workflow. Queued and interrupted deliveries stay here until sent. Re-sending uses the exact stored payload; recipient and copy cannot be edited."
+=======
+        lead="Review failed or interrupted email deliveries. Re-sending uses the original recipient and message, so you can retry without changing the completed workflow."
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
         meta={
           <span>
             <strong className="font-semibold text-on-dark">{total}</strong> unsent {total === 1 ? "notification" : "notifications"}

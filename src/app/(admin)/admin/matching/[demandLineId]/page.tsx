@@ -28,7 +28,7 @@ import {
   formatWindow,
   pill,
   toneFor,
-} from "@/lib/platform-ui";
+} from "@/lib/admin-ui";
 import { CandidateTable, type CandidateRowData } from "../candidate-table";
 
 // 11.1–11.4 plus the 16.1 concierge controls for one requirement line.
@@ -134,7 +134,11 @@ export default async function DemandLineMatchingPage({ params, searchParams }: P
         </FactList>
         <p className={`${FIELD_HINT} mt-(--space-4) border-t border-hairline pt-(--space-3)`}>
           Platform fee at proposal <span className="tabular-nums text-on-dark">{(demandLine.feeBp / 100).toFixed(2)}%</span>.
+<<<<<<< HEAD
           It is snapshotted onto each match and never re-read.
+=======
+          Each proposed match keeps its agreed fee.
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
           {" "}Showing {includeHigherProficiency ? `${demandLine.proficiencyName} and higher levels` : `${demandLine.proficiencyName} only`}.
         </p>
       </section>
@@ -142,7 +146,11 @@ export default async function DemandLineMatchingPage({ params, searchParams }: P
       <section className={`${PANEL} p-(--space-5)`} aria-labelledby="candidates-heading">
         <SectionHeader
           title={<span id="candidates-heading">Candidates</span>}
+<<<<<<< HEAD
           hint="Availability, hours and ticket coverage are computed on the server. Shortlisting proves the shape is feasible and creates one match per capacity line; the supplying business decides which of its crew actually go."
+=======
+          hint="Compare availability, hours and ticket coverage. Shortlisting creates one match per capacity line; the supplying business confirms which crew will go."
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
         />
         <div className="mt-(--space-5)">
           <CandidateTable

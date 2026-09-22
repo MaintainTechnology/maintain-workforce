@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Notice, PageHeader, TableFrame } from "@/components/admin-page";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -7,8 +8,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
 import { CONFIG_KEYS, getBookingRules } from "@/lib/config";
 import { formatCentsExGst } from "@/lib/domain/money";
-import { H1, H2, LABEL, PANEL, BTN_PRIMARY } from "@/lib/ui";
-import { MONO, TABLE, TH, TD, formatDate } from "@/lib/platform-ui";
+import { LABEL, PANEL, BTN_PRIMARY, BTN_GHOST_SM } from "@/lib/ui";
+import { INPUT, MONO, SECTION_TITLE, TABLE, TH, TD, formatDate } from "@/lib/admin-ui";
 
 // Recommended rate bands and the commercial configuration — spec module 5.
 //
@@ -27,10 +28,7 @@ export const metadata: Metadata = { title: "Rates and fees" };
 
 const BASE_PATH = "/admin/rates";
 
-const INPUT =
-  "min-h-11 w-full rounded-(--radius-md) border border-hairline bg-black-2 px-(--space-3) py-(--space-2) text-body text-on-dark placeholder:text-on-dark-faint focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
-const SMALL_BTN =
-  "inline-flex min-h-11 items-center justify-center rounded-(--radius-pill) border border-hairline px-(--space-5) py-(--space-2) text-sm font-bold text-on-dark hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark";
+const SMALL_BTN = BTN_GHOST_SM;
 
 function finish(params: { ok?: string; error?: string }): never {
   const search = new URLSearchParams();
@@ -188,32 +186,19 @@ export default async function RatesPage({
   };
 
   return (
-    <div className="flex flex-col gap-(--space-7)">
-      <header>
-        <h1 className={H1}>Rates and fees</h1>
-        <p className="mt-(--space-3) max-w-[70ch] text-body-lg text-on-dark-muted">
-          Maintain publishes a recommended band per trade, level and region. The supplying
-          business confirms or overrides its own number — the band is a reference, never a
-          price set between competing businesses. Every figure here is ex GST.
-        </p>
-      </header>
+    <div className="flex flex-col gap-(--space-6)">
+      <PageHeader
+        title="Rates and fees"
+        lead="Manage recommended rate bands by trade, level and region. Each supplying business sets its own rate. All amounts are ex GST."
+      />
 
       {(params.ok || params.error) && (
-        <p
-          role="status"
-          className="flex items-center gap-(--space-3) rounded-(--radius-md) border border-hairline bg-black-2 px-(--space-4) py-(--space-3) text-body text-on-dark"
-        >
-          <span
-            aria-hidden="true"
-            className={`size-2 shrink-0 rounded-(--radius-pill) ${params.error ? "bg-status-critical" : "bg-status-active"}`}
-          />
-          {params.error ?? params.ok}
-        </p>
+        <Notice tone={params.error ? "error" : "ok"}>{params.error ?? params.ok}</Notice>
       )}
 
       {/* 5.3 / 5.6 configuration ---------------------------------------------------- */}
-      <section className={`${PANEL} p-(--space-6)`}>
-        <h2 className={H2}>Commercial configuration</h2>
+      <section className={`${PANEL} min-w-0 p-(--space-6)`}>
+        <h2 className={SECTION_TITLE}>Commercial configuration</h2>
         <p className="mt-(--space-3) max-w-[70ch] text-body text-on-dark-muted">
           The platform fee and the booking minimums are configuration, not constants. A
           change here applies to new proposals only: every match snapshots the fee at
@@ -278,8 +263,8 @@ export default async function RatesPage({
       </section>
 
       {/* 5.1 band publication ------------------------------------------------------- */}
-      <section className={`${PANEL} p-(--space-6)`}>
-        <h2 className={H2}>Publish a recommended band</h2>
+      <section className={`${PANEL} min-w-0 p-(--space-6)`}>
+        <h2 className={SECTION_TITLE}>Publish a recommended band</h2>
         <p className="mt-(--space-3) max-w-[70ch] text-body text-on-dark-muted">
           A band is effective-dated. Publishing a new one for the same trade, level and
           region supersedes the previous band from its effective date; the earlier row
@@ -376,8 +361,8 @@ export default async function RatesPage({
       </section>
 
       {/* 5.1 history ---------------------------------------------------------------- */}
-      <section className={`${PANEL} p-(--space-6)`}>
-        <h2 className={H2}>Published bands</h2>
+      <section className={`${PANEL} min-w-0 p-(--space-6)`}>
+        <h2 className={SECTION_TITLE}>Published bands</h2>
         <p className={`${LABEL} mt-(--space-2)`}>Newest first — history is never edited away</p>
         {bandRows.length === 0 ? (
           <p className="mt-(--space-5) text-body text-on-dark-muted">
@@ -386,30 +371,32 @@ export default async function RatesPage({
             band&rdquo; and the supplying business still sets its own rate.
           </p>
         ) : (
-          <table className={`${TABLE} mt-(--space-5)`}>
-            <thead>
-              <tr>
-                <th className={TH}>Trade</th>
-                <th className={TH}>Level</th>
-                <th className={TH}>Region</th>
-                <th className={TH}>Band low</th>
-                <th className={TH}>Band high</th>
-                <th className={TH}>Effective from</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bandRows.map((band) => (
-                <tr key={band.id}>
-                  <td className={TD}>{named(band.trade_role)}</td>
-                  <td className={TD}>{named(band.proficiency)}</td>
-                  <td className={TD}>{named(band.region)}</td>
-                  <td className={`${TD} ${MONO}`}>{formatCentsExGst(band.band_low_cents)}</td>
-                  <td className={`${TD} ${MONO}`}>{formatCentsExGst(band.band_high_cents)}</td>
-                  <td className={`${TD} ${MONO}`}>{formatDate(band.effective_from)}</td>
+          <TableFrame inset className="mt-(--space-5)">
+            <table className={TABLE}>
+              <thead>
+                <tr>
+                  <th className={TH}>Trade</th>
+                  <th className={TH}>Level</th>
+                  <th className={TH}>Region</th>
+                  <th className={TH}>Band low</th>
+                  <th className={TH}>Band high</th>
+                  <th className={TH}>Effective from</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {bandRows.map((band) => (
+                  <tr key={band.id}>
+                    <td className={TD}>{named(band.trade_role)}</td>
+                    <td className={TD}>{named(band.proficiency)}</td>
+                    <td className={TD}>{named(band.region)}</td>
+                    <td className={`${TD} ${MONO}`}>{formatCentsExGst(band.band_low_cents)}</td>
+                    <td className={`${TD} ${MONO}`}>{formatCentsExGst(band.band_high_cents)}</td>
+                    <td className={`${TD} ${MONO}`}>{formatDate(band.effective_from)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableFrame>
         )}
       </section>
     </div>

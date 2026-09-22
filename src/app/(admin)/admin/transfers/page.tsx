@@ -9,7 +9,11 @@ import { TransferQueuePagination } from "@/components/transfer-queue-pagination"
 import { loadTransferPage, type TransferSearchParams } from "@/lib/transfer-queue";
 import { COMMITTING_STATUSES } from "@/lib/domain/availability";
 import { LINK } from "@/lib/ui";
+<<<<<<< HEAD
 import { FIELD_LABEL, INPUT_SM, TABLE, TD, TH, formatDate, pill, toneFor } from "@/lib/platform-ui";
+=======
+import { FIELD_LABEL, INPUT_SM, TABLE, TD, TH, formatDate, pill, toneFor } from "@/lib/admin-ui";
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 import type { TransferStatus } from "@/lib/supabase/types";
 
 // Transfer queue — spec 8.3 and 8.4.

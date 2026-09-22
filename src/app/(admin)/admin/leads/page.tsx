@@ -32,7 +32,7 @@ import {
   formatDate,
   pill,
   toneFor,
-} from "@/lib/platform-ui";
+} from "@/lib/admin-ui";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BTN_GHOST, BTN_GHOST_SM, BTN_PRIMARY, LINK, NAV_FOCUS, PANEL } from "@/lib/ui";
 

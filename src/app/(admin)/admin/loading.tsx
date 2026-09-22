@@ -14,7 +14,11 @@ export default function AdminLoading() {
         <div className={`${BONE} h-4 w-[min(36rem,100%)]`} />
         <div className={`${BONE} h-4 w-[min(22rem,100%)]`} />
       </div>
+<<<<<<< HEAD
       <div aria-hidden="true" className="grid gap-(--space-5) lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+=======
+      <div aria-hidden="true" className="grid gap-(--space-5) xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
         <div className={`${PANEL} p-(--space-5)`}>
           <div className={`${BONE} h-5 w-40`} />
           <div className="mt-(--space-5) grid gap-(--space-6) sm:grid-cols-2">

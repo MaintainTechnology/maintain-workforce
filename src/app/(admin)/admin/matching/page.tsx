@@ -4,7 +4,11 @@ import { EmptyState, PageHeader, TableFrame } from "@/components/admin-page";
 import { Icon } from "@/components/icon";
 import { openDemandLines } from "@/lib/actions/match";
 import { NAV_FOCUS } from "@/lib/ui";
+<<<<<<< HEAD
 import { TABLE, TD, TD_NUM, TH, TH_NUM, formatWindow, pill, toneFor } from "@/lib/platform-ui";
+=======
+import { TABLE, TD, TD_NUM, TH, TH_NUM, formatWindow, pill, toneFor } from "@/lib/admin-ui";
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
 
 // 11.1 — the matching workspace opens on the requirement lines that can still take a
 // proposal. Nothing here is a search: Maintain is the only party that sees both sides

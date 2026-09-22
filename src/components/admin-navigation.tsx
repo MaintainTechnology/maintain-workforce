@@ -27,7 +27,11 @@ type AdminAccount = {
 
 function BrandLockup({ href = "/admin" }: { href?: string }) {
   return (
+<<<<<<< HEAD
     <Link href={href} aria-label="Maintain admin, marketplace overview" className={`inline-flex min-h-11 items-center gap-(--space-3) ${NAV_FOCUS}`}>
+=======
+    <Link href={href} aria-label="Maintain admin dashboard" className={`inline-flex min-h-11 items-center gap-(--space-3) ${NAV_FOCUS}`}>
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
       <Image src="/design-system/assets/logo/mark.svg" alt="" width={36} height={23} priority className="h-auto w-8" />
       <span className="flex items-center gap-(--space-2)">
         <span className="hidden text-sm font-extrabold tracking-(--tracking-tight) text-on-dark sm:inline">Maintain</span>
@@ -129,12 +133,20 @@ export function AdminTopBar(account: AdminAccount) {
   const detail = adminDetailLabel(pathname);
 
   return (
+<<<<<<< HEAD
     <header className="sticky top-0 z-(--z-sticky) border-b border-hairline bg-ink-teal/85 backdrop-blur-md">
+=======
+    <header className="sticky top-0 z-(--z-sticky) border-b border-hairline bg-ink-teal/95 backdrop-blur-md">
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
       <div className="mx-auto flex h-[68px] w-full max-w-[1440px] items-center justify-between gap-4 px-4 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <span className="lg:hidden"><BrandLockup /></span>
           <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-2 text-sm lg:flex">
+<<<<<<< HEAD
             <span className="text-on-dark-faint">Admin</span>
+=======
+            <span className="shrink-0 text-on-dark-faint">Admin view</span>
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
             <span aria-hidden="true" className="text-on-dark-faint">/</span>
             {detail && destination ? (
               <>
@@ -150,7 +162,11 @@ export function AdminTopBar(account: AdminAccount) {
           </nav>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+<<<<<<< HEAD
           <span className="hidden max-w-[28ch] truncate text-xs font-medium text-on-dark-faint md:block" title={account.email}>{account.email}</span>
+=======
+          <span className="hidden text-xs font-medium text-on-dark-faint xl:block">Platform management</span>
+>>>>>>> fb1ccdc2a57e4bf8192bcc59dadd4f7c99c31aba
           <WorkspaceViewSwitch view="admin" />
           <MobileNavigation {...account} />
         </div>
