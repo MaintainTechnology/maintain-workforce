@@ -10,6 +10,8 @@ export const REQUIRED_RPCS = [
   "transition_company_status_atomic",
   "update_company_profile_atomic",
   "save_company_document_atomic",
+  "save_company_document_details_atomic",
+  "attach_company_document_with_snapshot_atomic",
   "approve_company_as_maintain_atomic",
 ];
 

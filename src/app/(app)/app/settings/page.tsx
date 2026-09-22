@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
+import { CompanyDocumentForm } from "@/components/company-document-form";
 import { CompanyDocumentFileInput } from "@/components/company-document-file-input";
 import { COMPANY_DOCUMENT_TYPES } from "@/lib/company-document-policy";
 import {
@@ -309,7 +310,7 @@ export default async function SettingsPage({
       <section id="company-documents" className={`${CARD} scroll-mt-6`}>
         <h2 className={H2}>Compliance documents</h2>
         <p className={`${FIELD_HINT} mt-(--space-2)`}>
-          PDF, JPG or PNG, up to 4 MB. Attach the actual document so Maintain can review and verify it.
+          Save document details first, then attach a PDF, JPG or PNG up to 4 MB so Maintain can review and verify it.
         </p>
         {(params.section === "documents" || params.saved === "document") && (problem || saved) && (
           <p role={problem ? "alert" : "status"} className={`${FIELD_HINT} mt-(--space-3)`}>{problem || saved}</p>
@@ -332,7 +333,7 @@ export default async function SettingsPage({
               {documents.length === 0 && (
                 <tr>
                   <td className={TD} colSpan={7}>
-                    <span className="text-on-dark-muted">No documents uploaded yet.</span>
+                    <span className="text-on-dark-muted">No documents saved yet.</span>
                   </td>
                 </tr>
               )}
@@ -348,7 +349,7 @@ export default async function SettingsPage({
                     <td className={`${TD} ${MONO}`}>{formatDate(doc.expiry_date)}</td>
                     <td className={TD}>
                       {isDocument && !doc.file_path?.trim()
-                        ? <span className={pill(toneFor("Pending"))}>File required</span>
+                        ? <><span className={pill(toneFor("Pending"))}>File required</span><span className={`mt-(--space-2) block ${FIELD_HINT}`}>Details saved; unverified.</span></>
                         : status === "—" ? "—" : <span className={pill(toneFor(status))}>{status}</span>}
                     </td>
                     <td className={`${TD} ${MONO}`}>{doc.verified_at ? formatDate(doc.verified_at) : "—"}</td>
@@ -366,9 +367,16 @@ export default async function SettingsPage({
                         <span className={FIELD_HINT}>{doc.file_path?.trim() ? "File unavailable" : isDocument ? "No file attached" : "—"}</span>
                       )}
                       {isDocument && !doc.file_path?.trim() && !doc.verified_at && !doc.verified_by && !readOnly && (
+                        <details className="mt-(--space-3) min-w-64">
+                          <summary className="cursor-pointer py-(--space-2) font-semibold">Edit saved details</summary>
+                          <CompanyDocumentForm key={doc.id} documentId={doc.id} document={doc} detailsOnly />
+                        </details>
+                      )}
+                      {isDocument && !doc.file_path?.trim() && !doc.verified_at && !doc.verified_by && !readOnly && (
                         <form action={uploadCompanyDocument} className="mt-(--space-3) flex min-w-56 flex-col gap-(--space-3)">
                           <input type="hidden" name="document_id" value={doc.id} />
                           <input type="hidden" name="doc_type" value={doc.doc_type} />
+                          <input type="hidden" name="expected_document" value={JSON.stringify({ number: doc.number, issuer: doc.issuer, issue_date: doc.issue_date, expiry_date: doc.expiry_date })} />
                           <label className={FIELD}>
                             <span className={FIELD_LABEL}>Attach the existing document</span>
                             <CompanyDocumentFileInput />
@@ -384,54 +392,14 @@ export default async function SettingsPage({
           </table>
         </div>
 
-        <form
-          action={uploadCompanyDocument}
-          encType="multipart/form-data"
-          className="mt-(--space-6) grid gap-(--space-4) border-t border-hairline pt-(--space-5) md:grid-cols-2"
-        >
-          <label className={FIELD}>
-            <span className={FIELD_LABEL}>Document type</span>
-            <select className={INPUT} name="doc_type" required disabled={readOnly}>
-              {checklist
-                .filter((item) => item.kind === "document")
-                .map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                    {item.optional ? " (optional)" : ""}
-                  </option>
-                ))}
-            </select>
-          </label>
-
-          <label className={FIELD}>
-            <span className={FIELD_LABEL}>Number</span>
-            <input className={`${INPUT} ${MONO}`} name="number" disabled={readOnly} />
-          </label>
-
-          <label className={FIELD}>
-            <span className={FIELD_LABEL}>Issuer</span>
-            <input className={INPUT} name="issuer" disabled={readOnly} />
-          </label>
-
-          <label className={FIELD}>
-            <span className={FIELD_LABEL}>Issue date</span>
-            <input className={INPUT} type="date" name="issue_date" disabled={readOnly} />
-          </label>
-
-          <label className={FIELD}>
-            <span className={FIELD_LABEL}>Expiry date</span>
-            <input className={INPUT} type="date" name="expiry_date" disabled={readOnly} />
-          </label>
-
-          <label className={FIELD}>
-            <span className={FIELD_LABEL}>File</span>
-            <CompanyDocumentFileInput disabled={readOnly} />
-          </label>
-
-          <div className="md:col-span-2">
-            <PendingSubmitButton className={BTN_PRIMARY} idleLabel="Upload document" pendingLabel="Uploading…" disabled={readOnly} />
-          </div>
-        </form>
+        <div className="mt-(--space-6) border-t border-hairline pt-(--space-5)">
+          <CompanyDocumentForm
+            key={company.id}
+            documentId={crypto.randomUUID()}
+            types={checklist.filter((item) => item.kind === "document")}
+            disabled={readOnly}
+          />
+        </div>
       </section>
 
       {/* -------------------------------------------------- 1.8 administrators */}

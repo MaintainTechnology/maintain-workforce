@@ -14,19 +14,27 @@ import {
   useTable,
   type RowSelectionState,
 } from "@tanstack/react-table";
+import { TableEmpty, TableFrame } from "@/components/admin-page";
+import { Icon } from "@/components/icon";
 import type { FormResult } from "@/lib/actions";
 import { proposeMatches } from "@/lib/actions/match";
 import { formatCentsExGst } from "@/lib/domain/money";
-import { BTN_PRIMARY } from "@/lib/ui";
+import { BTN_PRIMARY, NAV_FOCUS } from "@/lib/ui";
 import {
+  CHECKBOX,
+  CHECK_OPTION,
   FIELD,
+  FIELD_ERROR,
   FIELD_HINT,
   FIELD_LABEL,
+  FIELD_OK,
   INPUT,
-  MONO,
+  INPUT_SM,
   TABLE,
   TD,
+  TD_NUM,
   TH,
+  TH_NUM,
   pill,
 } from "@/lib/platform-ui";
 
@@ -77,6 +85,9 @@ const columns = helper.columns([
   helper.accessor("buyerRateCents", { id: "buyerRate", header: "Buyer rate" }),
   helper.accessor("engagementWindow", { id: "window", header: "Engagement window" }),
 ]);
+
+/** Columns whose cells are figures; header and body align right together. */
+const NUMERIC = new Set(["availability", "hours", "skills", "supplierRate", "buyerRate"]);
 
 const EMPTY: CandidateRowData[] = [];
 
@@ -132,6 +143,7 @@ export function CandidateTable({
   const blockedByConflict = selectedRows.filter(
     (row) => row.reasons.some((reason) => /committing|commitment|committed/i.test(reason)),
   );
+  const visible = table.getRowModel().rows;
 
   return (
     <form action={action} className="flex flex-col gap-(--space-5)">
@@ -144,60 +156,65 @@ export function CandidateTable({
       ))}
 
       <div className="flex flex-wrap items-end justify-between gap-(--space-4)">
-        <div className={`${FIELD} min-w-[16rem]`}>
+        <div className={`${FIELD} w-full sm:w-72`}>
           <label className={FIELD_LABEL} htmlFor="candidate-filter">
             Filter candidates
           </label>
           <input
             id="candidate-filter"
             type="search"
-            className={INPUT}
+            className={INPUT_SM}
             value={globalFilter}
             onChange={(event) => setGlobalFilter(event.target.value)}
             placeholder="Name, supplying business, ticket"
           />
         </div>
-        <p className={FIELD_HINT}>
-          <span className={MONO}>{table.getRowModel().rows.length}</span> of{" "}
-          <span className={MONO}>{data.length}</span> candidates shown ·{" "}
-          <span className={MONO}>{remaining}</span> position{remaining === 1 ? "" : "s"} still
+        <p className={`${FIELD_HINT} tabular-nums`}>
+          <span className="font-semibold text-on-dark">{visible.length}</span> of{" "}
+          <span className="font-semibold text-on-dark">{data.length}</span> candidates shown ·{" "}
+          <span className="font-semibold text-on-dark">{remaining}</span> position{remaining === 1 ? "" : "s"} still
           open on this line
         </p>
       </div>
 
-      <div className="overflow-x-auto">
+      <TableFrame inset>
         <table className={TABLE}>
           <thead>
             {table.getHeaderGroups().map((group) => (
               <tr key={group.id}>
-                <th scope="col" className={TH}>
+                <th scope="col" className={`${TH} w-12`}>
                   <span className="sr-only">Shortlist</span>
                 </th>
-                {group.headers.map((header) => (
-                  <th key={header.id} scope="col" className={TH}>
-                    {header.isPlaceholder ? null : (
-                      <button
-                        type="button"
-                        onClick={header.column.getToggleSortingHandler()}
-                        className="inline-flex items-center gap-(--space-1) uppercase tracking-[0.08em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hi-vis-amber"
-                      >
-                        <table.FlexRender header={header} />
-                        <span aria-hidden="true">
-                          {header.column.getIsSorted() === "asc"
-                            ? "↑"
-                            : header.column.getIsSorted() === "desc"
-                              ? "↓"
-                              : ""}
-                        </span>
-                      </button>
-                    )}
-                  </th>
-                ))}
+                {group.headers.map((header) => {
+                  const sorted = header.column.getIsSorted();
+                  return (
+                    <th
+                      key={header.id}
+                      scope="col"
+                      className={NUMERIC.has(header.column.id) ? TH_NUM : TH}
+                      aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <button
+                          type="button"
+                          onClick={header.column.getToggleSortingHandler()}
+                          className={`inline-flex min-h-6 items-center gap-(--space-1) uppercase tracking-(--tracking-caps) transition-colors duration-(--dur-fast) hover:text-on-dark ${sorted ? "text-on-dark" : ""} ${NAV_FOCUS}`}
+                        >
+                          <table.FlexRender header={header} />
+                          <Icon
+                            name="i-arrow-right"
+                            className={`size-3 transition-transform duration-(--dur-fast) ${sorted === "asc" ? "-rotate-90" : sorted === "desc" ? "rotate-90" : "rotate-90 opacity-0 group-hover:opacity-100"}`}
+                          />
+                        </button>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => {
+            {visible.map((row) => {
               const candidate = row.original;
               return (
                 <tr key={row.id} className={candidate.klass === "Greyed" ? "opacity-70" : undefined}>
@@ -207,13 +224,13 @@ export function CandidateTable({
                       checked={row.getIsSelected()}
                       onChange={row.getToggleSelectedHandler()}
                       aria-label={`Shortlist ${candidate.workerName} from ${candidate.supplierCompanyName}`}
-                      className="size-5 accent-(--color-hi-vis-amber)"
+                      className={`${CHECKBOX} size-5`}
                     />
                   </td>
-                  <td className={TD}>
+                  <td className={`${TD} min-w-[12rem]`}>
                     <span className="font-semibold text-on-dark">{candidate.workerName}</span>
                     {candidate.reasons.length > 0 && (
-                      <span className="mt-(--space-1) block text-body-sm text-on-dark-muted">
+                      <span className="mt-(--space-1) block text-xs leading-relaxed text-on-dark-muted">
                         {candidate.reasons.join("; ")}
                       </span>
                     )}
@@ -224,47 +241,45 @@ export function CandidateTable({
                       {candidate.klass}
                     </span>
                   </td>
-                  <td className={`${TD} ${MONO}`}>
+                  <td className={TD_NUM}>
                     {/* 21.2 — 100% requires full coverage AND hours sufficiency on every
                         covered day; an hours shortfall demotes the label to Partial. */}
                     {candidate.availabilityPercent === 100 && !candidate.hoursShortfall
                       ? "100%"
                       : `Partial (${candidate.availabilityPercent}%)`}
                     {candidate.hoursShortfall && (
-                      <span className="block text-body-sm text-on-dark-muted">hours shortfall</span>
+                      <span className="block text-xs text-on-dark-muted">hours shortfall</span>
                     )}
                   </td>
-                  <td className={`${TD} ${MONO}`}>
+                  <td className={TD_NUM}>
                     {candidate.lineHoursPerWeek}
                     {!candidate.hoursSufficient && (
-                      <span className="block text-body-sm text-on-dark-muted">
+                      <span className="block text-xs text-on-dark-muted">
                         under {demandHoursPerWeek}
                       </span>
                     )}
                   </td>
-                  <td className={`${TD} ${MONO}`}>
-                    {candidate.skillsHeld}/{candidate.skillsRequired}
+                  <td className={TD_NUM}>
+                    {candidate.skillsHeld}<span className="text-on-dark-faint">/{candidate.skillsRequired}</span>
                   </td>
-                  <td className={TD}>{candidate.qualificationSummary}</td>
-                  <td className={`${TD} ${MONO}`}>{formatCentsExGst(candidate.supplierRateCents)}</td>
-                  <td className={`${TD} ${MONO}`}>{formatCentsExGst(candidate.buyerRateCents)}</td>
-                  <td className={`${TD} ${MONO}`}>{candidate.engagementWindow}</td>
+                  <td className={`${TD} min-w-[14rem]`}>{candidate.qualificationSummary}</td>
+                  <td className={TD_NUM}>{formatCentsExGst(candidate.supplierRateCents)}</td>
+                  <td className={TD_NUM}>{formatCentsExGst(candidate.buyerRateCents)}</td>
+                  <td className={`${TD} whitespace-nowrap tabular-nums`}>{candidate.engagementWindow}</td>
                 </tr>
               );
             })}
-            {table.getRowModel().rows.length === 0 && (
-              <tr>
-                <td className={TD} colSpan={columns.length + 1}>
-                  No candidate matches this filter.
-                </td>
-              </tr>
+            {visible.length === 0 && (
+              <TableEmpty colSpan={columns.length + 1}>
+                {data.length === 0 ? "No eligible candidates for this line." : "No candidate matches this filter."}
+              </TableEmpty>
             )}
           </tbody>
         </table>
-      </div>
+      </TableFrame>
 
       {blockedByConflict.length > 0 && (
-        <p className="text-body-sm text-status-critical">
+        <p className={FIELD_ERROR}>
           {blockedByConflict.length} shortlisted candidate
           {blockedByConflict.length === 1 ? " is" : "s are"} greyed for a committed conflict. The
           supplying business cannot nominate them until that engagement is resolved.
@@ -272,51 +287,53 @@ export function CandidateTable({
       )}
 
       {needsOverride && (
-        <div className="flex flex-col gap-(--space-3)">
-          <label className="flex items-start gap-(--space-3) text-body text-on-dark">
-          <input
-            type="checkbox"
-            name="qualification_override"
-            checked={override}
-            onChange={(event) => setOverride(event.target.checked)}
-            className="mt-1 size-5 accent-(--color-hi-vis-amber)"
-          />
-          <span>
-            Record my shortlist override for the displayed warnings. An in-window ticket expiry
-            may be accepted knowingly; a committing conflict must still be resolved before the
-            worker can be nominated. Soft holds in other proposals do not block nomination.
-          </span>
+        <div className="flex flex-col gap-(--space-3) rounded-(--radius-md) border border-hairline p-(--space-4)">
+          <label className={`${CHECK_OPTION} w-fit items-start rounded-(--radius-md) py-(--space-3)`}>
+            <input
+              type="checkbox"
+              name="qualification_override"
+              checked={override}
+              onChange={(event) => setOverride(event.target.checked)}
+              className={`${CHECKBOX} mt-0.5 size-5`}
+            />
+            <span className="max-w-[70ch] leading-relaxed">
+              Record my shortlist override for the displayed warnings. An in-window ticket expiry
+              may be accepted knowingly; a committing conflict must still be resolved before the
+              worker can be nominated. Soft holds in other proposals do not block nomination.
+            </span>
           </label>
-          <label className={FIELD_LABEL} htmlFor="shortlist-override-evidence">Override evidence</label>
-          <textarea id="shortlist-override-evidence" name="override_evidence_note" className={INPUT}
-            rows={2} minLength={10} maxLength={4000} required={override}
-            placeholder="Explain the exception and who agreed to it" />
-          {state?.errors?.override_evidence_note && (
-            <p className="text-body text-status-critical">{state.errors.override_evidence_note}</p>
-          )}
+          <div className={FIELD}>
+            <label className={FIELD_LABEL} htmlFor="shortlist-override-evidence">Override evidence</label>
+            <textarea id="shortlist-override-evidence" name="override_evidence_note" className={INPUT}
+              rows={2} minLength={10} maxLength={4000} required={override}
+              placeholder="Explain the exception and who agreed to it" />
+            {state?.errors?.override_evidence_note && (
+              <p className={FIELD_ERROR}>{state.errors.override_evidence_note}</p>
+            )}
+          </div>
         </div>
       )}
 
       {state?.message && (
-        <p className={state.ok ? "text-body text-status-active" : "text-body text-status-critical"}>
+        <p role="status" className={state.ok ? FIELD_OK : FIELD_ERROR}>
           {state.message}
         </p>
       )}
       {state?.errors?.candidates && (
-        <p className="text-body text-status-critical">{state.errors.candidates}</p>
+        <p role="alert" className={FIELD_ERROR}>{state.errors.candidates}</p>
       )}
 
-      <div className="flex flex-wrap items-center gap-(--space-4)">
-        <button type="submit" className={BTN_PRIMARY} disabled={pending || selectedKeys.length === 0}>
+      <div className="flex flex-wrap items-center gap-(--space-4) border-t border-hairline pt-(--space-4)">
+        <button type="submit" className={BTN_PRIMARY} disabled={pending || selectedKeys.length === 0} aria-busy={pending || undefined}>
           {pending
             ? "Proposing…"
             : lineCount > 1
               ? `Propose ${lineCount} matches`
               : "Propose match"}
         </button>
-        <p className={FIELD_HINT}>
-          <span className={MONO}>{selectedKeys.length}</span> shortlisted across{" "}
-          <span className={MONO}>{lineCount}</span> capacity line{lineCount === 1 ? "" : "s"}. The
+        <p className={`${FIELD_HINT} tabular-nums`}>
+          <span className="font-semibold text-on-dark">{selectedKeys.length}</span> shortlisted across{" "}
+          <span className="font-semibold text-on-dark">{lineCount}</span> capacity line{lineCount === 1 ? "" : "s"}. The
           shortlist proves the shape is feasible; the supplying business chooses who goes.
         </p>
       </div>

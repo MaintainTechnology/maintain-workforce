@@ -28,6 +28,15 @@ export const BTN_PRIMARY =
 export const BTN_GHOST =
   "mw-cta inline-flex min-h-11 items-center justify-center gap-(--space-2) rounded-(--radius-pill) border border-hairline px-(--space-6) py-(--space-3) font-bold text-on-dark [transition:background-color_var(--dur-base)_var(--ease-out),transform_var(--dur-fast)_var(--ease-out),opacity_var(--dur-base)_var(--ease-out)] hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:active:scale-100";
 
+// Compact variants for dense operational surfaces (table cells, toolbars, the
+// admin sidebar footer). Same pill, same 44px target, tighter horizontal
+// padding and the 14px interface size so a row of controls reads as one line.
+export const BTN_PRIMARY_SM =
+  "mw-cta inline-flex min-h-11 items-center justify-center gap-(--space-2) whitespace-nowrap rounded-(--radius-pill) bg-primary px-(--space-4) py-(--space-2) text-sm font-bold text-primary-ink shadow-(--shadow-md) [transition:background-color_var(--dur-base)_var(--ease-out),transform_var(--dur-fast)_var(--ease-out),opacity_var(--dur-base)_var(--ease-out)] hover:bg-amber-tint-2 focus-visible:bg-amber-tint-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:bg-primary disabled:active:scale-100";
+
+export const BTN_GHOST_SM =
+  "mw-cta inline-flex min-h-11 items-center justify-center gap-(--space-2) whitespace-nowrap rounded-(--radius-pill) border border-hairline px-(--space-4) py-(--space-2) text-sm font-semibold text-on-dark [transition:background-color_var(--dur-base)_var(--ease-out),transform_var(--dur-fast)_var(--ease-out),opacity_var(--dur-base)_var(--ease-out)] hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:active:scale-100";
+
 // Panel: Black 2 on a hairline, no shadow (Flat-By-Default Rule).
 export const PANEL = "rounded-(--radius-lg) border border-hairline bg-black-2";
 

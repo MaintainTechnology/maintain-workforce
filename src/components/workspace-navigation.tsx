@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
+import { useDismissableDetails } from "@/components/use-dismissable-details";
+import { WorkspaceViewSwitch } from "@/components/workspace-view-switch";
 import type { CompanyStatus } from "@/lib/supabase/types";
 import { NAV_FOCUS } from "@/lib/ui";
 import {
@@ -96,8 +98,8 @@ function AccountFooter({ email, signOut, canManageWorkforce }: Pick<WorkspaceAcc
       <p className="text-xs text-on-dark-faint">Signed in as</p>
       <p className="mt-1 truncate text-sm font-medium text-on-dark-muted" title={email}>{email}</p>
       {canManageWorkforce && (
-        <Link href="/admin/verification" className={`mt-3 flex min-h-11 items-center justify-center rounded-(--radius-pill) border border-hairline px-4 text-sm font-semibold text-on-dark hover:bg-white/5 ${NAV_FOCUS}`}>
-          Account approvals
+        <Link href="/admin" className={`mt-3 flex min-h-11 items-center justify-center rounded-(--radius-pill) border border-hairline px-4 text-sm font-semibold text-on-dark hover:bg-white/5 ${NAV_FOCUS}`}>
+          Switch to admin view
         </Link>
       )}
       <div className="mt-3">{signOut}</div>
@@ -123,61 +125,7 @@ export function WorkspaceSidebar(account: WorkspaceAccount) {
 }
 
 function MobileNavigation(account: WorkspaceAccount) {
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-  const summaryRef = useRef<HTMLElement>(null);
-  const pathname = usePathname();
-
-  function close(restoreFocus = false) {
-    const details = detailsRef.current;
-    if (!details?.open) return;
-    details.open = false;
-    if (restoreFocus) summaryRef.current?.focus();
-  }
-
-  useEffect(() => {
-    if (detailsRef.current) detailsRef.current.open = false;
-  }, [pathname]);
-
-  useEffect(() => {
-    function dismissOnPointer(event: PointerEvent) {
-      const details = detailsRef.current;
-      if (details?.open && event.target instanceof Node && !details.contains(event.target)) {
-        const focusInside = details.contains(document.activeElement);
-        details.open = false;
-        if (focusInside) summaryRef.current?.focus();
-      }
-    }
-
-    function dismissOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && detailsRef.current?.open) {
-        detailsRef.current.open = false;
-        summaryRef.current?.focus();
-        event.preventDefault();
-      }
-    }
-
-    function dismissOnFocus(event: FocusEvent) {
-      if (detailsRef.current?.open && event.target instanceof Node && !detailsRef.current.contains(event.target)) {
-        detailsRef.current.open = false;
-      }
-    }
-
-    const desktop = window.matchMedia("(min-width: 1024px)");
-    function dismissOnDesktop() {
-      if (desktop.matches && detailsRef.current) detailsRef.current.open = false;
-    }
-
-    document.addEventListener("pointerdown", dismissOnPointer);
-    document.addEventListener("keydown", dismissOnEscape);
-    document.addEventListener("focusin", dismissOnFocus);
-    desktop.addEventListener("change", dismissOnDesktop);
-    return () => {
-      document.removeEventListener("pointerdown", dismissOnPointer);
-      document.removeEventListener("keydown", dismissOnEscape);
-      document.removeEventListener("focusin", dismissOnFocus);
-      desktop.removeEventListener("change", dismissOnDesktop);
-    };
-  }, []);
+  const { detailsRef, summaryRef, close } = useDismissableDetails();
 
   return (
     <details ref={detailsRef} className="group relative shrink-0 lg:hidden">
@@ -204,15 +152,21 @@ export function WorkspaceHeader(account: WorkspaceAccount) {
           <Link href="/app" aria-label="Maintain Workforce dashboard" className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center lg:hidden ${NAV_FOCUS}`}>
             <Image src="/design-system/assets/logo/mark.svg" alt="Maintain Workforce" width={36} height={23} priority className="h-auto w-9" />
           </Link>
-          <span className="hidden text-on-dark-faint lg:inline">Workspace</span>
+          <span className="hidden shrink-0 text-on-dark-faint lg:inline">User view</span>
           <span aria-hidden="true" className="hidden text-on-dark-faint lg:inline">/</span>
           <span className="truncate font-semibold text-on-dark">{destination?.label ?? "Workspace"}</span>
           {destination && pathname !== destination.href && (
             <span className="hidden text-on-dark-faint sm:inline">/ {pathname.endsWith("/new") ? "New" : "Details"}</span>
           )}
         </div>
-        <span className="hidden text-xs font-medium text-on-dark-faint lg:block">Company workspace</span>
-        <MobileNavigation {...account} />
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {account.canManageWorkforce ? (
+            <WorkspaceViewSwitch view="user" />
+          ) : (
+            <span className="hidden text-xs font-medium text-on-dark-faint lg:block">Company workspace</span>
+          )}
+          <MobileNavigation {...account} />
+        </div>
       </div>
     </header>
   );

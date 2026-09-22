@@ -29,7 +29,7 @@ describe("account navigation", () => {
     expect(html).not.toContain('href="/auth/continue"');
   });
 
-  it.each([false, true])("shows account approvals only when the server grants access (%s)", (canManageWorkforce) => {
+  it.each([false, true])("shows the admin view switch only when the server grants access (%s)", (canManageWorkforce) => {
     const account = {
       companyName: "Example Company",
       companyStatus: "Pending" as const,
@@ -40,7 +40,7 @@ describe("account navigation", () => {
     const html = renderToStaticMarkup(createElement("div", null,
       createElement(WorkspaceSidebar, account), createElement(WorkspaceHeader, account)));
 
-    expect([...html.matchAll(/href="\/admin\/verification"/g)]).toHaveLength(canManageWorkforce ? 2 : 0);
-    expect(html.includes("Account approvals")).toBe(canManageWorkforce);
+    expect([...html.matchAll(/href="\/admin"/g)]).toHaveLength(canManageWorkforce ? 3 : 0);
+    expect(html.includes("Switch to admin view")).toBe(canManageWorkforce);
   });
 });

@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState, PageHeader, Pagination, TableFrame } from "@/components/admin-page";
 import { ActionForm } from "@/components/action-form";
 import { retryNotificationAction } from "@/lib/actions/notification";
 import { requireMaintainAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { BTN_GHOST, H1 } from "@/lib/ui";
-import { CARD, MONO, PAGE, TABLE, TD, TH } from "@/lib/platform-ui";
+import { TABLE, TD, TD_NUM, TH, TH_NUM } from "@/lib/platform-ui";
 
 export const metadata: Metadata = { title: "Notification delivery" };
 export const dynamic = "force-dynamic";
@@ -47,36 +46,31 @@ export default async function AdminNotificationsPage({
   if (total > 0 && page > totalPages) redirect(`/admin/notifications?page=${totalPages}`);
 
   return (
-    <div className={`${PAGE} flex flex-col gap-(--space-6)`}>
-      <div>
-        <p className="text-label uppercase tracking-[0.08em] text-on-dark-faint">Delivery operations</p>
-        <h1 className={H1}>Notification delivery</h1>
-        <p className="mt-(--space-2) max-w-[70ch] text-body text-on-dark-muted">
-          Failed email never rolls back its workflow. Queued and interrupted deliveries stay here
-          until sent. Re-send the exact stored payload; recipient and copy cannot be edited.
-        </p>
-        <p className="mt-(--space-2) text-label text-on-dark-faint">
-          {total} unsent {total === 1 ? "notification" : "notifications"}
-        </p>
-      </div>
+    <div className="flex flex-col gap-(--space-6)">
+      <PageHeader
+        title="Notification delivery"
+        lead="Failed email never rolls back its workflow. Queued and interrupted deliveries stay here until sent. Re-sending uses the exact stored payload; recipient and copy cannot be edited."
+        meta={
+          <span>
+            <strong className="font-semibold text-on-dark">{total}</strong> unsent {total === 1 ? "notification" : "notifications"}
+          </span>
+        }
+      />
 
       {failures.length === 0 ? (
-        <section className={CARD}>
-          <h2 className="font-display text-h2 font-bold text-on-dark">No unsent notifications</h2>
-          <p className="mt-(--space-2) text-body text-on-dark-muted">
-            All recorded notifications have been sent.
-          </p>
-        </section>
+        <EmptyState title="No unsent notifications">
+          Every recorded notification has been delivered. Failed or interrupted sends will appear here with their provider reason.
+        </EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-(--radius-lg) border border-hairline">
+        <TableFrame>
           <table className={TABLE}>
             <thead>
               <tr>
                 <th className={TH}>Event</th>
                 <th className={TH}>Recipient</th>
                 <th className={TH}>Delivery state</th>
-                <th className={TH}>Completed attempts</th>
-                <th className={TH}>Action</th>
+                <th className={TH_NUM}>Attempts</th>
+                <th className={TH}><span className="sr-only">Action</span></th>
               </tr>
             </thead>
             <tbody>
@@ -86,43 +80,52 @@ export default async function AdminNotificationsPage({
                   Date.parse(row.retry_claimed_at) > activeLeaseCutoff;
                 return (
                   <tr key={row.id}>
-                    <td className={TD}>
-                      <p className="font-semibold text-on-dark">{row.trigger}</p>
+                    <td className={`${TD} min-w-[14rem]`}>
+                      <p className="font-semibold">{row.trigger}</p>
                       {row.subject && (
-                        <p className="mt-(--space-1) text-body-sm text-on-dark-muted">{row.subject}</p>
+                        <p className="mt-(--space-1) text-xs text-on-dark-muted">{row.subject}</p>
                       )}
                       {row.entity_type && row.entity_id && (
-                        <p className={`${MONO} mt-(--space-1) text-label text-on-dark-faint`}>
+                        <p className="mt-(--space-1) text-xs tabular-nums text-on-dark-faint [overflow-wrap:anywhere]">
                           {row.entity_type} · {row.entity_id}
                         </p>
                       )}
                     </td>
-                    <td className={`${TD} ${MONO} text-body-sm`}>{row.recipient_email}</td>
-                    <td className={TD}>
-                      <p className="text-body-sm text-status-critical">
-                        {row.failure_reason ?? (row.retry_claimed_at
-                          ? "Delivery interrupted or still in progress. Check its provider receipt before re-sending."
-                          : "Awaiting its first delivery attempt.")}
+                    <td className={`${TD} text-on-dark-muted [overflow-wrap:anywhere]`}>{row.recipient_email}</td>
+                    <td className={`${TD} max-w-[26rem]`}>
+                      {/* Dot-and-Label: the failure hue is on the dot; the reason reads in white. */}
+                      <p className="flex items-start gap-(--space-2) text-sm leading-relaxed">
+                        <span
+                          aria-hidden="true"
+                          className={`mt-[0.45em] size-2 shrink-0 rounded-(--radius-pill) ${row.failure_reason ? "bg-status-critical" : "bg-status-pending"}`}
+                        />
+                        <span>
+                          {row.failure_reason ?? (row.retry_claimed_at
+                            ? "Delivery interrupted or still in progress. Check its provider receipt before re-sending."
+                            : "Awaiting its first delivery attempt.")}
+                        </span>
                       </p>
-                      <p className="mt-(--space-1) text-label text-on-dark-faint">
+                      <p className="mt-(--space-1) pl-(--space-4) text-xs tabular-nums text-on-dark-faint">
                         {formatTimestamp(row.failed_at ?? row.created_at)}
                       </p>
                     </td>
-                    <td className={`${TD} ${MONO}`}>{row.attempt_count}</td>
-                    <td className={TD}>
+                    <td className={TD_NUM}>{row.attempt_count}</td>
+                    <td className={`${TD} text-right`}>
                       {inProgress ? (
-                        <p className="text-body-sm text-on-dark-muted">Delivery in progress.</p>
+                        <p className="text-sm text-on-dark-muted">Delivery in progress</p>
                       ) : retryable ? (
                         <ActionForm
                           action={retryNotificationAction}
-                          submitLabel="Re-send notification"
+                          submitLabel="Re-send"
                           pendingLabel="Re-sending…"
                           tone="ghost"
+                          size="sm"
+                          className="items-end"
                         >
                           <input type="hidden" name="notification_id" value={row.id} />
                         </ActionForm>
                       ) : (
-                        <p className="max-w-[28ch] text-body-sm text-on-dark-faint">
+                        <p className="ml-auto max-w-[24ch] text-xs text-on-dark-faint">
                           Legacy row — the original payload was not stored, so it cannot be safely re-sent.
                         </p>
                       )}
@@ -132,25 +135,16 @@ export default async function AdminNotificationsPage({
               })}
             </tbody>
           </table>
-        </div>
+        </TableFrame>
       )}
 
       {totalPages > 1 && (
-        <nav aria-label="Notification failure pages" className="flex items-center gap-(--space-3)">
-          {page > 1 ? (
-            <Link href={`/admin/notifications?page=${page - 1}`} className={BTN_GHOST}>
-              Previous
-            </Link>
-          ) : null}
-          <span className="text-body-sm text-on-dark-muted">
-            Page {Math.min(page, totalPages)} of {totalPages}
-          </span>
-          {page < totalPages ? (
-            <Link href={`/admin/notifications?page=${page + 1}`} className={BTN_GHOST}>
-              Next
-            </Link>
-          ) : null}
-        </nav>
+        <Pagination
+          label="Notification failure pages"
+          summary={<>Page {Math.min(page, totalPages)} of {totalPages}</>}
+          previousHref={page > 1 ? `/admin/notifications?page=${page - 1}` : undefined}
+          nextHref={page < totalPages ? `/admin/notifications?page=${page + 1}` : undefined}
+        />
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import { getUser, isMaintainAdmin, resolveCompanyInvitation } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { WorkspaceViewSwitch } from "@/components/workspace-view-switch";
 import { H1, PANEL, SECTION, SHELL } from "@/lib/ui";
 import { OnboardingForm } from "./onboarding-form";
 
@@ -20,9 +21,7 @@ export default async function OnboardingPage() {
   if (!sessionUser) redirect("/signup");
 
   const clerkUser = await currentUser();
-  if (isMaintainAdmin(clerkUser?.publicMetadata as Record<string, unknown> | undefined)) {
-    redirect("/admin");
-  }
+  const isStaff = isMaintainAdmin(clerkUser?.publicMetadata as Record<string, unknown> | undefined);
 
   const admin = createAdminClient();
   const { data: existing } = await admin
@@ -31,6 +30,7 @@ export default async function OnboardingPage() {
     .eq("user_id", sessionUser.id)
     .maybeSingle();
   if (existing?.accepted_at) redirect("/app");
+  if (existing) redirect("/accept-invitation");
 
   // Clerk invitees arrive here after accepting their account invitation. Bind them
   // to the inviting company instead of showing the new-company form.
@@ -44,8 +44,21 @@ export default async function OnboardingPage() {
   return (
     <main className={`${SHELL} ${SECTION}`}>
       <div className="max-w-[640px]">
-        <p className="font-semibold text-on-dark-muted">Step 2 of 2</p>
+        {isStaff && (
+          <div className="mb-(--space-6) flex flex-wrap items-center justify-between gap-3">
+            <p className="font-semibold text-on-dark-muted">User view</p>
+            <WorkspaceViewSwitch view="user" />
+          </div>
+        )}
+        <p className="font-semibold text-on-dark-muted">{isStaff ? "Set up your user workspace" : "Step 2 of 2"}</p>
         <h1 className={`${H1} mt-(--space-3)`}>Your company details</h1>
+        {isStaff && (
+          <p className="mt-(--space-4) text-body text-on-dark-muted">
+            Your admin access is ready. To use the company dashboard, set up your own
+            company profile below. You can then manage your crew, documents and requests
+            in user view and switch back to admin at any time.
+          </p>
+        )}
         <p className="mt-(--space-4) text-body text-on-dark-muted">
           Add your ABN now or later. Maintain checks any ABN, insurance and licences
           against the documents you upload. Your company starts Pending and can prepare

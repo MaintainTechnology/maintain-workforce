@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Notice, PageHeader, SectionHeader, TableEmpty, TableFrame } from "@/components/admin-page";
+import { Icon } from "@/components/icon";
 import {
   approveCompany,
   companyChecklist,
@@ -11,17 +13,19 @@ import {
 import { requireMaintainAdmin } from "@/lib/auth";
 import { ApprovalSubmitButton } from "@/components/approval-submit-button";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
+import { CompanyDocumentForm } from "@/components/company-document-form";
 import { CompanyDocumentFileInput } from "@/components/company-document-file-input";
 import { companyDocumentIssue } from "@/lib/company-document-policy";
 import { formatAbn } from "@/lib/domain/abn";
 import {
-  CARD,
+  CHECKBOX,
+  CHECK_OPTION,
   FIELD,
   FIELD_HINT,
   FIELD_LABEL,
   INPUT,
-  MONO,
-  PAGE,
+  INPUT_SM,
+  SUBSECTION_TITLE,
   TABLE,
   TD,
   TH,
@@ -30,7 +34,7 @@ import {
   toneFor,
 } from "@/lib/platform-ui";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { BTN_GHOST, BTN_PRIMARY, H1, H2, LINK } from "@/lib/ui";
+import { BTN_GHOST, BTN_GHOST_SM, NAV_FOCUS, PANEL } from "@/lib/ui";
 
 // Spec 1.4 / 1.5 — the Verification queue. It lists Pending companies and gives each one
 // a checklist: ABN verified, public liability insurance, workers compensation, trade
@@ -38,6 +42,9 @@ import { BTN_GHOST, BTN_PRIMARY, H1, H2, LINK } from "@/lib/ui";
 // reference only, since 1.4 stores no bank data. Approving sets the company Active and
 // notifies it; rejecting records a reason and notifies it. Only a Maintain admin can do
 // either (1.5).
+//
+// Amber budget (DESIGN.md): one — "Approve and activate". Saving onboarding details,
+// verifying a document and uploading are ghost controls; the activation is the decision.
 
 export const metadata: Metadata = { title: "Account approvals" };
 
@@ -183,117 +190,107 @@ export default async function VerificationPage({
       })
     : "";
 
+  const pendingRows = pending ?? [];
+  const editable = selected?.status === "Pending";
+
   return (
-    <div className={`${PAGE} flex flex-col gap-(--space-6)`}>
-      <header className="flex flex-wrap items-baseline gap-(--space-4)">
-        <h1 className={H1}>Account approvals</h1>
-        <span className={`${MONO} text-body text-on-dark-muted`}>
-          {(pending ?? []).length} companies Pending
-        </span>
-      </header>
-      <p className="max-w-[62ch] text-body text-on-dark-muted">
-        Maintain admins can approve accounts with incomplete information or missing documents.
-        Verify confirms an individual document. Approve and activate opens the account and records your decision.
-      </p>
+    <div className="flex flex-col gap-(--space-6)">
+      <PageHeader
+        title="Account approvals"
+        lead="Pending companies and their verification checklist. Verify confirms an individual document. Approve and activate opens the account and records your decision — Maintain admins can approve with incomplete information or missing documents."
+        meta={
+          <span>
+            <strong className="font-semibold text-on-dark">{pendingRows.length}</strong>{" "}
+            {pendingRows.length === 1 ? "company" : "companies"} Pending
+          </span>
+        }
+      />
 
-      {saved && (
-        <p role="status" className={`${CARD} text-body text-on-dark`}>
-          {saved}
-        </p>
-      )}
-      {problem && (
-        <p role="alert" className={`${CARD} text-body text-on-dark`}>
-          {problem}
-        </p>
-      )}
+      {saved && <Notice tone="ok">{saved}</Notice>}
+      {problem && <Notice tone="error">{problem}</Notice>}
 
-      <section className={CARD}>
-        <div className="overflow-x-auto">
-          <table className={TABLE}>
-            <thead>
-              <tr>
-                <th className={TH}>Registered</th>
-                <th className={TH}>Company</th>
-                <th className={TH}>ABN</th>
-                <th className={TH}>Contact</th>
-                <th className={TH}>Checklist</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(pending ?? []).length === 0 && (
-                <tr>
-                  <td className={TD} colSpan={5}>
-                    <span className="text-on-dark-muted">Nothing waiting on verification.</span>
-                  </td>
-                </tr>
-              )}
-              {(pending ?? []).map((company) => (
-                <tr key={company.id}>
-                  <td className={`${TD} ${MONO}`}>{formatDate(company.created_at)}</td>
+      <TableFrame>
+        <table className={TABLE}>
+          <thead>
+            <tr>
+              <th className={TH}>Registered</th>
+              <th className={TH}>Company</th>
+              <th className={TH}>Contact</th>
+              <th className={TH}><span className="sr-only">Checklist</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingRows.length === 0 && (
+              <TableEmpty colSpan={4}>Nothing waiting on verification.</TableEmpty>
+            )}
+            {pendingRows.map((company) => {
+              const isSelected = company.id === selectedId;
+              return (
+                <tr key={company.id} className={isSelected ? "bg-white/[0.04]" : undefined}>
+                  <td className={`${TD} whitespace-nowrap tabular-nums text-on-dark-muted`}>{formatDate(company.created_at)}</td>
                   <td className={TD}>
-                    {company.legal_name}
+                    <span className="font-semibold">{company.legal_name}</span>
                     {company.trading_name && (
-                      <>
-                        <br />
-                        <span className="text-body-sm text-on-dark-muted">
-                          trading as {company.trading_name}
-                        </span>
-                      </>
+                      <span className="block text-xs text-on-dark-muted">trading as {company.trading_name}</span>
                     )}
-                  </td>
-                  <td className={`${TD} ${MONO}`}>
-                    {company.abn ? formatAbn(company.abn) : "Not provided"}
-                  </td>
-                  <td className={TD}>
-                    {company.contact_name ?? "—"}
-                    <br />
-                    <span className={`${MONO} text-body-sm text-on-dark-muted`}>
-                      {company.contact_email}
+                    <span className="mt-(--space-1) block text-xs tabular-nums text-on-dark-faint">
+                      {company.abn ? `ABN ${formatAbn(company.abn)}` : "ABN not provided"}
                     </span>
                   </td>
                   <td className={TD}>
-                    <Link className={LINK} href={`/admin/verification?company=${company.id}`}>
-                      Open checklist
+                    {company.contact_name ?? "—"}
+                    <span className="block text-xs text-on-dark-muted [overflow-wrap:anywhere]">{company.contact_email}</span>
+                  </td>
+                  <td className={`${TD} text-right`}>
+                    <Link
+                      className={`inline-flex min-h-11 items-center gap-(--space-1) text-sm font-semibold ${isSelected ? "text-on-dark" : "text-on-dark-muted hover:text-on-dark"} ${NAV_FOCUS}`}
+                      href={`/admin/verification?company=${company.id}`}
+                      aria-current={isSelected ? "true" : undefined}
+                    >
+                      {isSelected ? "Checklist open" : "Open checklist"}
+                      <Icon name="i-arrow-right" className="size-4" />
                     </Link>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              );
+            })}
+          </tbody>
+        </table>
+      </TableFrame>
 
       {/* -------------------------------------------------- 1.4 per-company checklist */}
       {selected && (
-        <section className={CARD}>
-          <div className="flex flex-wrap items-baseline gap-(--space-4)">
-            <h2 className={H2}>{selected.legal_name}</h2>
-            <span className={pill(toneFor(selected.status))}>{selected.status}</span>
-            <span className={`${MONO} text-body text-on-dark-muted`}>
-              {selected.abn ? formatAbn(selected.abn) : "ABN not provided"}
-            </span>
-          </div>
-          <p className={`${FIELD_HINT} mt-(--space-2)`}>
-            {checklistUnavailable
-              ? "The verification checklist could not be loaded. Account approval remains available to Maintain admins."
-              : outstanding.length === 0
-              ? "Every mandatory checklist item is verified."
-              : `Checklist items still outstanding: ${outstanding.map((item) => item.label).join(", ")}. You can still approve this account.`}
-          </p>
+        <section className={`${PANEL} p-(--space-5)`} aria-labelledby="approval-company-heading">
+          <SectionHeader
+            title={<span id="approval-company-heading">{selected.legal_name}</span>}
+            hint={
+              checklistUnavailable
+                ? "The verification checklist could not be loaded. Account approval remains available to Maintain admins."
+                : outstanding.length === 0
+                ? "Every mandatory checklist item is verified."
+                : `Checklist items still outstanding: ${outstanding.map((item) => item.label).join(", ")}. You can still approve this account.`
+            }
+            actions={
+              <>
+                <span className="text-sm tabular-nums text-on-dark-muted">
+                  {selected.abn ? `ABN ${formatAbn(selected.abn)}` : "ABN not provided"}
+                </span>
+                <span className={pill(toneFor(selected.status))}>{selected.status}</span>
+              </>
+            }
+          />
 
           <div className="mt-(--space-6) border-t border-hairline pt-(--space-5)">
-            <h3 className="font-display text-h4 font-bold text-on-dark">
-              Onboarding company details
-            </h3>
-            <p className={`${FIELD_HINT} mt-(--space-2) max-w-[72ch]`}>
-              These are the current company details saved from onboarding. Changes made
-              here are audited and become the company&apos;s current profile. Insurance
-              documents and payment confirmation are completed separately below.
+            <h3 className={SUBSECTION_TITLE}>Onboarding company details</h3>
+            <p className={`${FIELD_HINT} mt-(--space-1) max-w-[72ch]`}>
+              The company details saved from onboarding. Changes made here are audited and
+              become the company&apos;s current profile. Insurance documents and payment
+              confirmation are completed separately below.
             </p>
 
             <form
               action={updatePendingCompanyProfileAsMaintain}
-              className="mt-(--space-5) grid gap-(--space-5) md:grid-cols-2"
+              className="mt-(--space-5) grid gap-(--space-4) md:grid-cols-2"
             >
               <input type="hidden" name="company_id" value={selected.id} />
               <input type="hidden" name="expected_status" value={selected.status} />
@@ -301,45 +298,28 @@ export default async function VerificationPage({
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Registered legal name</span>
-                <input
-                  className={INPUT}
-                  name="legal_name"
-                  defaultValue={selected.legal_name}
-                  required
-                  disabled={selected.status !== "Pending"}
-                />
+                <input className={INPUT} name="legal_name" defaultValue={selected.legal_name} required disabled={!editable} />
               </label>
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Trading name</span>
-                <input
-                  className={INPUT}
-                  name="trading_name"
-                  defaultValue={selected.trading_name ?? ""}
-                  disabled={selected.status !== "Pending"}
-                />
+                <input className={INPUT} name="trading_name" defaultValue={selected.trading_name ?? ""} disabled={!editable} />
               </label>
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>ABN (optional)</span>
                 <input
-                  className={`${INPUT} ${MONO}`}
+                  className={`${INPUT} tabular-nums`}
                   name="abn"
                   inputMode="numeric"
                   defaultValue={selected.abn ? formatAbn(selected.abn) : ""}
-                  disabled={selected.status !== "Pending"}
+                  disabled={!editable}
                 />
               </label>
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Industry</span>
-                <select
-                  className={INPUT}
-                  name="industry_id"
-                  defaultValue={selected.industry_id ?? ""}
-                  required
-                  disabled={selected.status !== "Pending"}
-                >
+                <select className={INPUT} name="industry_id" defaultValue={selected.industry_id ?? ""} required disabled={!editable}>
                   <option value="">Choose an industry</option>
                   {industries.map((industry: { id: string; name: string; is_active: boolean }) => (
                     <option
@@ -355,48 +335,22 @@ export default async function VerificationPage({
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Contact name</span>
-                <input
-                  className={INPUT}
-                  name="contact_name"
-                  defaultValue={selected.contact_name ?? ""}
-                  required
-                  disabled={selected.status !== "Pending"}
-                />
+                <input className={INPUT} name="contact_name" defaultValue={selected.contact_name ?? ""} required disabled={!editable} />
               </label>
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Contact email</span>
-                <input
-                  className={INPUT}
-                  type="email"
-                  name="contact_email"
-                  defaultValue={selected.contact_email}
-                  required
-                  disabled={selected.status !== "Pending"}
-                />
+                <input className={INPUT} type="email" name="contact_email" defaultValue={selected.contact_email} required disabled={!editable} />
               </label>
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Contact phone</span>
-                <input
-                  className={INPUT}
-                  type="tel"
-                  name="contact_phone"
-                  defaultValue={selected.contact_phone ?? ""}
-                  required
-                  disabled={selected.status !== "Pending"}
-                />
+                <input className={INPUT} type="tel" name="contact_phone" defaultValue={selected.contact_phone ?? ""} required disabled={!editable} />
               </label>
 
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>Primary location</span>
-                <select
-                  className={INPUT}
-                  name="primary_region_id"
-                  defaultValue={selected.primary_region_id ?? ""}
-                  required
-                  disabled={selected.status !== "Pending"}
-                >
+                <select className={INPUT} name="primary_region_id" defaultValue={selected.primary_region_id ?? ""} required disabled={!editable}>
                   <option value="">Choose a region</option>
                   {regions.map((region: { id: string; name: string; is_active: boolean }) => (
                     <option
@@ -412,21 +366,18 @@ export default async function VerificationPage({
 
               <fieldset className="md:col-span-2">
                 <legend className={FIELD_LABEL}>Regions the company operates in</legend>
-                <div className="mt-(--space-3) grid gap-(--space-2) sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-(--space-3) flex flex-wrap gap-(--space-2)">
                   {regions.map((region: { id: string; name: string; is_active: boolean }) => {
                     const selectedRegion = operatingIds.includes(region.id);
                     return (
-                      <label
-                        key={region.id}
-                        className="flex min-h-11 items-center gap-(--space-3) text-body text-on-dark"
-                      >
+                      <label key={region.id} className={CHECK_OPTION}>
                         <input
                           type="checkbox"
                           name="operating_region_ids"
                           value={region.id}
                           defaultChecked={selectedRegion}
-                          disabled={selected.status !== "Pending" || (!region.is_active && !selectedRegion)}
-                          className="size-4 accent-teal-mist"
+                          disabled={!editable || (!region.is_active && !selectedRegion)}
+                          className={CHECKBOX}
                         />
                         {region.name}{region.is_active ? "" : " (inactive)"}
                       </label>
@@ -436,16 +387,12 @@ export default async function VerificationPage({
               </fieldset>
 
               <div className="md:col-span-2">
-                <PendingSubmitButton
-                  className={BTN_PRIMARY}
-                  disabled={selected.status !== "Pending"}
-                  idleLabel="Save onboarding details"
-                />
+                <PendingSubmitButton className={BTN_GHOST_SM} disabled={!editable} idleLabel="Save onboarding details" />
               </div>
             </form>
           </div>
 
-          <div className="mt-(--space-6) flex flex-col gap-(--space-5)">
+          <div className="mt-(--space-6) flex flex-col gap-(--space-6)">
             {checklist.map((item) => {
               const rows = byType.get(item.id) ?? [];
               const checks = requirements.filter((requirement) => requirement.doc_type === item.id);
@@ -466,20 +413,20 @@ export default async function VerificationPage({
                         ? "Awaiting verification" : "Needs attention"
                     : item.id === "payment_details" ? "Not confirmed" : "Outstanding";
               return (
-                <div key={item.id} id={`checklist-${item.id}`} className="scroll-mt-6 border-t border-hairline pt-(--space-4)">
+                <div key={item.id} id={`checklist-${item.id}`} className="scroll-mt-6 border-t border-hairline pt-(--space-5)">
                   <div className="flex flex-wrap items-center gap-(--space-3)">
-                    <h3 className="font-display text-h4 font-bold text-on-dark">{item.label}</h3>
-                    {optional && <span className={FIELD_HINT}>optional</span>}
+                    <h3 className={SUBSECTION_TITLE}>{item.label}</h3>
+                    {optional && <span className="text-xs text-on-dark-faint">optional</span>}
                     <span className={pill(done ? toneFor("Active") : toneFor("Pending"))}>
                       {stateLabel}
                     </span>
                   </div>
                   {one("section") === item.id && (problem || saved) && (
-                    <p role={problem ? "alert" : "status"} className={`${FIELD_HINT} mt-(--space-3)`}>{problem || saved}</p>
+                    <Notice tone={problem ? "error" : "ok"} className="mt-(--space-3)">{problem || saved}</Notice>
                   )}
 
                   {item.kind === "flag" ? (
-                    <div className="mt-(--space-3)">
+                    <div className="mt-(--space-3) flex flex-wrap items-center gap-(--space-4)">
                       <p className={FIELD_HINT}>
                         {item.id === "payment_details"
                           ? "Reference only — no bank data is stored."
@@ -488,20 +435,20 @@ export default async function VerificationPage({
                           : "Checked against the Australian Business Register by hand."}
                       </p>
                       {!done && !omittedAbn && selected.status !== "Closed" && !checklistUnavailable && (
-                        <form action={verifyCompanyDocument} className="mt-(--space-3)">
+                        <form action={verifyCompanyDocument}>
                           <input type="hidden" name="company_id" value={selected.id} />
                           <input type="hidden" name="expected_status" value={selected.status} />
                           <input type="hidden" name="doc_type" value={item.id} />
                           {item.id === "abn_verified" && (
                             <input type="hidden" name="expected_abn" value={selected.abn ?? ""} />
                           )}
-                          <PendingSubmitButton className={BTN_GHOST} idleLabel={`Mark ${item.label.toLowerCase()}`} pendingLabel="Verifying…" />
+                          <PendingSubmitButton className={BTN_GHOST_SM} idleLabel={`Mark ${item.label.toLowerCase()}`} pendingLabel="Verifying…" />
                         </form>
                       )}
                     </div>
                   ) : (
                     <>
-                      <div className="mt-(--space-3) overflow-x-auto">
+                      <TableFrame inset className="mt-(--space-4)">
                         <table className={TABLE}>
                           <thead>
                             <tr>
@@ -516,11 +463,7 @@ export default async function VerificationPage({
                           </thead>
                           <tbody>
                             {rows.length === 0 && (
-                              <tr>
-                                <td className={TD} colSpan={7}>
-                                  <span className="text-on-dark-muted">Nothing uploaded.</span>
-                                </td>
-                              </tr>
+                              <TableEmpty colSpan={7}>No details or file saved yet.</TableEmpty>
                             )}
                             {rows.map((doc) => {
                               const status = expiryStatus(doc.expiry_date);
@@ -529,18 +472,18 @@ export default async function VerificationPage({
                               const canAttach = !doc.file_path?.trim() && !doc.verified_at && !doc.verified_by && selected.status !== "Closed";
                               return (
                                 <tr key={doc.id} id={`document-${doc.id}`} className="scroll-mt-6">
-                                  <td className={`${TD} ${MONO}`}>{doc.number ?? "—"}</td>
+                                  <td className={`${TD} tabular-nums`}>{doc.number ?? "—"}</td>
                                   <td className={TD}>{doc.issuer ?? "—"}</td>
-                                  <td className={`${TD} ${MONO}`}>{formatDate(doc.issue_date)}</td>
-                                  <td className={`${TD} ${MONO}`}>{formatDate(doc.expiry_date)}</td>
+                                  <td className={`${TD} whitespace-nowrap tabular-nums`}>{formatDate(doc.issue_date)}</td>
+                                  <td className={`${TD} whitespace-nowrap tabular-nums`}>{formatDate(doc.expiry_date)}</td>
                                   <td className={TD}>
-                                    {!doc.file_path?.trim() ? <span className={pill(toneFor("Pending"))}>File required</span>
-                                      : status === "—" ? "No expiry recorded" : <span className={pill(toneFor(status))}>{status}</span>}
+                                    {!doc.file_path?.trim() ? <><span className={pill(toneFor("Pending"))}>File required</span><span className={`mt-(--space-2) block ${FIELD_HINT}`}>Details saved; unverified.</span></>
+                                      : status === "—" ? <span className="text-on-dark-muted">No expiry recorded</span> : <span className={pill(toneFor(status))}>{status}</span>}
                                   </td>
                                   <td className={TD}>
                                     {signed.get(doc.id) ? (
                                       <a
-                                        className={LINK}
+                                        className={`inline-flex min-h-11 items-center gap-(--space-1) text-sm font-semibold text-on-dark underline underline-offset-4 ${NAV_FOCUS}`}
                                         href={signed.get(doc.id)}
                                         rel="noopener noreferrer"
                                         target="_blank"
@@ -551,21 +494,21 @@ export default async function VerificationPage({
                                       <span className={FIELD_HINT}>{doc.file_path?.trim() ? "File unavailable" : "No file attached"}</span>
                                     )}
                                   </td>
-                                  <td className={TD}>
+                                  <td className={`${TD} min-w-[16rem]`}>
                                     {one("document") === doc.id && (problem || saved) && (
-                                      <p role={problem ? "alert" : "status"} className={`${FIELD_HINT} mb-(--space-3)`}>{problem || saved}</p>
+                                      <Notice tone={problem ? "error" : "ok"} className="mb-(--space-3)">{problem || saved}</Notice>
                                     )}
                                     {issue && <p className={`${FIELD_HINT} mb-(--space-3)`}>{issue}</p>}
                                     {doc.verified_at && (
-                                      <span className={`${MONO} text-on-dark-muted`}>
-                                        {formatDate(doc.verified_at)}
+                                      <span className="tabular-nums text-on-dark-muted">
+                                        Verified {formatDate(doc.verified_at)}
                                       </span>
                                     )}
                                     {selected.status !== "Closed" && !checklistUnavailable && (!doc.verified_at || (
                                       item.id === "trade_licence" && requiredLicences.length > 0 &&
                                       !requiredLicences.some((requirement) => requirement.qualification_id === doc.qualification_id)
                                     )) && (
-                                      <form action={verifyCompanyDocument}>
+                                      <form action={verifyCompanyDocument} className="flex flex-col gap-(--space-3)">
                                         <input type="hidden" name="company_id" value={selected.id} />
                                         <input type="hidden" name="expected_status" value={selected.status} />
                                         <input type="hidden" name="document_id" value={doc.id} />
@@ -573,7 +516,7 @@ export default async function VerificationPage({
                                         {item.id === "trade_licence" && requiredLicences.length > 0 && (
                                           <label className={FIELD}>
                                             <span className={FIELD_LABEL}>Catalogue licence</span>
-                                            <select className={INPUT} name="qualification_id" defaultValue={doc.qualification_id ?? ""} required>
+                                            <select className={INPUT_SM} name="qualification_id" defaultValue={doc.qualification_id ?? ""} required>
                                               <option value="" disabled>Choose the licence evidenced</option>
                                               {requiredLicences.map((requirement) => (
                                                 <option key={requirement.qualification_id} value={requirement.qualification_id ?? ""}>
@@ -583,8 +526,16 @@ export default async function VerificationPage({
                                             </select>
                                           </label>
                                         )}
-                                        <PendingSubmitButton className={BTN_GHOST} idleLabel="Verify" pendingLabel="Verifying…" disabled={!!issue} />
+                                        <div>
+                                          <PendingSubmitButton className={BTN_GHOST_SM} idleLabel="Verify" pendingLabel="Verifying…" disabled={!!issue} />
+                                        </div>
                                       </form>
+                                    )}
+                                    {canAttach && (
+                                      <details className="mt-(--space-3)">
+                                        <summary className="cursor-pointer py-(--space-2) font-semibold">Edit saved details</summary>
+                                        <CompanyDocumentForm key={doc.id} documentId={doc.id} document={doc} companyId={selected.id} companyStatus={selected.status} detailsOnly />
+                                      </details>
                                     )}
                                     {canAttach && (
                                       <form action={uploadCompanyDocument} className="mt-(--space-3) flex min-w-56 flex-col gap-(--space-3)">
@@ -593,11 +544,14 @@ export default async function VerificationPage({
                                         <input type="hidden" name="expected_status" value={selected.status} />
                                         <input type="hidden" name="document_id" value={doc.id} />
                                         <input type="hidden" name="doc_type" value={doc.doc_type} />
+                                        <input type="hidden" name="expected_document" value={JSON.stringify({ number: doc.number, issuer: doc.issuer, issue_date: doc.issue_date, expiry_date: doc.expiry_date })} />
                                         <label className={FIELD}>
                                           <span className={FIELD_LABEL}>Attach the existing document</span>
                                           <CompanyDocumentFileInput />
                                         </label>
-                                        <PendingSubmitButton className={BTN_GHOST} idleLabel="Attach file" pendingLabel="Uploading…" />
+                                        <div>
+                                          <PendingSubmitButton className={BTN_GHOST_SM} idleLabel="Attach file" pendingLabel="Uploading…" />
+                                        </div>
                                       </form>
                                     )}
                                   </td>
@@ -606,44 +560,21 @@ export default async function VerificationPage({
                             })}
                           </tbody>
                         </table>
-                      </div>
+                      </TableFrame>
 
                       {/* 16.1 — paperwork arrives by phone and email, so Maintain can
                           upload it on the company's behalf. The row is audited with the
                           acting admin. */}
-                      <form
-                        action={uploadCompanyDocument}
-                        encType="multipart/form-data"
-                        className="mt-(--space-4) grid gap-(--space-3) md:grid-cols-6"
-                      >
-                        <input type="hidden" name="as_maintain" value="1" />
-                        <input type="hidden" name="company_id" value={selected.id} />
-                        <input type="hidden" name="expected_status" value={selected.status} />
-                        <input type="hidden" name="doc_type" value={item.id} />
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Number</span>
-                          <input className={`${INPUT} ${MONO}`} name="number" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Issuer</span>
-                          <input className={INPUT} name="issuer" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Issued</span>
-                          <input className={INPUT} type="date" name="issue_date" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>Expires</span>
-                          <input className={INPUT} type="date" name="expiry_date" />
-                        </label>
-                        <label className={FIELD}>
-                          <span className={FIELD_LABEL}>File</span>
-                          <CompanyDocumentFileInput disabled={selected.status === "Closed"} />
-                        </label>
-                        <div className="flex items-end">
-                          <PendingSubmitButton className={BTN_GHOST} idleLabel="Upload document" pendingLabel="Uploading…" disabled={selected.status === "Closed"} />
-                        </div>
-                      </form>
+                      <div className="mt-(--space-4)">
+                        <CompanyDocumentForm
+                          key={`${selected.id}:${item.id}`}
+                          documentId={crypto.randomUUID()}
+                          docType={item.id}
+                          companyId={selected.id}
+                          companyStatus={selected.status}
+                          disabled={selected.status === "Closed"}
+                        />
+                      </div>
                     </>
                   )}
                 </div>
@@ -653,14 +584,16 @@ export default async function VerificationPage({
 
           {/* -------------------------------------------------- 1.5 decision */}
           {selected.status === "Pending" && (
-          <div className="mt-(--space-7) grid gap-(--space-6) border-t border-hairline pt-(--space-5) lg:grid-cols-2">
+          <div className="mt-(--space-7) grid gap-(--space-8) border-t border-hairline pt-(--space-5) lg:grid-cols-2">
             <form action={approveCompany} className="flex flex-col gap-(--space-3)">
-              <h3 className="font-display text-h4 font-bold text-on-dark">Approve</h3>
-              <p className={FIELD_HINT}>
-                Sets the company Active and emails it. From then on it can list spare
-                capacity and post requirements. Missing information or files do not block
-                admin approval. Document verification statuses stay unchanged.
-              </p>
+              <div>
+                <h3 className={SUBSECTION_TITLE}>Approve</h3>
+                <p className={`${FIELD_HINT} mt-(--space-1)`}>
+                  Sets the company Active and emails it. From then on it can list spare
+                  capacity and post requirements. Missing information or files do not block
+                  admin approval. Document verification statuses stay unchanged.
+                </p>
+              </div>
               <input type="hidden" name="company_id" value={selected.id} />
               <input type="hidden" name="expected_status" value={selected.status} />
               <ApprovalSubmitButton
@@ -670,11 +603,13 @@ export default async function VerificationPage({
             </form>
 
             <form action={rejectCompany} className="flex flex-col gap-(--space-3)">
-              <h3 className="font-display text-h4 font-bold text-on-dark">Reject</h3>
-              <p className={FIELD_HINT}>
-                The company stays Pending, the reason is audited, and the company is told
-                what is missing.
-              </p>
+              <div>
+                <h3 className={SUBSECTION_TITLE}>Reject</h3>
+                <p className={`${FIELD_HINT} mt-(--space-1)`}>
+                  The company stays Pending, the reason is audited, and the company is told
+                  what is missing.
+                </p>
+              </div>
               <input type="hidden" name="company_id" value={selected.id} />
               <input type="hidden" name="expected_status" value={selected.status} />
               <label className={FIELD}>

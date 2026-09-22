@@ -1,23 +1,32 @@
 import type { Metadata } from "next";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
+import { PageHeader, SectionHeader } from "@/components/admin-page";
+import { Icon } from "@/components/icon";
 import { requireMaintainAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCommitting } from "@/lib/domain/availability";
 import { formatCentsExGst } from "@/lib/domain/money";
 import { brisbaneToday } from "@/lib/cron";
-import { H1, H2, PANEL, LABEL } from "@/lib/ui";
-import { MONO } from "@/lib/platform-ui";
+import { LABEL, NAV_FOCUS, PANEL } from "@/lib/ui";
+import { formatDate } from "@/lib/platform-ui";
 import { collectReportPages } from "@/lib/admin-reporting";
+import { cn } from "@/lib/utils";
 
 // Maintain marketplace dashboard — spec 14.2.
 //
-// Basic cards only: supply, demand, matches, engagements, and four marketplace figures.
-// Explicitly not an analytics platform — 14.3's CSV exports are the only reporting
-// facility in MVP, and every number here is a count or a sum of frozen estimates.
+// Basic figures only: supply, demand, matches, engagements, and four marketplace
+// totals. Explicitly not an analytics platform — 14.3's CSV exports are the only
+// reporting facility in MVP, and every number here is a count or a sum of frozen
+// estimates.
 //
 // The aggregation happens in TypeScript over modest row sets rather than in SQL views:
 // year-one volumes are ≤200 companies, ≤5,000 workers and ≤500 open lines (11.5), and a
 // readable derivation that matches the spec's own arithmetic beats a clever query.
+//
+// Layout: a ledger, not a card grid. Supply sits beside demand because that gap is
+// the marketplace; the proposals waiting on a party sit beside it; the commercial
+// book and the cumulative totals run underneath as hairline-divided figures.
 //
 // Amber budget (DESIGN.md): one — the Overdue count. An engagement past its start date
 // without the commercial trigger is the only number on this screen that means work may
@@ -162,157 +171,192 @@ export default async function MarketplaceDashboard() {
   );
 
   return (
-    <div className="flex flex-col gap-(--space-7)">
-      <header>
-        <h1 className={H1}>Marketplace</h1>
-        <p className="mt-(--space-3) max-w-[70ch] text-body-lg text-on-dark-muted">
-          Supply against demand, what is waiting on a party, and what is on the books.
-          Availability, fill and commit figures are derived at read time — nothing here is
-          a stored counter that can drift.
-        </p>
-      </header>
+    <div className="flex flex-col gap-(--space-6)">
+      <PageHeader
+        title="Marketplace"
+        lead="Supply against demand, what is waiting on a party, and what is on the books. Every figure is derived at read time — nothing here is a stored counter that can drift."
+        meta={
+          <>
+            <span>As at {formatDate(today)}</span>
+            <span aria-hidden="true" className="text-on-dark-faint">·</span>
+            <span>Australia/Brisbane</span>
+          </>
+        }
+      />
 
-      <Section title="Supply" href="/admin/matching" hint="Open capacity lines covering today">
-        <Stat label="Available crew" value={availableWorkers.size} note="Not committed today" />
-        <Stat
-          label="Available hours"
-          value={Math.round(availableHoursPerWeek)}
-          note="Per week across open lines"
-        />
-        <Stat label="Upcoming capacity" value={upcomingLines} note="Lines opening later" />
-      </Section>
+      <div className="grid gap-(--space-5) lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <Panel step={0}>
+          <SectionHeader
+            title="Supply against demand"
+            hint="Open capacity covering today, beside the requirement lines still seeking crew."
+            actions={<PanelLink href="/admin/matching">Open matching</PanelLink>}
+          />
+          <div className="mt-(--space-5) grid gap-x-(--space-8) gap-y-(--space-6) sm:grid-cols-2">
+            <Ledger heading="Supply">
+              <Row label="Available crew" value={availableWorkers.size} note="Not committed today" />
+              <Row label="Available hours" value={Math.round(availableHoursPerWeek)} note="Per week across open lines" />
+              <Row label="Upcoming capacity" value={upcomingLines} note="Lines opening later" />
+            </Ledger>
+            <Ledger heading="Demand">
+              <Row label="Open requirements" value={demandRows.length} note="Lines seeking crew" />
+              <Row label="Crew required" value={requiredWorkers} note="Across those lines" />
+              <Row label="Hours required" value={Math.round(requiredHoursPerWeek)} note="Per week across those lines" />
+              <Row label="Unfilled demand" value={unfilledDemand} note="Requested minus filled, per 10.3" />
+            </Ledger>
+          </div>
+        </Panel>
 
-      <Section title="Demand" href="/admin/matching" hint="Open and partially filled lines">
-        <Stat label="Open requirements" value={demandRows.length} note="Lines seeking crew" />
-        <Stat label="Crew required" value={requiredWorkers} note="Across those lines" />
-        <Stat
-          label="Hours required"
-          value={Math.round(requiredHoursPerWeek)}
-          note="Per week across those lines"
-        />
-        <Stat
-          label="Unfilled demand"
-          value={unfilledDemand}
-          note="Requested minus filled, per 10.3"
-        />
-      </Section>
+        <Panel step={1}>
+          <SectionHeader
+            title="Waiting on a party"
+            hint="Proposals in flight, and declines on lines that still need crew."
+            actions={<PanelLink href="/admin/matching">Matching</PanelLink>}
+          />
+          <ul className="mt-(--space-4) divide-y divide-hairline">
+            <Row label="Awaiting supplier" value={awaitingSupplier} note="Proposed, not yet answered" />
+            <Row label="Awaiting buyer" value={awaitingBuyer} note="Supplier accepted and nominated" />
+            <Row label="Declined, needs attention" value={declinedNeedingAttention} note="Requirement still open" />
+          </ul>
+        </Panel>
+      </div>
 
-      <Section title="Matches" href="/admin/matching" hint="Proposals in flight">
-        <Stat label="Awaiting supplier" value={awaitingSupplier} note="Proposed, not yet answered" />
-        <Stat label="Awaiting buyer" value={awaitingBuyer} note="Supplier accepted and nominated" />
-        <Stat
-          label="Declined, needs attention"
-          value={declinedNeedingAttention}
-          note="Requirement still open"
+      <Panel step={2}>
+        <SectionHeader
+          title="Engagements"
+          hint="The commercial book. Overdue is a start date reached without the commercial trigger."
+          actions={<PanelLink href="/admin/engagements">Open the register</PanelLink>}
         />
-      </Section>
+        <Figures className="mt-(--space-5) grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+          <Figure
+            label="Awaiting commercial"
+            value={awaitingCommercial.length}
+            note="Pre-authorisation not yet recorded"
+            href="/admin/engagements?status=Awaiting%20Commercial"
+          />
+          <Figure
+            label="Overdue"
+            value={overdue}
+            note="Start date reached without the trigger"
+            href="/admin/engagements?timing=overdue"
+            emphasis
+          />
+          <Figure label="Confirmed" value={confirmed.length} note="Commercial trigger recorded" href="/admin/engagements?status=Confirmed" />
+          <Figure label="Upcoming" value={upcoming} note="Confirmed, starting after today" href="/admin/engagements?timing=upcoming" />
+          <Figure label="Active" value={active} note="On site now" href="/admin/engagements?status=Active" />
+          <Figure label="Completed" value={completed} note="Finished, outcome recorded" href="/admin/engagements?status=Completed" />
+        </Figures>
+      </Panel>
 
-      <Section title="Engagements" href="/admin/engagements" hint="The commercial book">
-        <Stat
-          label="Awaiting commercial"
-          value={awaitingCommercial.length}
-          note="Pre-authorisation not yet recorded"
-          href="/admin/engagements?status=Awaiting%20Commercial"
+      <Panel step={3}>
+        <SectionHeader
+          title="Marketplace"
+          hint="Cumulative. Estimates are ex GST and frozen at engagement creation."
+          actions={<PanelLink href="/admin/companies">Companies</PanelLink>}
         />
-        <Stat
-          label="Overdue"
-          value={overdue}
-          note="Start date reached without the trigger"
-          href="/admin/engagements?timing=overdue"
-          emphasis
-        />
-        <Stat label="Confirmed" value={confirmed.length} note="Commercial trigger recorded" href="/admin/engagements?status=Confirmed" />
-        <Stat label="Upcoming" value={upcoming} note="Confirmed, starting after today" href="/admin/engagements?timing=upcoming" />
-        <Stat label="Active" value={active} note="On site now" href="/admin/engagements?status=Active" />
-        <Stat label="Completed" value={completed} note="Finished, outcome recorded" href="/admin/engagements?status=Completed" />
-      </Section>
-
-      <Section title="Marketplace" href="/admin/companies" hint="Cumulative, estimates ex GST">
-        <Stat label="Active companies" value={companies.count ?? 0} note="Verified and trading" />
-        <Stat label="Crew on the platform" value={workers.count ?? 0} note="All company records" />
-        <StatText
-          label="Estimated transaction value"
-          value={formatCentsExGst(transactionValue)}
-          note="Frozen at engagement creation"
-        />
-        <StatText
-          label="Estimated Maintain revenue"
-          value={formatCentsExGst(maintainRevenue)}
-          note="Buyer value less supplier value"
-        />
-      </Section>
+        <Figures className="mt-(--space-5) grid-cols-2 lg:grid-cols-4">
+          <Figure label="Active companies" value={companies.count ?? 0} note="Verified and trading" />
+          <Figure label="Crew on the platform" value={workers.count ?? 0} note="All company records" />
+          <Figure label="Estimated transaction value" value={formatCentsExGst(transactionValue)} note="Frozen at engagement creation" compact />
+          <Figure label="Estimated Maintain revenue" value={formatCentsExGst(maintainRevenue)} note="Buyer value less supplier value" compact />
+        </Figures>
+      </Panel>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ pieces ---- */
 
-function Section({
-  title,
-  hint,
-  href,
-  children,
-}: {
-  title: string;
-  hint: string;
-  href: string;
-  children: React.ReactNode;
-}) {
+/** The page's one authored entrance: panels rise in order, 90ms apart. */
+function Panel({ step, children }: { step: number; children: ReactNode }) {
   return (
-    <section>
-      <div className="flex flex-wrap items-baseline justify-between gap-(--space-3)">
-        <h2 className={H2}>{title}</h2>
-        <Link
-          href={href}
-          className="text-body font-semibold text-on-dark-muted underline underline-offset-4 hover:text-on-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark"
-        >
-          {hint}
-        </Link>
-      </div>
-      <div className="mt-(--space-4) grid gap-(--space-4) sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-        {children}
-      </div>
+    <section className={`${PANEL} mw-enter p-(--space-5)`} style={{ "--enter-step": step } as CSSProperties}>
+      {children}
     </section>
   );
 }
 
-function Stat({
+function PanelLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className={`mw-cta inline-flex min-h-11 items-center gap-(--space-2) text-sm font-semibold text-on-dark-muted transition-colors duration-(--dur-base) ease-(--ease-out) hover:text-on-dark ${NAV_FOCUS}`}
+    >
+      {children}
+      <Icon name="i-arrow-right" className="size-4" />
+    </Link>
+  );
+}
+
+function Ledger({ heading, children }: { heading: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className={`${LABEL} border-b border-hairline pb-(--space-2)`}>{heading}</p>
+      <ul className="divide-y divide-hairline">{children}</ul>
+    </div>
+  );
+}
+
+/** A ledger line: label and note on the left, the figure set against the right edge. */
+function Row({ label, value, note }: { label: string; value: number; note: string }) {
+  return (
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-(--space-4) py-(--space-3)">
+      <p className="text-sm font-semibold text-on-dark">{label}</p>
+      <p className="row-span-2 font-display text-h3 font-extrabold leading-none tracking-(--tracking-tight) text-on-dark tabular-nums">
+        {value}
+      </p>
+      <p className="mt-0.5 text-xs text-on-dark-faint">{note}</p>
+    </li>
+  );
+}
+
+/** Hairline-divided figure tiles: one panel, not a card per number. */
+function Figures({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("grid gap-px overflow-hidden rounded-(--radius-md) border border-hairline bg-hairline", className)}>
+      {children}
+    </div>
+  );
+}
+
+function Figure({
   label,
   value,
   note,
-  emphasis,
   href,
+  emphasis,
+  compact,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   note: string;
-  emphasis?: boolean;
   href?: string;
+  emphasis?: boolean;
+  compact?: boolean;
 }) {
   const body = (
     <>
       <p className={LABEL}>{label}</p>
       <p
-        className={`${MONO} mt-(--space-3) text-h1 font-extrabold ${
-          emphasis && value > 0 ? "text-primary" : "text-on-dark"
-        }`}
+        className={cn(
+          "mt-(--space-2) font-display font-extrabold leading-none tracking-(--tracking-display) tabular-nums [overflow-wrap:anywhere]",
+          compact ? "text-h3" : "text-h2",
+          emphasis && typeof value === "number" && value > 0 ? "text-primary" : "text-on-dark",
+        )}
       >
         {value}
       </p>
-      <p className="mt-(--space-2) text-sm text-on-dark-muted">{note}</p>
+      <p className="mt-(--space-2) text-xs text-on-dark-faint">{note}</p>
     </>
   );
+  const cell = "flex min-w-0 flex-col bg-black-2 p-(--space-4)";
   return href ? (
-    <Link href={href} className={`${PANEL} p-(--space-5) transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark`}>{body}</Link>
-  ) : <div className={`${PANEL} p-(--space-5)`}>{body}</div>;
-}
-
-function StatText({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className={`${PANEL} p-(--space-5)`}>
-      <p className={LABEL}>{label}</p>
-      <p className={`${MONO} mt-(--space-3) text-h3 font-extrabold text-on-dark`}>{value}</p>
-      <p className="mt-(--space-2) text-sm text-on-dark-muted">{note}</p>
-    </div>
+    <Link
+      href={href}
+      className={cn(cell, "transition-colors duration-(--dur-fast) ease-(--ease-out) hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-on-dark")}
+    >
+      {body}
+    </Link>
+  ) : (
+    <div className={cell}>{body}</div>
   );
 }

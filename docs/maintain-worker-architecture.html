@@ -1,0 +1,2860 @@
+﻿<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maintain Worker System Architecture</title>
+<meta name="description" content="How the Maintain Worker workforce exchange operates: architecture, tenancy, account approval, matching, engagements and the daily clock.">
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   Maintain Worker, the Hi-Vis Standard.
+   Tokens mirror public/design-system/tokens.css and DESIGN.md. The page
+   is dark from header to footer; no section flips theme. Amber marks the
+   next thing worth looking at and nothing else.
+   ------------------------------------------------------------------ */
+:root {
+  --paper:        #07272D;
+  --paper-deep:   #051F24;
+  --paper-band:   #101820;
+  --panel:        #0C1319;
+
+  --ink:          #FFFFFF;
+  --muted:        rgba(255,255,255,0.70);
+  --faint:        rgba(255,255,255,0.55);
+  --rule:         rgba(255,255,255,0.10);
+  --rule-strong:  rgba(255,255,255,0.25);
+
+  --amber:        #FFC400;
+  --amber-tint-2: #FFE699;
+  --teal-mist:    #66A1AB;
+
+  --status-active:    #22A05B;
+  --status-scheduled: #3B82F6;
+  --status-pending:   #D97706;
+  --status-overdue:   #EA580C;
+  --status-critical:  #DC2626;
+
+  --font: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  --measure: 68ch;
+  --dur: 260ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tracking is size specific. Large type is set tighter, body sits near zero. */
+h1, h2, h3, h4 { text-wrap: balance; }
+p, li { text-wrap: pretty; }
+
+/* ---------------- layout ---------------- */
+
+.shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 1120px) {
+  .shell { padding: 0 40px; }
+  .body-grid {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    gap: 64px;
+    align-items: start;
+  }
+}
+
+/* ---------------- masthead ---------------- */
+
+.masthead {
+  position: relative;
+  border-bottom: 1px solid var(--rule);
+  background:
+    radial-gradient(58% 58% at 74% 16%, rgba(255,196,0,0.14), transparent 70%),
+    linear-gradient(rgba(255,196,0,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,196,0,0.05) 1px, transparent 1px);
+  background-size: auto, 40px 40px, 40px 40px;
+}
+
+.masthead-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 56px 16px 64px;
+}
+@media (min-width: 1120px) { .masthead-inner { padding: 88px 40px 96px; } }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+.brand svg { width: 28px; height: auto; display: block; }
+.brand-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  font-size: clamp(2.5rem, 6vw, 4.25rem);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  max-width: 18ch;
+}
+
+.standfirst {
+  margin-top: 24px;
+  font-size: clamp(1.0625rem, 1.6vw, 1.1875rem);
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 58ch;
+}
+
+.factstrip {
+  margin-top: 48px;
+  display: grid;
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+@media (min-width: 720px) { .factstrip { grid-template-columns: repeat(4, 1fr); } }
+
+.fact { background: var(--paper); padding: 20px 22px; }
+.fact dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.fact dd {
+  margin-top: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+/* ---------------- side navigation ---------------- */
+
+.toc { margin: 40px 0 0; }
+@media (min-width: 1120px) {
+  .toc {
+    position: sticky;
+    top: 32px;
+    margin: 72px 0 0;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+}
+.toc-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+.toc ol { list-style: none; margin-top: 8px; }
+.toc a {
+  display: flex;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+.toc a:hover, .toc a:focus-visible { color: var(--ink); }
+.toc a .n { color: var(--faint); font-variant-numeric: tabular-nums; }
+.toc a[aria-current="true"] { color: var(--amber); }
+.toc a[aria-current="true"] .n { color: var(--amber); }
+
+/* ---------------- sections ---------------- */
+
+main { padding-bottom: 96px; }
+
+section[id] {
+  scroll-margin-top: 24px;
+  padding: 72px 0;
+  border-top: 1px solid var(--rule);
+}
+section[id]:first-of-type { border-top: 0; }
+@media (min-width: 1120px) { section[id] { padding: 88px 0; } }
+
+.sec-head { margin-bottom: 36px; }
+/* DESIGN.md: numerals stay Headline-weight Manrope, never a tracked eyebrow
+   label. Caps and 0.08em tracking are reserved for operational strings. */
+.sec-num {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--amber);
+  margin-bottom: 12px;
+  font-variant-numeric: tabular-nums;
+}
+h2 {
+  font-size: clamp(1.75rem, 3.4vw, 2.625rem);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  max-width: 20ch;
+}
+h3 {
+  margin-top: 44px;
+  font-size: 1.3125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+}
+h4 {
+  margin-top: 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+p { margin-top: 16px; max-width: var(--measure); color: var(--muted); }
+p.lead { font-size: 1.125rem; line-height: 1.6; max-width: 60ch; color: var(--muted); }
+p strong, li strong { color: var(--ink); font-weight: 700; }
+
+ul.points, ol.points { margin-top: 18px; max-width: var(--measure); list-style: none; }
+ul.points > li, ol.points > li {
+  position: relative;
+  padding: 12px 0 12px 22px;
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+}
+ul.points > li:first-child, ol.points > li:first-child { border-top: 0; padding-top: 0; }
+ul.points > li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 22px;
+  width: 8px; height: 1px;
+  background: var(--rule-strong);
+}
+ul.points > li:first-child::before { top: 10px; }
+ol.points { counter-reset: pt; }
+ol.points > li { counter-increment: pt; padding-left: 34px; }
+ol.points > li::before {
+  content: counter(pt, decimal-leading-zero);
+  position: absolute;
+  left: 0; top: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+ol.points > li:first-child::before { top: 0; }
+
+code {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.9375em;
+  color: var(--ink);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+a.ref { color: var(--teal-mist); text-decoration: none; border-bottom: 1px solid rgba(102,161,171,0.4); }
+a.ref:hover, a.ref:focus-visible { color: var(--ink); border-bottom-color: var(--ink); }
+
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 2px; }
+
+/* ---------------- panels, tables, chips ---------------- */
+
+.panel {
+  margin-top: 32px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  padding: 24px;
+}
+@media (min-width: 720px) { .panel { padding: 32px; } }
+.panel > :first-child { margin-top: 0; }
+.panel h4:first-child { margin-top: 0; }
+
+.panel.accent { border-color: rgba(255,196,0,0.45); background: rgba(255,196,0,0.05); }
+
+.tablewrap {
+  margin-top: 28px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  overflow-x: auto;
+}
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 0.9375rem; }
+caption {
+  text-align: left;
+  padding: 18px 22px 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+th, td { text-align: left; padding: 14px 22px; vertical-align: top; line-height: 1.5; }
+thead th {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+tbody tr + tr td { border-top: 1px solid var(--rule); }
+tbody td { color: var(--muted); }
+tbody td:first-child { color: var(--ink); font-weight: 600; }
+td.yes { color: var(--ink); }
+td.no { color: var(--faint); }
+
+/* Status is a dot plus a written label. Colour never carries it alone. */
+.status { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.status .dot { width: 8px; height: 8px; border-radius: var(--r-pill); flex: none; }
+.status .lab {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dot-active    { background: var(--status-active); }
+.dot-scheduled { background: var(--status-scheduled); }
+.dot-pending   { background: var(--status-pending); }
+.dot-overdue   { background: var(--status-overdue); }
+.dot-critical  { background: var(--status-critical); }
+
+.chiprow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.chip {
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  padding: 5px 14px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ---------------- figures ---------------- */
+
+figure { margin-top: 40px; }
+.figscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+figure svg { display: block; width: 100%; min-width: 880px; height: auto; }
+figcaption {
+  margin-top: 16px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--faint);
+  max-width: 64ch;
+}
+figcaption b { color: var(--muted); font-weight: 700; }
+
+/* ---------------- footer ---------------- */
+
+footer {
+  border-top: 1px solid var(--rule);
+  background: var(--paper-deep);
+}
+.footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 48px 16px 64px;
+  display: grid;
+  gap: 28px;
+}
+@media (min-width: 1120px) {
+  .footer-inner { padding: 56px 40px 72px; grid-template-columns: 1.3fr 1fr 1fr; gap: 48px; }
+}
+.footer-inner h4 { margin-top: 0; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.footer-inner p { margin-top: 12px; font-size: 0.875rem; color: var(--muted); }
+.footer-inner ul { list-style: none; margin-top: 12px; }
+.footer-inner li { font-size: 0.875rem; color: var(--muted); padding: 4px 0; }
+
+/* This is a reference document, so it does not animate. The only scripted
+   behaviour is marking the section the reader is currently in. */
+@media (prefers-reduced-transparency: reduce) {
+  .masthead { background: var(--paper); }
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <svg viewBox="0 0 146 93" fill="none" aria-hidden="true" focusable="false">
+        <path d="M145.266 50.8169V91.6312C145.266 92.2738 144.749 92.8012 144.096 92.8012H106.102C105.066 92.8012 104.538 91.5449 105.277 90.8065L145.266 50.8169Z" fill="#FFC400"/>
+        <path d="M145.267 1.16959V50.8258H137.193C135.649 50.8258 134.162 51.4395 133.069 52.5328L93.1464 92.4552C92.9258 92.6758 92.6285 92.8005 92.3217 92.8005H53.6458C52.6101 92.8005 52.0827 91.5442 52.8211 90.8058L143.282 0.344859C144.02 -0.393559 145.277 0.133883 145.277 1.16959H145.267Z" fill="#FFC400"/>
+        <path d="M92.8005 1.16959V50.8258H84.7258C83.1819 50.8258 81.6955 51.4395 80.6022 52.5328L40.6797 92.4552C40.4592 92.6758 40.1619 92.8005 39.855 92.8005H1.16959C0.133883 92.8005 -0.393558 91.5442 0.344859 90.8058L90.8058 0.344859C91.5442 -0.393559 92.8005 0.133883 92.8005 1.16959Z" fill="#FFC400"/>
+      </svg>
+      <span class="brand-name">Maintain Worker</span>
+    </div>
+
+    <h1>How the workforce exchange is built</h1>
+    <p class="standfirst">
+      Maintain Worker is Australia's business-to-business workforce exchange for construction.
+      One company lists spare crew, another states a shortfall, and Maintain introduces the two.
+      This document describes the system that runs it: its architecture, how a company account is
+      approved, how the exchange actually moves, and why it is put together this way.
+    </p>
+
+    <dl class="factstrip">
+      <div class="fact">
+        <dt>Marketplace unit</dt>
+        <dd>The company, never the individual worker</dd>
+      </div>
+      <div class="fact">
+        <dt>Runtime</dt>
+        <dd>Next.js 16 on Vercel, Supabase Postgres 17</dd>
+      </div>
+      <div class="fact">
+        <dt>Identity</dt>
+        <dd>Clerk, trusted by Postgres as a third-party issuer</dd>
+      </div>
+      <div class="fact">
+        <dt>Operating clock</dt>
+        <dd>Australia/Brisbane, one nightly transaction</dd>
+      </div>
+    </dl>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="body-grid">
+
+    <nav class="toc" aria-label="Contents">
+      <p class="toc-title">Contents</p>
+      <ol>
+        <li><a href="#exchange"><span class="n">01</span><span>What the exchange is</span></a></li>
+        <li><a href="#architecture"><span class="n">02</span><span>System architecture</span></a></li>
+        <li><a href="#trust"><span class="n">03</span><span>Trust boundaries</span></a></li>
+        <li><a href="#identity"><span class="n">04</span><span>Identity and tenancy</span></a></li>
+        <li><a href="#registration"><span class="n">05</span><span>Registration and intake</span></a></li>
+        <li><a href="#approval"><span class="n">06</span><span>Account approval</span></a></li>
+        <li><a href="#users"><span class="n">07</span><span>Users and membership</span></a></li>
+        <li><a href="#capability"><span class="n">08</span><span>What each status permits</span></a></li>
+        <li><a href="#matching"><span class="n">09</span><span>Supply, demand, matching</span></a></li>
+        <li><a href="#engagement"><span class="n">10</span><span>Engagements and transfers</span></a></li>
+        <li><a href="#datamodel"><span class="n">11</span><span>The data model</span></a></li>
+        <li><a href="#clock"><span class="n">12</span><span>The daily clock</span></a></li>
+        <li><a href="#why"><span class="n">13</span><span>Why it is built this way</span></a></li>
+        <li><a href="#notes"><span class="n">14</span><span>Operational notes</span></a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+<!-- =========================================================
+     01  WHAT THE EXCHANGE IS
+     ========================================================= -->
+<section id="exchange">
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <h2>What the exchange is</h2>
+  </div>
+
+  <p class="lead">
+    Construction companies swing between two problems within the same month. In April a crew
+    finishes early and sits idle. In May the same business wins work it cannot staff. Maintain
+    Worker is the exchange where those two states meet, directly, between businesses.
+  </p>
+
+  <p>
+    The product has one audience with two postures. A company that has <strong>capacity
+    available</strong> lists the crew it can spare. A company with a <strong>shortfall</strong>
+    posts what it needs: trade, level, headcount, dates, hours, region. There is no buyer account
+    and no supplier account, and no mode to switch between them. The same login does both, because
+    the same business does both.
+  </p>
+
+  <p>
+    Every introduction in this version is made by a person at Maintain. The software finds and
+    ranks the candidates, enforces the compliance rules and holds the commercial terms still, but a
+    Maintain admin decides which proposal to put in front of which company. That is a deliberate
+    choice about trust rather than a gap in the build.
+  </p>
+
+  <h3>The rule everything else follows</h3>
+  <p>
+    <strong>The unit of the marketplace is the company.</strong> A worker is never listed, never
+    browsed, never searched and never named to the other side before a deal is commercially
+    confirmed. There is no cross-company worker directory anywhere in the product. The hiring
+    business approves a <em>shape</em>: a trade, a level, a headcount and a window. The supplying
+    business chooses which of its people go.
+  </p>
+  <p>
+    This is what makes the compliance work meaningful. Verifying one ABN, one public liability
+    policy and one workers compensation policy per business is tractable. Verifying them per person
+    per job is not, which is the cost every head contractor currently pays.
+  </p>
+
+  <div class="chiprow">
+    <span class="chip">Roofing</span>
+    <span class="chip">Plumbing</span>
+    <span class="chip">Carpentry</span>
+    <span class="chip">Electrical</span>
+    <span class="chip">South East Queensland</span>
+  </div>
+</section>
+
+<!-- =========================================================
+     02  SYSTEM ARCHITECTURE
+     ========================================================= -->
+<section id="architecture">
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <h2>System architecture</h2>
+  </div>
+
+  <p class="lead">
+    One deployable and one database. A single Next.js 16 App Router application on Vercel serves
+    the public site, the company workspace and the Maintain admin console. Everything durable lives
+    in one Supabase Postgres project.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="arch-title arch-desc">
+        <title id="arch-title">Maintain Worker system architecture</title>
+        <desc id="arch-desc">A browser and a scheduled job reach one Next.js application on Vercel, which is gated at the edge by a Clerk proxy and calls out to Clerk for identity, Supabase Postgres for all business state, Supabase Storage for compliance documents, and Resend for email.</desc>
+        <defs>
+          <marker id="a-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="a-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+          <marker id="a-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#66A1AB"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- zones (painted before arrows and nodes) -->
+        <rect x="32" y="72" width="176" height="288" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="64" y="76" width="64" height="12" rx="2" fill="#07272D"/>
+        <text x="96" y="85" fill="rgba(255,255,255,0.40)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">CLIENTS</text>
+
+        <rect x="240" y="72" width="352" height="392" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="376" y="76" width="80" height="12" rx="2" fill="#07272D"/>
+        <text x="416" y="85" fill="rgba(255,255,255,0.40)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">VERCEL</text>
+
+        <rect x="624" y="72" width="344" height="440" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="716" y="76" width="160" height="12" rx="2" fill="#07272D"/>
+        <text x="796" y="85" fill="rgba(255,255,255,0.40)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">MANAGED SERVICES</text>
+
+        <!-- arrows (drawn before boxes) -->
+        <line x1="184" y1="152" x2="268" y2="152" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#a-arrow)"/>
+        <line x1="344" y1="184" x2="344" y2="236" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#a-arrow)"/>
+        <path d="M 184,288 H 220 Q 228,288 228,296 V 392 Q 228,400 236,400 H 268" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#a-arrow)"/>
+        <line x1="344" y1="368" x2="344" y2="324" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#a-arrow)"/>
+
+        <path d="M 560,256 H 592 Q 600,256 600,248 V 144 Q 600,136 608,136 H 676" fill="none" stroke="#66A1AB" stroke-width="1.2" marker-end="url(#a-arrow-link)"/>
+        <line x1="560" y1="272" x2="676" y2="272" stroke="#FFC400" stroke-width="1.2" marker-end="url(#a-arrow-accent)"/>
+        <path d="M 560,288 H 616 Q 624,288 624,296 V 368 Q 624,376 632,376 H 676" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#a-arrow)"/>
+        <path d="M 560,304 H 640 Q 648,304 648,312 V 460 Q 648,468 656,468 H 676" fill="none" stroke="#66A1AB" stroke-width="1.2" marker-end="url(#a-arrow-link)"/>
+
+        <!-- arrow labels: opaque mask, 8px clear of the stroke -->
+        <rect x="200" y="132" width="34" height="12" rx="2" fill="#07272D"/>
+        <text x="217" y="141" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">HTTPS</text>
+
+        <rect x="352" y="198" width="86" height="12" rx="2" fill="#07272D"/>
+        <text x="356" y="207" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">CLERK SESSION</text>
+
+        <rect x="236" y="330" width="76" height="12" rx="2" fill="#07272D"/>
+        <text x="274" y="339" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">CRON SECRET</text>
+
+        <rect x="352" y="338" width="60" height="12" rx="2" fill="#07272D"/>
+        <text x="356" y="347" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">DAILY JOB</text>
+
+        <rect x="514" y="190" width="76" height="12" rx="2" fill="#07272D"/>
+        <text x="588" y="199" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="end" letter-spacing="0.08em">BACKEND API</text>
+
+        <rect x="572" y="250" width="92" height="12" rx="2" fill="#07272D"/>
+        <text x="618" y="259" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">JWT AND RPC</text>
+
+        <rect x="546" y="338" width="68" height="12" rx="2" fill="#07272D"/>
+        <text x="612" y="347" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="end" letter-spacing="0.08em">SIGNED URL</text>
+
+        <rect x="588" y="410" width="50" height="12" rx="2" fill="#07272D"/>
+        <text x="636" y="419" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="end" letter-spacing="0.08em">OUTBOX</text>
+
+        <!-- nodes -->
+        <rect x="56" y="120" width="128" height="64" rx="6" fill="#07272D"/>
+        <rect x="56" y="120" width="128" height="64" rx="6" fill="rgba(102,161,171,0.12)" stroke="#8F9EA1" stroke-width="1"/>
+        <rect x="64" y="126" width="34" height="12" rx="2" fill="none" stroke="rgba(143,158,161,0.4)" stroke-width="0.8"/>
+        <text x="81" y="135" fill="rgba(143,158,161,0.9)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">USER</text>
+        <text x="120" y="158" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Browser</text>
+        <text x="120" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">company and staff</text>
+
+        <rect x="56" y="256" width="128" height="64" rx="6" fill="#07272D"/>
+        <rect x="56" y="256" width="128" height="64" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <rect x="64" y="262" width="34" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.8"/>
+        <text x="81" y="271" fill="rgba(255,255,255,0.5)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">CRON</text>
+        <text x="120" y="294" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Vercel Cron</text>
+        <text x="120" y="308" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">00:00 Brisbane</text>
+
+        <rect x="272" y="120" width="144" height="64" rx="6" fill="#07272D"/>
+        <rect x="272" y="120" width="144" height="64" rx="6" fill="rgba(255,196,0,0.05)" stroke="rgba(255,196,0,0.50)" stroke-width="1" stroke-dasharray="4,4"/>
+        <rect x="280" y="126" width="38" height="12" rx="2" fill="none" stroke="rgba(255,196,0,0.4)" stroke-width="0.8"/>
+        <text x="299" y="135" fill="rgba(255,196,0,0.85)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">EDGE</text>
+        <text x="344" y="158" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">proxy.ts</text>
+        <text x="344" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">gates /app and /admin</text>
+
+        <rect x="272" y="240" width="288" height="84" rx="6" fill="#07272D"/>
+        <rect x="272" y="240" width="288" height="84" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <rect x="280" y="246" width="40" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="300" y="255" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">APP</text>
+        <text x="416" y="282" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Server Components and Server Actions</text>
+        <text x="416" y="298" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">public site, company workspace, admin console</text>
+        <text x="416" y="312" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">guards run before any database client is opened</text>
+
+        <rect x="272" y="368" width="144" height="64" rx="6" fill="#07272D"/>
+        <rect x="272" y="368" width="144" height="64" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <rect x="280" y="374" width="42" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="301" y="383" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">ROUTE</text>
+        <text x="344" y="406" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">/api/cron/daily</text>
+        <text x="344" y="420" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">bearer token only</text>
+
+        <rect x="680" y="104" width="144" height="64" rx="6" fill="#07272D"/>
+        <rect x="680" y="104" width="144" height="64" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <rect x="688" y="110" width="52" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.8"/>
+        <text x="714" y="119" fill="rgba(255,255,255,0.5)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">IDENTITY</text>
+        <text x="752" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Clerk</text>
+        <text x="752" y="156" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">sessions, invitations, staff role</text>
+
+        <rect x="680" y="232" width="144" height="80" rx="6" fill="#07272D"/>
+        <rect x="680" y="232" width="144" height="80" rx="6" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <rect x="688" y="238" width="34" height="12" rx="2" fill="none" stroke="rgba(255,196,0,0.5)" stroke-width="0.8"/>
+        <text x="705" y="247" fill="#FFC400" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">DATA</text>
+        <text x="752" y="272" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Supabase Postgres</text>
+        <text x="752" y="288" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">37 tables, 12 enums, RLS</text>
+        <text x="752" y="302" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">the business rulebook</text>
+
+        <rect x="680" y="344" width="144" height="64" rx="6" fill="#07272D"/>
+        <rect x="680" y="344" width="144" height="64" rx="6" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <rect x="688" y="350" width="46" height="12" rx="2" fill="none" stroke="rgba(181,190,192,0.4)" stroke-width="0.8"/>
+        <text x="711" y="359" fill="rgba(181,190,192,0.9)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">FILES</text>
+        <text x="752" y="382" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Supabase Storage</text>
+        <text x="752" y="396" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">two private buckets</text>
+
+        <rect x="680" y="440" width="144" height="56" rx="6" fill="#07272D"/>
+        <rect x="680" y="440" width="144" height="56" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <rect x="688" y="446" width="42" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.8"/>
+        <text x="709" y="455" fill="rgba(255,255,255,0.5)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">EMAIL</text>
+        <text x="752" y="478" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Resend</text>
+
+        <!-- legend -->
+        <line x1="32" y1="556" x2="968" y2="556" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="574" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+
+        <rect x="120" y="564" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="144" y="574" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Authoritative state</text>
+
+        <rect x="288" y="564" width="16" height="12" rx="3" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <text x="312" y="574" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Application code</text>
+
+        <rect x="448" y="564" width="16" height="12" rx="3" fill="rgba(255,196,0,0.05)" stroke="rgba(255,196,0,0.50)" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="472" y="574" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Trust boundary</text>
+
+        <rect x="600" y="564" width="16" height="12" rx="3" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <text x="624" y="574" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Third party</text>
+
+        <line x1="736" y1="570" x2="768" y2="570" stroke="#66A1AB" stroke-width="1.2"/>
+        <text x="776" y="574" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">External call</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 1.</b> There is no separate API tier and no background worker fleet. Server Actions
+      are the write path, Server Components are the read path, and the nightly clock is one HTTP
+      route that a Vercel Cron calls with a shared secret.
+    </figcaption>
+  </figure>
+
+  <h3>What each piece is responsible for</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Runtime responsibilities</caption>
+      <thead>
+        <tr><th scope="col">Component</th><th scope="col">Owns</th><th scope="col">Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Next.js 16 App Router</td>
+          <td>Every surface: marketing site, company workspace under <code>/app</code>, admin console under <code>/admin</code></td>
+          <td>React 19, Tailwind v4, TypeScript strict. MDX pages are routable.</td>
+        </tr>
+        <tr>
+          <td><code>src/proxy.ts</code></td>
+          <td>The edge gate. This Next.js version names middleware <code>proxy.ts</code>.</td>
+          <td>Wraps <code>clerkMiddleware</code>. Redirects signed-out requests for <code>/app*</code> and <code>/admin*</code>, stamps <code>X&#8209;Robots&#8209;Tag: noindex</code>, and makes no role decision at all.</td>
+        </tr>
+        <tr>
+          <td>Clerk</td>
+          <td>Credentials, sessions, invitations, second factors, and the Maintain staff flag in backend <code>publicMetadata</code>.</td>
+          <td>The only authoritative identity provider. There is no Clerk webhook, so a role change lands on the user's next request.</td>
+        </tr>
+        <tr>
+          <td>Supabase Postgres</td>
+          <td>All business state and all business rules: row level security, state machines, locking, audit.</td>
+          <td>37 tables and 12 enums across one base migration and 22 hardening migrations.</td>
+        </tr>
+        <tr>
+          <td>Supabase Storage</td>
+          <td>Two private buckets: <code>company-documents</code> and <code>worker-qualifications</code>.</td>
+          <td>10&nbsp;MiB per file, PDF or JPEG or PNG only. Every read is a server-minted signed URL valid for 300 seconds.</td>
+        </tr>
+        <tr>
+          <td>Resend</td>
+          <td>Transactional email, sent from one React Email template.</td>
+          <td>Email is the only channel. There is no SMS and no push.</td>
+        </tr>
+        <tr>
+          <td>Vercel Cron</td>
+          <td>One schedule, <code>0 14 * * *</code> UTC, which is midnight in Brisbane.</td>
+          <td>Calls <code>/api/cron/daily</code> with a bearer secret. A deployment with no secret configured rejects every call.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Three database clients, two of which matter</h3>
+  <p>
+    The application opens a Supabase client in one of two ways. The <strong>tenant client</strong>
+    carries the signed-in user's Clerk token, so Postgres evaluates row level security against that
+    person's company. The <strong>service-role client</strong> bypasses row level security entirely
+    and is only reached after an authorisation guard has already passed; it is how Maintain staff
+    screens read across companies, and how every privileged state change is executed. A third,
+    browser-side client survives in the tree but nothing reachable imports it.
+  </p>
+</section>
+
+<!-- =========================================================
+     03  TRUST BOUNDARIES
+     ========================================================= -->
+<section id="trust">
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <h2>Trust boundaries</h2>
+  </div>
+
+  <p class="lead">
+    Authorisation is checked at five separate depths, and the checks are deliberately redundant.
+    The edge gate is optimistic and cheap. The real decisions are made next to the data.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="trust-title trust-desc">
+        <title id="trust-title">Layers of authorisation on a single request</title>
+        <desc id="trust-desc">A stack of six layers from a public request down to Postgres row level security, showing which check each layer performs, with the server action layer marked as the place company status is enforced.</desc>
+        <defs>
+          <marker id="t-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- direction indicator, left margin, outside the stack -->
+        <text x="32" y="88" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">NARROWS</text>
+        <line x1="72" y1="108" x2="72" y2="500" stroke="rgba(255,255,255,0.25)" stroke-width="1" marker-end="url(#t-arrow)"/>
+
+        <!-- L1 -->
+        <rect x="160" y="96" width="720" height="64" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="184" y="132" fill="rgba(255,255,255,0.55)" font-size="9" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">L1</text>
+        <text x="248" y="124" fill="#FFFFFF" font-size="14" font-weight="600" font-family="Manrope, sans-serif">Public request</text>
+        <text x="248" y="142" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">any origin, no assumptions</text>
+        <text x="856" y="132" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="end">nothing trusted</text>
+
+        <!-- L2 -->
+        <rect x="160" y="168" width="720" height="64" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="184" y="204" fill="rgba(255,255,255,0.55)" font-size="9" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">L2</text>
+        <text x="248" y="196" fill="#FFFFFF" font-size="14" font-weight="600" font-family="Manrope, sans-serif">Edge gate, proxy.ts</text>
+        <text x="248" y="214" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">signed in or not, for /app and /admin only</text>
+        <text x="856" y="204" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="end">no role decision here</text>
+
+        <!-- L3 -->
+        <rect x="160" y="240" width="720" height="64" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="184" y="276" fill="rgba(255,255,255,0.55)" font-size="9" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">L3</text>
+        <text x="248" y="268" fill="#FFFFFF" font-size="14" font-weight="600" font-family="Manrope, sans-serif">Layout and page guard</text>
+        <text x="248" y="286" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">requireCompanyAdmin or requireMaintainAdmin</text>
+        <text x="856" y="276" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="end">who are you, and whose company</text>
+
+        <!-- L4 focal -->
+        <rect x="160" y="312" width="720" height="64" rx="6" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="184" y="348" fill="#FFC400" font-size="9" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">L4</text>
+        <text x="248" y="340" fill="#FFFFFF" font-size="14" font-weight="600" font-family="Manrope, sans-serif">Server action</text>
+        <text x="248" y="358" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">requireWritableCompany or requireActiveCompany</text>
+        <text x="856" y="348" fill="#FFC400" font-size="9" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">company status decides</text>
+
+        <!-- L5 -->
+        <rect x="160" y="384" width="720" height="64" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="184" y="420" fill="rgba(255,255,255,0.55)" font-size="9" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">L5</text>
+        <text x="248" y="412" fill="#FFFFFF" font-size="14" font-weight="600" font-family="Manrope, sans-serif">Security definer function</text>
+        <text x="248" y="430" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">expected-status check, row locks, audit row, one transaction</text>
+        <text x="856" y="420" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="end">service role only</text>
+
+        <!-- L6 -->
+        <rect x="160" y="456" width="720" height="64" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="184" y="492" fill="rgba(255,255,255,0.55)" font-size="9" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">L6</text>
+        <text x="248" y="484" fill="#FFFFFF" font-size="14" font-weight="600" font-family="Manrope, sans-serif">Row level security</text>
+        <text x="248" y="502" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">current_company_id() from the JWT subject</text>
+        <text x="856" y="492" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="end">deny by default</text>
+
+        <!-- legend -->
+        <line x1="32" y1="552" x2="968" y2="552" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="570" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <rect x="120" y="560" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="144" y="570" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Where company status is enforced</text>
+        <rect x="368" y="560" width="16" height="12" rx="3" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="392" y="570" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Privileged layer</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 2.</b> The edge gate answers one question, and answers it optimistically: is there a
+      session. It deliberately does not read the staff role, because a session token can still carry
+      the previous role after staff access is granted or revoked.
+    </figcaption>
+  </figure>
+
+  <h3>The guard ladder</h3>
+  <p>
+    Four server-side guards sit between a request and the data. Each one is a superset of the last,
+    and the message a blocked user sees names the actual reason.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Server-side authorisation guards</caption>
+      <thead>
+        <tr><th scope="col">Guard</th><th scope="col">Passes when</th><th scope="col">Otherwise</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>requireCompanyAdmin</code></td>
+          <td>Signed in and bound to a company by an accepted membership.</td>
+          <td>No session goes to <code>/signin</code>. No membership goes to <code>/onboarding</code>. An unaccepted membership goes to <code>/accept-invitation</code>.</td>
+        </tr>
+        <tr>
+          <td><code>requireWritableCompany</code></td>
+          <td>Company status is Pending or Active.</td>
+          <td>Throws with distinct copy for suspended and for closed.</td>
+        </tr>
+        <tr>
+          <td><code>requireActiveCompany</code></td>
+          <td>Company status is Active only.</td>
+          <td>Throws. A Pending company is told verification is still in progress.</td>
+        </tr>
+        <tr>
+          <td><code>requireMaintainAdmin</code></td>
+          <td>Clerk backend <code>publicMetadata</code> marks the account as Maintain staff, plus a recently verified second factor when that account has two-factor enabled.</td>
+          <td>Redirects to <code>/app</code>, or to <code>/admin/mfa</code> when the second factor needs re-verifying.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h4>Authorisation runs before any client is opened</h4>
+    <p>
+      This ordering is a tested contract rather than a convention. A page or action must complete its
+      guard before it constructs a Supabase client, so an unauthorised request never reaches a query
+      builder that holds the service-role key. The test suite asserts the ordering on the screens
+      that read across companies.
+    </p>
+  </div>
+</section>
+
+<!-- =========================================================
+     04  IDENTITY AND TENANCY
+     ========================================================= -->
+<section id="identity">
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <h2>Identity and tenancy</h2>
+  </div>
+
+  <p class="lead">
+    Clerk knows who you are. Postgres decides what you may see. The two are joined by one token,
+    and the join is what makes a revoked membership take effect instantly across the whole product.
+  </p>
+
+  <p>
+    A Clerk session becomes a Supabase-trusted session through an access-token callback that asks
+    Clerk for a token minted from a JWT template named <code>supabase</code>. Supabase has that
+    Clerk instance registered as a trusted third-party issuer, so the Clerk user id arrives inside
+    Postgres as <code>auth.jwt() -&gt;&gt; 'sub'</code>. No Supabase session is created, stored or
+    refreshed.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="seq-title seq-desc">
+        <title id="seq-title">How a Clerk session becomes a tenant-scoped database read</title>
+        <desc id="seq-desc">A time-ordered exchange in which the browser requests a workspace page, the server resolves the Clerk session and asks Clerk for a Supabase-template token, then queries Postgres with that bearer token so row level security resolves the caller's company and returns only that company's rows.</desc>
+        <defs>
+          <marker id="s-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="s-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- lifelines -->
+        <line x1="112" y1="120" x2="112" y2="484" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="328" y1="120" x2="328" y2="484" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="568" y1="120" x2="568" y2="484" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="808" y1="120" x2="808" y2="484" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="3,3"/>
+
+        <!-- activation bars -->
+        <rect x="324" y="152" width="8" height="288" fill="rgba(255,255,255,0.06)" stroke="#B5BEC0" stroke-width="0.8"/>
+        <rect x="564" y="188" width="8" height="108" fill="rgba(255,255,255,0.06)" stroke="#B5BEC0" stroke-width="0.8"/>
+        <rect x="804" y="332" width="8" height="72" fill="rgba(255,255,255,0.06)" stroke="#B5BEC0" stroke-width="0.8"/>
+
+        <!-- messages -->
+        <line x1="112" y1="152" x2="320" y2="152" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#s-arrow)"/>
+        <line x1="332" y1="188" x2="560" y2="188" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#s-arrow)"/>
+        <line x1="564" y1="224" x2="336" y2="224" stroke="#B5BEC0" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#s-arrow)"/>
+        <line x1="332" y1="260" x2="560" y2="260" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#s-arrow)"/>
+        <line x1="564" y1="296" x2="336" y2="296" stroke="#B5BEC0" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#s-arrow)"/>
+        <line x1="332" y1="332" x2="800" y2="332" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#s-arrow)"/>
+        <path d="M 812,368 H 852 Q 860,368 860,376 V 384 Q 860,392 852,392 H 816" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#s-arrow)"/>
+        <line x1="804" y1="404" x2="336" y2="404" stroke="#FFC400" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#s-arrow-accent)"/>
+        <line x1="324" y1="440" x2="116" y2="440" stroke="#B5BEC0" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#s-arrow)"/>
+
+        <!-- message labels, masked, 10px clear of the stroke -->
+        <rect x="176" y="130" width="92" height="12" rx="2" fill="#07272D"/>
+        <text x="222" y="139" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">GET /APP/WORKERS</text>
+
+        <rect x="404" y="166" width="84" height="12" rx="2" fill="#07272D"/>
+        <text x="446" y="175" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">RESOLVE SESSION</text>
+
+        <rect x="412" y="202" width="68" height="12" rx="2" fill="#07272D"/>
+        <text x="446" y="211" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">USER AND ROLE</text>
+
+        <rect x="408" y="238" width="76" height="12" rx="2" fill="#07272D"/>
+        <text x="446" y="247" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">JWT TEMPLATE</text>
+
+        <rect x="412" y="274" width="68" height="12" rx="2" fill="#07272D"/>
+        <text x="446" y="283" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">SIGNED TOKEN</text>
+
+        <rect x="524" y="310" width="84" height="12" rx="2" fill="#07272D"/>
+        <text x="566" y="319" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">QUERY + BEARER</text>
+
+        <rect x="872" y="370" width="88" height="12" rx="2" fill="#07272D"/>
+        <text x="872" y="379" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">TENANT LOOKUP</text>
+
+        <rect x="524" y="382" width="72" height="12" rx="2" fill="#07272D"/>
+        <text x="560" y="391" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TENANT ROWS</text>
+
+        <rect x="180" y="418" width="80" height="12" rx="2" fill="#07272D"/>
+        <text x="220" y="427" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">RENDERED PAGE</text>
+
+        <!-- actors, drawn last -->
+        <rect x="40" y="72" width="144" height="48" rx="6" fill="#07272D"/>
+        <rect x="40" y="72" width="144" height="48" rx="6" fill="rgba(102,161,171,0.12)" stroke="#8F9EA1" stroke-width="1"/>
+        <text x="112" y="102" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Browser</text>
+
+        <rect x="256" y="72" width="144" height="48" rx="6" fill="#07272D"/>
+        <rect x="256" y="72" width="144" height="48" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <text x="328" y="102" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Next.js server</text>
+
+        <rect x="496" y="72" width="144" height="48" rx="6" fill="#07272D"/>
+        <rect x="496" y="72" width="144" height="48" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <text x="568" y="102" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Clerk</text>
+
+        <rect x="736" y="72" width="144" height="48" rx="6" fill="#07272D"/>
+        <rect x="736" y="72" width="144" height="48" rx="6" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="808" y="102" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Postgres</text>
+
+        <!-- legend -->
+        <line x1="32" y1="512" x2="968" y2="512" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="530" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <line x1="120" y1="526" x2="152" y2="526" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#s-arrow)"/>
+        <text x="164" y="530" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Call</text>
+        <line x1="240" y1="526" x2="272" y2="526" stroke="#B5BEC0" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#s-arrow)"/>
+        <text x="284" y="530" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Return</text>
+        <line x1="380" y1="526" x2="412" y2="526" stroke="#FFC400" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#s-arrow-accent)"/>
+        <text x="424" y="530" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">The result that matters</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 3.</b> If the Clerk instance is not registered with Supabase, Postgres answers 401
+      with <code>PGRST301</code> and every tenant-scoped read comes back empty. The shared fetch path
+      detects exactly that case and logs the issuer, because an empty screen and a permissions
+      failure look identical to a user.
+    </figcaption>
+  </figure>
+
+  <h3>How tenancy is resolved inside the database</h3>
+  <p>
+    Tenancy is not a column that application code sets. Two security-definer helpers derive it,
+    and every row level security policy is written in terms of them.
+  </p>
+
+  <ul class="points">
+    <li>
+      <code>current_company_id()</code> reads the Clerk subject out of the JWT and returns the
+      <code>company_id</code> of that user's <strong>accepted</strong> membership row. A membership
+      that exists but has no <code>accepted_at</code> resolves to nothing, so it grants nothing.
+    </li>
+    <li>
+      <code>current_company_employs(worker)</code> answers whether the caller's company holds the
+      worker's <strong>open</strong> employment row. Worker access therefore moves the moment
+      employment moves, with no permission list to update.
+    </li>
+  </ul>
+
+  <p>
+    Row level security is enabled on every table in the public schema, so an absent policy denies
+    rather than permits. Tables that carry both sides of a deal, including <code>match</code>,
+    <code>engagement</code>, <code>worker_transfer</code> and the crew rows beneath them, have all
+    privileges revoked from the signed-in role outright. Companies read them only through
+    per-role projection views.
+  </p>
+
+  <div class="panel">
+    <h4>Rate confidentiality is a view, not a query convention</h4>
+    <p>
+      <code>supplier_match_view</code> exposes the supplier rate. <code>buyer_match_view</code>
+      exposes the all-in buyer rate. Neither exposes the platform fee, and the base table is
+      unreachable from a tenant session. A margin cannot leak through a mis-scoped query because
+      there is no query that could carry it.
+    </p>
+    <p>
+      The same view also withholds the counterparty. <code>buyer_match_view</code> filters out every
+      proposal still awaiting the supplier, so a hiring business never learns a proposal existed
+      until the supplying business has agreed to it. On the engagement, both identities stay null
+      until <code>commercial_confirmed_at</code> is set, and that column is write-once.
+    </p>
+  </div>
+
+  <h3>Maintain staff</h3>
+  <p>
+    Maintain staff are Clerk users with no company membership at all. Staff status lives in backend
+    <code>publicMetadata</code> and is read through the Clerk Backend API on every request, never
+    from session claims. An explicit <code>isAdmin</code> key is authoritative, including when it is
+    false, which is how a legacy grant is revoked. Nothing in the web application can escalate a
+    customer account into staff: the grant is an audited command-line runbook run against Clerk.
+  </p>
+  <p>
+    A second factor is required when the staff account has two-factor enabled, and a session that
+    has not verified it recently is redirected to <code>/admin/mfa</code>. Enrolment itself is
+    optional, so an account that has never enrolled reaches the console on a single factor.
+  </p>
+</section>
+
+<!-- =========================================================
+     05  REGISTRATION AND INTAKE
+     ========================================================= -->
+<section id="registration">
+  <div class="sec-head">
+    <span class="sec-num">05</span>
+    <h2>Registration and intake</h2>
+  </div>
+
+  <p class="lead">
+    Exactly two code paths create a company. A business can register itself, or Maintain can stand
+    it up from a lead. Both land in the same place: a Pending company that can prepare but cannot
+    trade.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="swim-title swim-desc">
+        <title id="swim-title">From first sign-in to a trading company account</title>
+        <desc id="swim-desc">A three-lane process showing the company creating a sign-in and describing the business, the application creating the company record and binding the first administrator in one transaction, and a Maintain admin reviewing the verification checklist and approving the account so the company can begin trading.</desc>
+        <defs>
+          <marker id="w-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="w-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- lane dividers -->
+        <line x1="32" y1="216" x2="968" y2="216" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+        <line x1="32" y1="336" x2="968" y2="336" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+        <line x1="160" y1="96" x2="160" y2="456" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+
+        <!-- lane labels -->
+        <text x="32" y="160" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">COMPANY</text>
+        <text x="32" y="280" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">APP AND</text>
+        <text x="32" y="292" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">DATABASE</text>
+        <text x="32" y="400" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">MAINTAIN</text>
+        <text x="32" y="412" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">ADMIN</text>
+
+        <!-- arrows -->
+        <line x1="312" y1="156" x2="332" y2="156" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#w-arrow)"/>
+        <line x1="404" y1="184" x2="404" y2="244" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#w-arrow)"/>
+        <path d="M 472,276 H 556 Q 564,276 564,268 V 188" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#w-arrow)"/>
+        <path d="M 404,304 V 388 Q 404,396 412,396 H 492" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#w-arrow)"/>
+        <line x1="632" y1="396" x2="652" y2="396" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#w-arrow)"/>
+        <line x1="724" y1="368" x2="724" y2="308" stroke="#FFC400" stroke-width="1.2" marker-end="url(#w-arrow-accent)"/>
+        <path d="M 792,276 H 876 Q 884,276 884,268 V 188" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#w-arrow)"/>
+
+        <!-- arrow labels -->
+        <rect x="412" y="208" width="46" height="12" rx="2" fill="#07272D"/>
+        <text x="416" y="217" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">ONE TXN</text>
+
+        <rect x="490" y="254" width="48" height="12" rx="2" fill="#07272D"/>
+        <text x="514" y="263" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">PENDING</text>
+
+        <rect x="412" y="336" width="44" height="12" rx="2" fill="#07272D"/>
+        <text x="416" y="345" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">QUEUED</text>
+
+        <rect x="732" y="326" width="58" height="12" rx="2" fill="#07272D"/>
+        <text x="736" y="335" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">ACTIVATED</text>
+
+        <rect x="810" y="254" width="72" height="12" rx="2" fill="#07272D"/>
+        <text x="846" y="263" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TRADING OPEN</text>
+
+        <!-- steps -->
+        <rect x="176" y="128" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="176" y="128" width="136" height="56" rx="6" fill="rgba(102,161,171,0.12)" stroke="#8F9EA1" stroke-width="1"/>
+        <text x="244" y="154" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Create sign-in</text>
+        <text x="244" y="168" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">/signup, Clerk verifies it</text>
+
+        <rect x="336" y="128" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="336" y="128" width="136" height="56" rx="6" fill="rgba(102,161,171,0.12)" stroke="#8F9EA1" stroke-width="1"/>
+        <text x="404" y="154" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Describe business</text>
+        <text x="404" y="168" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">/onboarding, step 2 of 2</text>
+
+        <rect x="336" y="248" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="336" y="248" width="136" height="56" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <text x="404" y="270" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Create company and</text>
+        <text x="404" y="284" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">bind first admin</text>
+        <text x="404" y="297" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">status Pending</text>
+
+        <rect x="496" y="128" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="496" y="128" width="136" height="56" rx="6" fill="rgba(102,161,171,0.12)" stroke="#8F9EA1" stroke-width="1"/>
+        <text x="564" y="154" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Load crew and</text>
+        <text x="564" y="168" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">documents</text>
+
+        <rect x="496" y="368" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="496" y="368" width="136" height="56" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <text x="564" y="394" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Review checklist</text>
+        <text x="564" y="408" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">/admin/verification</text>
+
+        <rect x="656" y="368" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="656" y="368" width="136" height="56" rx="6" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="724" y="394" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Approve</text>
+        <text x="724" y="408" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">an explicit decision</text>
+
+        <rect x="656" y="248" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="656" y="248" width="136" height="56" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <text x="724" y="274" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Company Active</text>
+        <text x="724" y="288" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">audit row written</text>
+
+        <rect x="816" y="128" width="136" height="56" rx="6" fill="#07272D"/>
+        <rect x="816" y="128" width="136" height="56" rx="6" fill="rgba(102,161,171,0.12)" stroke="#8F9EA1" stroke-width="1"/>
+        <text x="884" y="150" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">List capacity,</text>
+        <text x="884" y="164" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">post requirements</text>
+        <text x="884" y="177" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">the exchange opens</text>
+
+        <!-- legend -->
+        <line x1="32" y1="488" x2="968" y2="488" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="506" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <rect x="120" y="496" width="16" height="12" rx="3" fill="rgba(102,161,171,0.12)" stroke="#8F9EA1" stroke-width="1"/>
+        <text x="144" y="506" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Company does it</text>
+        <rect x="288" y="496" width="16" height="12" rx="3" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <text x="312" y="506" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">System or staff does it</text>
+        <rect x="488" y="496" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="512" y="506" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">The decision that opens the account</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 4.</b> The whole of self-serve registration is one database transaction. There is no
+      such thing as a half-created company: a company always has its operating regions, its first
+      administrator and its audit entry, or it does not exist.
+    </figcaption>
+  </figure>
+
+  <h3>Path one: a company registers itself</h3>
+  <ol class="points">
+    <li>
+      A visitor creates a sign-in at <code>/signup</code>. Clerk owns the credential and the email
+      verification. No company data is collected here.
+    </li>
+    <li>
+      Clerk forces the new user to <code>/onboarding</code>, which collects the legal name, trading
+      name, contact details, industry, primary region, other operating regions and, optionally, the
+      ABN.
+    </li>
+    <li>
+      One security-definer function creates the company, expands the operating regions with the
+      primary region always included, binds the submitter as an already-accepted member, and writes
+      the audit row. It refuses to run without a verified Clerk identity and email.
+    </li>
+    <li>
+      The company lands on status <strong>Pending</strong>. The membership email recorded is the
+      Clerk-verified session email, not the contact address typed into the form.
+    </li>
+  </ol>
+
+  <h4>The ABN is optional at intake, and checked properly when supplied</h4>
+  <p>
+    Requiring an ABN at the keyboard was the single largest drop-off. It is now optional. When one
+    is supplied it must be eleven digits and must pass the real modulus-89 checksum, and that rule
+    is enforced twice: once in the server action and once as a database check constraint, so no
+    write path can bypass it. An ABN is unique across companies, and a blank one can never collide.
+  </p>
+  <p>
+    A self-serve registration whose ABN already belongs to another company is not simply refused.
+    It is routed into the Maintain leads queue for a human to untangle, and the message shown back
+    never names the business already holding that ABN.
+  </p>
+
+  <h3>Path two: Maintain stands the company up from a lead</h3>
+  <p>
+    Enquiries arrive from the public contact form, from an admin CSV import, and from a
+    token-authenticated webhook that an external funnel tool posts to. All three land in one
+    <code>lead</code> queue that no company can see: row level security is on, there is no policy,
+    and privileges are revoked from the signed-in role.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Lead lifecycle</caption>
+      <thead>
+        <tr><th scope="col">State</th><th scope="col">Meaning</th><th scope="col">Moves on</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="status"><span class="dot dot-scheduled"></span><span class="lab">New</span></span></td>
+          <td>Captured, nobody has called yet.</td>
+          <td>A Maintain admin marks it contacted.</td>
+        </tr>
+        <tr>
+          <td><span class="status"><span class="dot dot-pending"></span><span class="lab">Contacted</span></span></td>
+          <td>The only state from which the lead can be resolved.</td>
+          <td>Qualified or disqualified.</td>
+        </tr>
+        <tr>
+          <td><span class="status"><span class="dot dot-active"></span><span class="lab">Qualified</span></span></td>
+          <td>A Pending company now exists and the lead is linked to it. Terminal for the queue.</td>
+          <td>Nothing. The work continues on the company.</td>
+        </tr>
+        <tr>
+          <td><span class="status"><span class="dot dot-critical"></span><span class="lab">Disqualified</span></span></td>
+          <td>Closed with a retained reason of at least four characters, and an audit entry.</td>
+          <td>Nothing.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    A qualified lead produces a company with <strong>no users at all</strong>, which the model
+    tolerates deliberately. Maintain runs that company concierge-style from the admin console and
+    can issue or re-issue a first administrator invitation at any point. A business that will never
+    log in can still be onboarded and traded on its behalf, with every such write flagged as
+    admin-entered and attributed to the acting staff member.
+  </p>
+</section>
+
+<!-- =========================================================
+     06  ACCOUNT APPROVAL
+     ========================================================= -->
+<section id="approval">
+  <div class="sec-head">
+    <span class="sec-num">06</span>
+    <h2>Account approval</h2>
+  </div>
+
+  <p class="lead">
+    This is the gate the whole exchange rests on. A construction workforce exchange is only safe if
+    the counterparty is a real, insured, licensed business, so Maintain does that check once per
+    company rather than once per deal.
+  </p>
+
+  <h3>The company status machine</h3>
+  <p>
+    A company carries one status from a four-value enum. The set of legal moves is small, it is
+    enforced in the database rather than in the interface, and <strong>Closed is terminal</strong>.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="cstate-title cstate-desc">
+        <title id="cstate-title">Company account status machine</title>
+        <desc id="cstate-desc">A company is created Pending, is approved to Active, may move between Active and Suspended, and may be Closed from any state. Closed is terminal. Rejection is not a status: a rejected company stays Pending.</desc>
+        <defs>
+          <marker id="c-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="c-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- transitions -->
+        <line x1="62" y1="200" x2="156" y2="200" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#c-arrow)"/>
+        <line x1="320" y1="200" x2="396" y2="200" stroke="#FFC400" stroke-width="1.2" marker-end="url(#c-arrow-accent)"/>
+        <line x1="456" y1="232" x2="456" y2="316" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#c-arrow)"/>
+        <line x1="504" y1="320" x2="504" y2="236" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#c-arrow)"/>
+        <path d="M 240,168 V 128 Q 240,120 248,120 H 752 Q 760,120 760,128 V 164" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#c-arrow)"/>
+        <line x1="560" y1="200" x2="676" y2="200" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#c-arrow)"/>
+        <path d="M 560,352 H 752 Q 760,352 760,344 V 236" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#c-arrow)"/>
+
+        <!-- transition labels -->
+        <rect x="88" y="178" width="66" height="12" rx="2" fill="#07272D"/>
+        <text x="121" y="187" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">REGISTERED</text>
+
+        <rect x="324" y="178" width="70" height="12" rx="2" fill="#07272D"/>
+        <text x="359" y="187" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">APPROVE</text>
+
+        <rect x="368" y="266" width="52" height="12" rx="2" fill="#07272D"/>
+        <text x="416" y="275" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="end" letter-spacing="0.08em">SUSPEND</text>
+
+        <rect x="514" y="266" width="66" height="12" rx="2" fill="#07272D"/>
+        <text x="518" y="275" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">REINSTATE</text>
+
+        <rect x="472" y="98" width="42" height="12" rx="2" fill="#07272D"/>
+        <text x="493" y="107" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">CLOSE</text>
+
+        <rect x="596" y="178" width="42" height="12" rx="2" fill="#07272D"/>
+        <text x="617" y="187" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">CLOSE</text>
+
+        <rect x="632" y="330" width="42" height="12" rx="2" fill="#07272D"/>
+        <text x="653" y="339" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">CLOSE</text>
+
+        <!-- start marker -->
+        <circle cx="56" cy="200" r="6" fill="#B5BEC0"/>
+
+        <!-- states -->
+        <rect x="160" y="168" width="160" height="64" rx="8" fill="#07272D"/>
+        <rect x="160" y="168" width="160" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="240" y="196" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Pending</text>
+        <text x="240" y="212" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">can prepare</text>
+        <text x="240" y="224" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">cannot trade</text>
+
+        <rect x="400" y="168" width="160" height="64" rx="8" fill="#07272D"/>
+        <rect x="400" y="168" width="160" height="64" rx="8" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="480" y="196" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Active</text>
+        <text x="480" y="212" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">lists capacity, posts</text>
+        <text x="480" y="224" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">requirements, decides matches</text>
+
+        <rect x="400" y="320" width="160" height="64" rx="8" fill="#07272D"/>
+        <rect x="400" y="320" width="160" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="480" y="348" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Suspended</text>
+        <text x="480" y="364" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">read only, open matches</text>
+        <text x="480" y="376" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">withdrawn on entry</text>
+
+        <rect x="680" y="168" width="160" height="64" rx="8" fill="#07272D"/>
+        <rect x="680" y="168" width="160" height="64" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="684" y="172" width="152" height="56" rx="6" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="760" y="196" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Closed</text>
+        <text x="760" y="212" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">terminal, records stay</text>
+        <text x="760" y="224" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">readable</text>
+
+        <!-- editorial callout -->
+        <line x1="180" y1="240" x2="180" y2="336" stroke="rgba(102,161,171,0.5)" stroke-width="1"/>
+        <text x="96" y="358" fill="#66A1AB" font-size="12" font-weight="400" font-family="Manrope, sans-serif">There is no Rejected status.</text>
+        <text x="96" y="376" fill="#66A1AB" font-size="12" font-weight="400" font-family="Manrope, sans-serif">A rejected company stays Pending</text>
+        <text x="96" y="394" fill="#66A1AB" font-size="12" font-weight="400" font-family="Manrope, sans-serif">so it can fix the gap and resubmit.</text>
+
+        <!-- legend -->
+        <line x1="32" y1="444" x2="968" y2="444" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="462" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <circle cx="128" cy="458" r="5" fill="#B5BEC0"/>
+        <text x="144" y="462" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Created here</text>
+        <rect x="264" y="452" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="288" y="462" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">The only trading state</text>
+        <rect x="448" y="452" width="16" height="12" rx="3" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="450" y="454" width="12" height="8" rx="2" fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="472" y="462" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Terminal</text>
+        <text x="600" y="462" fill="rgba(255,255,255,0.55)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Every transition is a Maintain staff decision</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 5.</b> The legal set is exactly four moves. Pending to Active, Active to Suspended,
+      Suspended to Active, and any non-closed state to Closed. Anything else raises a check-violation
+      in the database. Note in particular that <b>Pending cannot be suspended</b>: an unapproved
+      company is closed, not suspended.
+    </figcaption>
+  </figure>
+
+  <h3>The verification checklist</h3>
+  <p>
+    What Maintain reviews is generated per company by a database function rather than stored as a
+    list. Four items are always required, one is conditional, and one more is derived from the crew
+    the company has actually loaded.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Checklist items and when they are required</caption>
+      <thead>
+        <tr><th scope="col">Item</th><th scope="col">Required</th><th scope="col">Needs a file</th><th scope="col">Note</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Public liability insurance</td>
+          <td class="yes">Always</td>
+          <td class="yes">Yes</td>
+          <td>Also one of the two document types that gate matching compliance.</td>
+        </tr>
+        <tr>
+          <td>Workers compensation</td>
+          <td class="yes">Always</td>
+          <td class="yes">Yes</td>
+          <td>The second matching-compliance document type.</td>
+        </tr>
+        <tr>
+          <td>Payment details provided</td>
+          <td class="yes">Always</td>
+          <td class="no">No</td>
+          <td>An attestation flag rather than an uploaded document.</td>
+        </tr>
+        <tr>
+          <td>ABN verified</td>
+          <td class="yes">Only when an ABN is on file</td>
+          <td class="no">No</td>
+          <td>A company with no ABN is told so plainly, and it does not block activation.</td>
+        </tr>
+        <tr>
+          <td>Trade licence</td>
+          <td class="yes">One row per mandatory company-level qualification of the trades of currently employed crew</td>
+          <td class="yes">Yes</td>
+          <td>The requirement appears as soon as a worker of that trade is added, and disappears when they leave.</td>
+        </tr>
+        <tr>
+          <td>Labour-hire licence</td>
+          <td class="no">Not required</td>
+          <td class="yes">Yes, when supplied</td>
+          <td>Present so it can be recorded. Licensing remains under legal review.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>What counts as verified</h4>
+  <p>
+    A checklist item is satisfied only when a matching document row carries <em>both</em> a verifier
+    and a verification timestamp, is inside its own date window, and, for real documents, actually
+    has a file attached. Dates are evaluated against the Brisbane calendar date.
+  </p>
+  <p>
+    Two consequences are worth stating because they surprise people. An ABN verification stops
+    counting the moment the company edits its ABN, because the verified number must still equal the
+    current one. And verification is bound to the exact value the reviewer was shown: if the ABN
+    moves between the screen render and the click, the write is rejected rather than applied to a
+    value nobody checked.
+  </p>
+
+  <h3>How approval actually works</h3>
+  <p>
+    There are two database functions that can move a company from Pending to Active, and the
+    difference between them is the entire design of this gate.
+  </p>
+
+  <div class="panel accent">
+    <h4>Approval is a staff decision, not a checklist score</h4>
+    <p>
+      The strict function refuses to activate a company whose required checklist is incomplete or
+      expired. The Maintain approval function computes exactly the same outstanding items and then
+      <strong>records them in the audit event instead of blocking on them</strong>, stamping the
+      decision with <code>approval_mode: maintain_admin</code> and a frozen snapshot of what was
+      still missing at the moment of the decision.
+    </p>
+    <p>
+      Both admin screens route a Pending-to-Active request to the second function. In practice,
+      therefore, <strong>the checklist informs the decision and never vetoes it</strong>. The approve
+      button is never disabled because an item is outstanding; it is disabled only while the form is
+      submitting.
+    </p>
+    <p>
+      This is a deliberate accommodation of how construction paperwork actually arrives, which is by
+      phone, email and photograph over several days. The alternative, a hard gate, produces staff
+      who work around the system. Recording the gap keeps the decision defensible without pretending
+      the paperwork is done.
+    </p>
+  </div>
+
+  <h4>The approval transaction</h4>
+  <ol class="points">
+    <li>
+      The caller must be Maintain staff, and must present an expected status of literally
+      <code>Pending</code>. Anything else is refused before the row is touched.
+    </li>
+    <li>
+      The company row is locked, and the live status is re-compared against the expected one. A
+      mismatch raises a serialisation failure telling the operator to refresh, so two staff members
+      working the same queue cannot both write a decision.
+    </li>
+    <li>
+      The document rows are share-locked and the outstanding required items are computed.
+    </li>
+    <li>
+      The status is written to Active under the same conditional predicate, and an audit event is
+      appended in the same transaction carrying the before state, the decision, the approval mode
+      and the outstanding items.
+    </li>
+    <li>
+      After the transaction commits, the server action emails the company that it has been verified.
+    </li>
+  </ol>
+
+  <h4>Rejection</h4>
+  <p>
+    Rejection requires a reason of between four and two thousand characters, enforced in the action
+    and again in the database. It writes an audit event and emails the company the reason verbatim,
+    and it <strong>changes no status at all</strong>. The company remains Pending, keeps its
+    workspace, and can correct the problem and resubmit. There is no dead end and no second
+    registration.
+  </p>
+
+  <h4>Suspension and closure</h4>
+  <p>
+    Suspending or closing a company is the kill switch, and it cascades inside the same transaction.
+    Every match still awaiting the supplier or the buyer is withdrawn, and both parties are notified
+    of each withdrawal. Existing engagements are deliberately left alone: pulling a crew off a live
+    site because a certificate lapsed is a worse outcome than flagging it, so committed work is
+    surfaced for Maintain to review rather than cancelled automatically.
+  </p>
+</section>
+
+<!-- =========================================================
+     07  USERS AND MEMBERSHIP
+     ========================================================= -->
+<section id="users">
+  <div class="sec-head">
+    <span class="sec-num">07</span>
+    <h2>Users and membership</h2>
+  </div>
+
+  <p class="lead">
+    The user model is deliberately thin. One table binds a Clerk identity to one company, and
+    membership alone is the authority. There is no role column and no permission set to administer.
+  </p>
+
+  <h3>One person, one company</h3>
+  <p>
+    <code>company_user.user_id</code> is the primary key and it stores the Clerk user id. That one
+    choice carries a surprising amount of the design. A person belongs to at most one company, so
+    there is no company switcher, <code>current_company_id()</code> has exactly one answer, and it
+    is structurally impossible for an identity to carry authority across two competing businesses.
+  </p>
+
+  <div class="panel">
+    <h4>Every accepted member has identical authority</h4>
+    <p>
+      There is no owner, no manager and no read-only seat. Any accepted member can edit the company
+      profile, upload and attach compliance documents, manage crew, invite and remove other
+      administrators, and, subject to company status, list capacity, post requirements and decide
+      matches. Differentiation is done at the level of the <em>company</em>, not the person, because
+      compliance risk is a company-level fact.
+    </p>
+    <p>
+      Two guards keep that from being dangerous. A member cannot remove their own access, and a
+      company cannot be left with zero administrators.
+    </p>
+  </div>
+
+  <h3>How an invitation binds</h3>
+  <p>
+    Inviting an administrator writes nothing to the database. It creates a Clerk invitation that
+    carries the target company id and the invited email in backend-controlled metadata, and it
+    expires after seventy-two hours. The membership row is created on the invitee's
+    <strong>first authenticated request</strong>, not when the invitation is sent.
+  </p>
+
+  <ol class="points">
+    <li>
+      A member invites an email address. The invitation is refused if that person already belongs to
+      any company, and the cross-company case is made deliberately indistinguishable from a generic
+      failure so the response cannot be used to probe who is on the platform.
+    </li>
+    <li>
+      The invitee signs up or signs in. On the first request that needs a company context, the
+      application reads the Clerk metadata, checks the invited email matches the verified session
+      email case-insensitively, and inserts the membership row already marked accepted.
+    </li>
+    <li>
+      The invitation metadata is then consumed, which makes it single use. If that cleanup fails it
+      is tolerated, because the membership row is unique and already wins.
+    </li>
+    <li>
+      A unique-violation on the insert is recovered by re-reading the existing row and refusing if it
+      names a different company or a different invited email.
+    </li>
+  </ol>
+
+  <p>
+    Re-issuing is the recovery path, and it is the only invitation route that checks whether the
+    Clerk account has actually been used: it refuses a target who has already signed in. A company
+    with zero members gets a first-administrator re-issue control in the admin console, shown only
+    when that company is Pending or Active and has a contact email on file.
+  </p>
+
+  <h3>Maintain staff are not members</h3>
+  <p>
+    A Maintain admin normally holds no <code>company_user</code> row whatsoever. Staff authority
+    comes from Clerk metadata alone and is checked on every request. That separation is what lets a
+    staff member operate the verification desk and the matching desk with service-role reach while
+    every mutation still records their Clerk user id in the audit trail.
+  </p>
+</section>
+
+<!-- =========================================================
+     08  WHAT EACH STATUS PERMITS
+     ========================================================= -->
+<section id="capability">
+  <div class="sec-head">
+    <span class="sec-num">08</span>
+    <h2>What each status permits</h2>
+  </div>
+
+  <p class="lead">
+    Company status is the single dial that decides what a logged-in business can do. It is enforced
+    in the server action, again inside each transactional function, and again by row level security,
+    so hiding a button is never the mechanism.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Company capability by status</caption>
+      <thead>
+        <tr>
+          <th scope="col">Capability</th>
+          <th scope="col">Pending</th>
+          <th scope="col">Active</th>
+          <th scope="col">Suspended</th>
+          <th scope="col">Closed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Read its own records</td>
+          <td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td>
+        </tr>
+        <tr>
+          <td>Edit the company profile</td>
+          <td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Upload and attach compliance documents</td>
+          <td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Add crew and record qualifications</td>
+          <td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Invite and remove administrators</td>
+          <td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Request and decide worker transfers</td>
+          <td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>List spare capacity</td>
+          <td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Post a requirement</td>
+          <td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Accept, decline or substitute on a match</td>
+          <td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+        <tr>
+          <td>Appear in Maintain's matching candidate pool</td>
+          <td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    The Pending row is the interesting one. A newly registered business can do every piece of
+    preparation that does not touch the marketplace: load its crew, upload its certificates, record
+    its licences, invite its office manager. Approval is therefore the moment it starts
+    <em>trading</em>, not the moment it starts data entry, which is what makes same-day activation
+    worth anything.
+  </p>
+</section>
+
+<!-- =========================================================
+     09  SUPPLY, DEMAND, MATCHING
+     ========================================================= -->
+<section id="matching">
+  <div class="sec-head">
+    <span class="sec-num">09</span>
+    <h2>Supply, demand, matching</h2>
+  </div>
+
+  <p class="lead">
+    Maintain holds both sides of the book. The software computes and constrains the candidate set,
+    and a person decides what to propose. Neither company ever sees the other's list.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="flow-title flow-desc">
+        <title id="flow-title">From two listings to one engagement</title>
+        <desc id="flow-desc">A capacity line from a supplying company and a demand line from a hiring company are combined by Maintain into a candidate set, proposed as a match to the supplier, nominated with named crew, reviewed by the buyer, and on acceptance become an engagement.</desc>
+        <defs>
+          <marker id="f-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="f-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- arrows -->
+        <path d="M 192,144 H 232 Q 240,144 240,152 V 212 Q 240,220 248,220 H 252" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#f-arrow)"/>
+        <path d="M 192,312 H 240 Q 248,312 248,304 V 244 Q 248,236 256,236 H 252" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#f-arrow)"/>
+        <line x1="408" y1="228" x2="452" y2="228" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#f-arrow)"/>
+        <line x1="536" y1="260" x2="536" y2="332" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#f-arrow)"/>
+        <line x1="616" y1="368" x2="676" y2="368" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#f-arrow)"/>
+        <line x1="756" y1="336" x2="756" y2="264" stroke="#FFC400" stroke-width="1.2" marker-end="url(#f-arrow-accent)"/>
+
+        <!-- arrow labels -->
+        <rect x="196" y="122" width="44" height="12" rx="2" fill="#07272D"/>
+        <text x="218" y="131" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">SUPPLY</text>
+
+        <rect x="196" y="290" width="44" height="12" rx="2" fill="#07272D"/>
+        <text x="218" y="299" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">DEMAND</text>
+
+        <rect x="408" y="206" width="48" height="12" rx="2" fill="#07272D"/>
+        <text x="432" y="215" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">PROPOSE</text>
+
+        <rect x="544" y="284" width="62" height="12" rx="2" fill="#07272D"/>
+        <text x="548" y="293" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">NOMINATE</text>
+
+        <rect x="618" y="346" width="48" height="12" rx="2" fill="#07272D"/>
+        <text x="642" y="355" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">REVIEW</text>
+
+        <rect x="764" y="292" width="48" height="12" rx="2" fill="#07272D"/>
+        <text x="768" y="301" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">ACCEPT</text>
+
+        <!-- nodes -->
+        <rect x="40" y="112" width="152" height="64" rx="6" fill="#07272D"/>
+        <rect x="40" y="112" width="152" height="64" rx="6" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <rect x="48" y="118" width="58" height="12" rx="2" fill="none" stroke="rgba(181,190,192,0.4)" stroke-width="0.8"/>
+        <text x="77" y="127" fill="rgba(181,190,192,0.9)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">SUPPLIER</text>
+        <text x="116" y="150" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Capacity line</text>
+        <text x="116" y="166" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">crew, window, rate</text>
+
+        <rect x="40" y="280" width="152" height="64" rx="6" fill="#07272D"/>
+        <rect x="40" y="280" width="152" height="64" rx="6" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <rect x="48" y="286" width="44" height="12" rx="2" fill="none" stroke="rgba(181,190,192,0.4)" stroke-width="0.8"/>
+        <text x="70" y="295" fill="rgba(181,190,192,0.9)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">BUYER</text>
+        <text x="116" y="318" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Demand line</text>
+        <text x="116" y="334" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">trade, level, headcount</text>
+
+        <rect x="256" y="196" width="152" height="64" rx="6" fill="#07272D"/>
+        <rect x="256" y="196" width="152" height="64" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <rect x="264" y="202" width="62" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="295" y="211" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">MAINTAIN</text>
+        <text x="332" y="234" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Candidate set</text>
+        <text x="332" y="250" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">computed, then shortlisted</text>
+
+        <rect x="456" y="196" width="160" height="64" rx="6" fill="#07272D"/>
+        <rect x="456" y="196" width="160" height="64" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <rect x="464" y="202" width="62" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="495" y="211" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">SUPPLIER</text>
+        <text x="536" y="234" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Match proposed</text>
+        <text x="536" y="250" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">terms frozen here</text>
+
+        <rect x="456" y="336" width="160" height="64" rx="6" fill="#07272D"/>
+        <rect x="456" y="336" width="160" height="64" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <rect x="464" y="342" width="62" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="495" y="351" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">SUPPLIER</text>
+        <text x="536" y="374" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Crew nominated</text>
+        <text x="536" y="390" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">a soft hold on their dates</text>
+
+        <rect x="680" y="336" width="152" height="64" rx="6" fill="#07272D"/>
+        <rect x="680" y="336" width="152" height="64" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <rect x="688" y="342" width="44" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="710" y="351" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">BUYER</text>
+        <text x="756" y="374" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Buyer decides</text>
+        <text x="756" y="390" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">counts and coverage only</text>
+
+        <rect x="680" y="196" width="152" height="68" rx="6" fill="#07272D"/>
+        <rect x="680" y="196" width="152" height="68" rx="6" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <rect x="688" y="202" width="62" height="12" rx="2" fill="none" stroke="rgba(255,196,0,0.5)" stroke-width="0.8"/>
+        <text x="719" y="211" fill="#FFC400" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">AGREEMENT</text>
+        <text x="756" y="234" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Engagement</text>
+        <text x="756" y="250" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">crew dates committed</text>
+
+        <!-- legend -->
+        <line x1="32" y1="472" x2="968" y2="472" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="490" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <rect x="120" y="480" width="16" height="12" rx="3" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="144" y="490" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">A company's own listing</text>
+        <rect x="320" y="480" width="16" height="12" rx="3" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <text x="344" y="490" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">A step in the exchange</text>
+        <rect x="520" y="480" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="544" y="490" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Where the deal becomes real</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 6.</b> The supplying business is asked first, and it is the one that picks people.
+      The hiring business is asked second, and it only ever sees a shape: how many, what coverage,
+      what all-in rate.
+    </figcaption>
+  </figure>
+
+  <h3>How candidates are found</h3>
+  <p>
+    There is no search index. Candidate capacity for a demand line is one indexed query over
+    capacity lines of the same trade whose window overlaps the requirement, and the candidate unit
+    is the worker on a capacity line. Everything after that is filtering, and the filters are the
+    product.
+  </p>
+
+  <ul class="points">
+    <li>
+      <strong>The engagement window is the intersection</strong> of the demand window and the
+      capacity window, and every subsequent test uses that intersection rather than the requirement's
+      own dates.
+    </li>
+    <li>
+      <strong>Region</strong> is covered when the capacity line's location matches the requirement's
+      work region, or when that region is listed among the line's travel regions.
+    </li>
+    <li>
+      <strong>Availability</strong> is a percentage: the days of the window covered by the worker's
+      live capacity lines, minus days already consumed by committing engagements. Zero percent
+      excludes. Full coverage still reads as partial if the covering line's weekly hours fall short
+      of what the requirement asks for.
+    </li>
+    <li>
+      <strong>Credentials</strong> must be held and must clear the window. A ticket that expires
+      inside the window is not an exclusion but a warning that only an audited override can pass. A
+      ticket mandatory for the trade excludes even when the requirement never listed it.
+    </li>
+    <li>
+      <strong>Both companies</strong> must be Active and compliant, and a company cannot match with
+      itself.
+    </li>
+  </ul>
+
+  <p>
+    Candidates that fail are computed and then discarded in application code rather than filtered
+    out in SQL, specifically so the exclusion reasons stay available to the audit trail. The
+    reviewer sees eligible candidates and greyed candidates; excluded ones are never rendered.
+  </p>
+
+  <h3>The match state machine</h3>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="mstate-title mstate-desc">
+        <title id="mstate-title">Match state machine</title>
+        <desc id="mstate-desc">A proposal starts awaiting the supplier, moves to awaiting the buyer once crew are nominated, and ends either accepted or in one of three closed outcomes: declined by a party, withdrawn by Maintain, or expired by the nightly clock.</desc>
+        <defs>
+          <marker id="m-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="m-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- terminal zone -->
+        <rect x="200" y="296" width="560" height="104" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="388" y="300" width="184" height="12" rx="2" fill="#07272D"/>
+        <text x="480" y="309" fill="rgba(255,255,255,0.40)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">CLOSED WITHOUT A DEAL</text>
+
+        <!-- transitions -->
+        <line x1="78" y1="160" x2="112" y2="160" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#m-arrow)"/>
+        <line x1="296" y1="160" x2="384" y2="160" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#m-arrow)"/>
+        <line x1="568" y1="160" x2="656" y2="160" stroke="#FFC400" stroke-width="1.2" marker-end="url(#m-arrow-accent)"/>
+        <path d="M 436,128 V 96 Q 436,88 444,88 H 512 Q 520,88 520,96 V 124" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#m-arrow)"/>
+        <line x1="208" y1="192" x2="208" y2="292" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#m-arrow)"/>
+        <line x1="480" y1="192" x2="480" y2="292" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#m-arrow)"/>
+
+        <!-- transition labels -->
+        <rect x="300" y="138" width="60" height="12" rx="2" fill="#07272D"/>
+        <text x="330" y="147" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">NOMINATE</text>
+
+        <rect x="572" y="138" width="80" height="12" rx="2" fill="#07272D"/>
+        <text x="612" y="147" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">BUYER ACCEPTS</text>
+
+        <rect x="444" y="64" width="68" height="12" rx="2" fill="#07272D"/>
+        <text x="478" y="73" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">SUBSTITUTE</text>
+
+        <rect x="216" y="228" width="44" height="12" rx="2" fill="#07272D"/>
+        <text x="220" y="237" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">CLOSES</text>
+
+        <rect x="488" y="228" width="44" height="12" rx="2" fill="#07272D"/>
+        <text x="492" y="237" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">CLOSES</text>
+
+        <!-- start -->
+        <circle cx="72" cy="160" r="6" fill="#B5BEC0"/>
+
+        <!-- states -->
+        <rect x="120" y="128" width="176" height="64" rx="8" fill="#07272D"/>
+        <rect x="120" y="128" width="176" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="208" y="156" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Awaiting Supplier</text>
+        <text x="208" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">invisible to the buyer</text>
+        <text x="208" y="184" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">the buyer cannot act at all</text>
+
+        <rect x="392" y="128" width="176" height="64" rx="8" fill="#07272D"/>
+        <rect x="392" y="128" width="176" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="480" y="156" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Awaiting Buyer</text>
+        <text x="480" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">crew nominated and held</text>
+        <text x="480" y="184" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">version token guards the accept</text>
+
+        <rect x="664" y="128" width="176" height="64" rx="8" fill="#07272D"/>
+        <rect x="664" y="128" width="176" height="64" rx="8" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="752" y="156" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Accepted</text>
+        <text x="752" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">one engagement created</text>
+        <text x="752" y="184" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">terminal for the match</text>
+
+        <!-- terminal chips -->
+        <rect x="232" y="336" width="144" height="44" rx="6" fill="#07272D"/>
+        <rect x="232" y="336" width="144" height="44" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="304" y="356" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Declined</text>
+        <text x="304" y="370" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">either party, or automatic</text>
+
+        <rect x="408" y="336" width="144" height="44" rx="6" fill="#07272D"/>
+        <rect x="408" y="336" width="144" height="44" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="480" y="356" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Withdrawn</text>
+        <text x="480" y="370" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">Maintain pulls it</text>
+
+        <rect x="584" y="336" width="144" height="44" rx="6" fill="#07272D"/>
+        <rect x="584" y="336" width="144" height="44" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="656" y="356" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Expired</text>
+        <text x="656" y="370" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">7 days, or the window passes</text>
+
+        <!-- legend -->
+        <line x1="32" y1="444" x2="968" y2="444" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="462" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <circle cx="128" cy="458" r="5" fill="#B5BEC0"/>
+        <text x="144" y="462" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Maintain proposes</text>
+        <rect x="296" y="452" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="320" y="462" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">The only outcome that books crew</text>
+        <rect x="560" y="452" width="16" height="12" rx="3" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="584" y="462" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Holds released, line freed</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 7.</b> Any closure releases the holds and unlocks the underlying capacity and demand
+      lines for editing again. While a proposal is open, the quantity, window, hours and required
+      tickets on both lines are frozen, so a supplier is never asked to accept a requirement that
+      moved while they were deciding.
+    </figcaption>
+  </figure>
+
+  <h3>What each side can see, and when</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Disclosure by stage</caption>
+      <thead>
+        <tr>
+          <th scope="col">Stage</th>
+          <th scope="col">The supplying business sees</th>
+          <th scope="col">The hiring business sees</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Awaiting Supplier</td>
+          <td>The requested shape, its own rate, the trade, level, window and region.</td>
+          <td>Nothing. The proposal is filtered out of the buyer's projection entirely.</td>
+        </tr>
+        <tr>
+          <td>Awaiting Buyer</td>
+          <td>Its own nominations by name, its own rate.</td>
+          <td>A count, coverage, and the all-in rate. No names, no supplying business, no supplier rate.</td>
+        </tr>
+        <tr>
+          <td>Engagement, awaiting commercial</td>
+          <td>The engagement and its own crew.</td>
+          <td>The engagement. Counterparty identity is still withheld.</td>
+        </tr>
+        <tr>
+          <td>Engagement, confirmed</td>
+          <td>The counterparty.</td>
+          <td>The counterparty, and the crew ticket snapshot frozen at the start of the job.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Commercial terms are frozen at proposal</h3>
+  <p>
+    The supplier rate, the platform fee in basis points and the derived buyer rate are all written
+    onto the match at the moment it is proposed, and copied onto the engagement at acceptance. The
+    buyer rate is the supplier rate marked up by the fee and rounded half up. The per-hour margin is
+    simply the difference between them.
+  </p>
+  <p>
+    Because those values are snapshots rather than lookups, a later change to the published rate
+    bands or the platform fee cannot retroactively move what two businesses agreed. That is also why
+    rate bands can be edited without a deployment: they are effective-dated configuration, and every
+    past deal already holds its own copy.
+  </p>
+</section>
+
+<!-- =========================================================
+     10  ENGAGEMENTS AND TRANSFERS
+     ========================================================= -->
+<section id="engagement">
+  <div class="sec-head">
+    <span class="sec-num">10</span>
+    <h2>Engagements and transfers</h2>
+  </div>
+
+  <p class="lead">
+    Acceptance creates an engagement and commits the crew's dates in the same transaction. From
+    that moment the terms stop moving and a database constraint makes double-booking impossible.
+  </p>
+
+  <h3>The engagement lifecycle</h3>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="estate-title estate-desc">
+        <title id="estate-title">Engagement lifecycle</title>
+        <desc id="estate-desc">An engagement is created awaiting commercial confirmation, becomes confirmed when payment is pre-authorised, is activated by the nightly job on its start date, and completes after its end date. Maintain may cancel it or raise a dispute.</desc>
+        <defs>
+          <marker id="e-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="e-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- transitions -->
+        <line x1="78" y1="168" x2="112" y2="168" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#e-arrow)"/>
+        <line x1="304" y1="168" x2="384" y2="168" stroke="#FFC400" stroke-width="1.2" marker-end="url(#e-arrow-accent)"/>
+        <line x1="552" y1="168" x2="632" y2="168" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#e-arrow)"/>
+        <line x1="784" y1="168" x2="840" y2="168" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#e-arrow)"/>
+        <path d="M 212,200 V 264 Q 212,272 220,272 H 464 Q 472,272 472,280 V 284" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#e-arrow)"/>
+        <line x1="712" y1="200" x2="712" y2="284" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#e-arrow)"/>
+        <path d="M 908,200 V 304 Q 908,312 900,312 H 788" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#e-arrow)"/>
+
+        <!-- transition labels -->
+        <rect x="308" y="146" width="78" height="12" rx="2" fill="#07272D"/>
+        <text x="347" y="155" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">PRE-AUTHORISED</text>
+
+        <rect x="556" y="146" width="58" height="12" rx="2" fill="#07272D"/>
+        <text x="585" y="155" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">START DATE</text>
+
+        <rect x="790" y="146" width="52" height="12" rx="2" fill="#07272D"/>
+        <text x="816" y="155" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">END DATE</text>
+
+        <rect x="220" y="240" width="44" height="12" rx="2" fill="#07272D"/>
+        <text x="224" y="249" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">CANCEL</text>
+
+        <rect x="720" y="228" width="48" height="12" rx="2" fill="#07272D"/>
+        <text x="724" y="237" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">DISPUTE</text>
+
+        <rect x="820" y="288" width="48" height="12" rx="2" fill="#07272D"/>
+        <text x="844" y="297" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">DISPUTE</text>
+
+        <!-- start -->
+        <circle cx="72" cy="168" r="6" fill="#B5BEC0"/>
+
+        <!-- states -->
+        <rect x="120" y="136" width="184" height="64" rx="8" fill="#07272D"/>
+        <rect x="120" y="136" width="184" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="212" y="164" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Awaiting Commercial</text>
+        <text x="212" y="180" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">crew already committed</text>
+        <text x="212" y="192" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">identities still withheld</text>
+
+        <rect x="392" y="136" width="160" height="64" rx="8" fill="#07272D"/>
+        <rect x="392" y="136" width="160" height="64" rx="8" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="472" y="164" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Confirmed</text>
+        <text x="472" y="180" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">the disclosure gate</text>
+        <text x="472" y="192" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">both parties revealed</text>
+
+        <rect x="640" y="136" width="144" height="64" rx="8" fill="#07272D"/>
+        <rect x="640" y="136" width="144" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="712" y="164" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Active</text>
+        <text x="712" y="180" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">crew on site</text>
+
+        <rect x="848" y="136" width="120" height="64" rx="8" fill="#07272D"/>
+        <rect x="848" y="136" width="120" height="64" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <text x="908" y="164" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Completed</text>
+        <text x="908" y="180" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">actuals recorded</text>
+
+        <rect x="392" y="288" width="160" height="48" rx="8" fill="#07272D"/>
+        <rect x="392" y="288" width="160" height="48" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="472" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Cancelled</text>
+        <text x="472" y="324" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">crew dates released</text>
+
+        <rect x="640" y="288" width="144" height="48" rx="8" fill="#07272D"/>
+        <rect x="640" y="288" width="144" height="48" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="712" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Disputed</text>
+        <text x="712" y="324" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">notes recorded</text>
+
+        <!-- editorial callout -->
+        <text x="40" y="384" fill="#66A1AB" font-size="12" font-weight="400" font-family="Manrope, sans-serif">Confirmed to Active is the nightly job's move. A person attempting it is refused.</text>
+        <text x="40" y="402" fill="#66A1AB" font-size="12" font-weight="400" font-family="Manrope, sans-serif">Cancellation is the mirror image: only a person can do it, never the system.</text>
+
+        <!-- legend -->
+        <line x1="32" y1="428" x2="968" y2="428" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="446" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <rect x="120" y="436" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="144" y="446" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Where the parties learn who they are dealing with</text>
+        <rect x="496" y="436" width="16" height="12" rx="3" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="520" y="446" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">No longer occupying the crew</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 8.</b> Nobody turns up to an unfunded job. An engagement sits visibly at Awaiting
+      Commercial until Maintain records pre-authorisation, and one that reaches its start date while
+      still there is flagged overdue every night until somebody deals with it.
+    </figcaption>
+  </figure>
+
+  <div class="panel">
+    <h4>Two invariants the database refuses to break</h4>
+    <p>
+      <strong>No double-booking.</strong> An exclusion constraint on the crew row rejects any second
+      engagement for the same worker whose committed window overlaps an existing one in a committing
+      status. It is not a scheduling check that can race; it is a constraint, and a conflicting
+      insert simply fails.
+    </p>
+    <p>
+      <strong>The commercial marker is write-once.</strong> <code>commercial_confirmed_at</code> can
+      only be set alongside a pre-authorised payment, cannot be set from any status other than
+      awaiting commercial, and once set can never be changed. Because counterparty disclosure keys
+      off that column, the reveal cannot be forged or undone.
+    </p>
+  </div>
+
+  <h3>What is frozen, and why</h3>
+  <p>
+    At acceptance the match snapshot is copied onto the engagement and the estimate arithmetic is
+    fixed: expected hours, expected value, expected fee. A later edit to a rate band, the platform
+    fee or the underlying capacity line cannot move any of it.
+  </p>
+  <p>
+    A second snapshot is taken per worker. The crew's tickets and licences as they stood on the day
+    the engagement began are frozen onto the engagement row, with an explicit capture date. A site
+    induction six months later needs to know what a person held when they came on that job, not what
+    they hold today after changing employers. Where no trustworthy snapshot exists, the screen says
+    so rather than showing current data in its place.
+  </p>
+
+  <h3>Worker transfers</h3>
+  <p>
+    Crew change employers constantly in this industry, and the usual result is duplicate records and
+    two businesses each believing they hold the same person. The platform refuses to create the
+    duplicate. A worker's mobile and email are unique across the whole platform, so adding someone
+    who already exists is detected at intake and turns into a transfer request rather than a second
+    record.
+  </p>
+  <p>
+    The request is deliberately uninformative. It is raised from duplicate detection, never from a
+    search, and the response tells the requester nothing: not who currently employs the person, not
+    which worker record matched. Only on completion does the requesting side learn the identity.
+    A speculative request cannot be used to map a competitor's crew.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="tstate-title tstate-desc">
+        <title id="tstate-title">Worker transfer lifecycle</title>
+        <desc id="tstate-desc">A transfer request sits with the current employer, who may approve or decline it. After five Queensland business days without a decision it escalates to Maintain, who decides instead. The requesting company can withdraw at any point before a decision.</desc>
+        <defs>
+          <marker id="r-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#B5BEC0"/></marker>
+          <marker id="r-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FFC400"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- transitions -->
+        <line x1="78" y1="160" x2="116" y2="160" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#r-arrow)"/>
+        <line x1="320" y1="160" x2="428" y2="160" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#r-arrow)"/>
+        <path d="M 220,128 V 88 Q 220,80 228,80 H 780 Q 788,80 788,88 V 124" fill="none" stroke="#FFC400" stroke-width="1.2" marker-end="url(#r-arrow-accent)"/>
+        <line x1="600" y1="160" x2="708" y2="160" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#r-arrow)"/>
+        <path d="M 260,192 V 264 Q 260,272 268,272 H 460 Q 468,272 468,280 V 284" fill="none" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#r-arrow)"/>
+        <line x1="548" y1="192" x2="548" y2="284" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#r-arrow)"/>
+        <line x1="180" y1="192" x2="180" y2="284" stroke="#B5BEC0" stroke-width="1.2" marker-end="url(#r-arrow)"/>
+
+        <!-- transition labels -->
+        <rect x="324" y="138" width="86" height="12" rx="2" fill="#07272D"/>
+        <text x="367" y="147" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">5 WORKING DAYS</text>
+
+        <rect x="472" y="56" width="52" height="12" rx="2" fill="#07272D"/>
+        <text x="498" y="65" fill="#FFC400" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">APPROVE</text>
+
+        <rect x="608" y="138" width="52" height="12" rx="2" fill="#07272D"/>
+        <text x="634" y="147" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">APPROVE</text>
+
+        <rect x="268" y="240" width="52" height="12" rx="2" fill="#07272D"/>
+        <text x="272" y="249" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">DECLINE</text>
+
+        <rect x="556" y="228" width="52" height="12" rx="2" fill="#07272D"/>
+        <text x="560" y="237" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">DECLINE</text>
+
+        <rect x="188" y="228" width="60" height="12" rx="2" fill="#07272D"/>
+        <text x="192" y="237" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">WITHDRAW</text>
+
+        <!-- start -->
+        <circle cx="72" cy="160" r="6" fill="#B5BEC0"/>
+
+        <!-- states -->
+        <rect x="120" y="128" width="200" height="64" rx="8" fill="#07272D"/>
+        <rect x="120" y="128" width="200" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="220" y="156" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Awaiting Current Employer</text>
+        <text x="220" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">the only state with a decision</text>
+        <text x="220" y="184" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">the requester learns nothing yet</text>
+
+        <rect x="432" y="128" width="168" height="64" rx="8" fill="#07272D"/>
+        <rect x="432" y="128" width="168" height="64" rx="8" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="516" y="156" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Admin Review</text>
+        <text x="516" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">silence, or no employer</text>
+        <text x="516" y="184" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">Maintain decides</text>
+
+        <rect x="712" y="128" width="152" height="64" rx="8" fill="#07272D"/>
+        <rect x="712" y="128" width="152" height="64" rx="8" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="788" y="156" fill="#FFFFFF" font-size="13" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Completed</text>
+        <text x="788" y="172" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">employment has moved</text>
+        <text x="788" y="184" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">identity now disclosed</text>
+
+        <rect x="120" y="288" width="200" height="48" rx="8" fill="#07272D"/>
+        <rect x="120" y="288" width="200" height="48" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="220" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Withdrawn</text>
+        <text x="220" y="324" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">the requester pulled it, no mail sent</text>
+
+        <rect x="432" y="288" width="168" height="48" rx="8" fill="#07272D"/>
+        <rect x="432" y="288" width="168" height="48" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="516" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="middle">Declined</text>
+        <text x="516" y="324" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif" text-anchor="middle">optional reason retained</text>
+
+        <!-- legend -->
+        <line x1="32" y1="392" x2="968" y2="392" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="410" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <rect x="120" y="400" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="144" y="410" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Employment actually moves here</text>
+        <text x="400" y="410" fill="rgba(255,255,255,0.55)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Approval is blocked while the worker is on a committing engagement</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 9.</b> Five business days is counted in Brisbane weekdays with seeded Queensland
+      public holidays excluded. Escalation is what stops an employer's silence from holding a person
+      indefinitely, and it notifies both businesses when it happens.
+    </figcaption>
+  </figure>
+
+  <p>
+    Completion runs the consequences in the same transaction. The old employment row is closed and
+    stamped as ended by transfer, a new open row is created at the requesting company, the person
+    comes off the old employer's open capacity lines, and every live nomination naming them is
+    knocked out. Any proposal that falls below the minimum crew size as a result is automatically
+    declined.
+  </p>
+  <p>
+    A transfer can never strand a live job. Approval is refused outright while the person sits on a
+    committing engagement, so a move cannot leave a builder a hand short mid-window. Maintain has to
+    resolve the engagement first.
+  </p>
+</section>
+
+<!-- =========================================================
+     11  THE DATA MODEL
+     ========================================================= -->
+<section id="datamodel">
+  <div class="sec-head">
+    <span class="sec-num">11</span>
+    <h2>The data model</h2>
+  </div>
+
+  <p class="lead">
+    The database is the rulebook, not the storage. Thirty-seven tables and twelve enums carry the
+    state machines, the locking order, the uniqueness rules and the audit trail, and application
+    code is mostly the thing that calls them in the right order.
+  </p>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="er-title er-desc">
+        <title id="er-title">The relational spine</title>
+        <desc id="er-desc">Eight core tables: a company owns memberships and, through employment rows, workers. Capacity lines and demand lines meet in a match, and an accepted match has exactly one engagement.</desc>
+        <rect width="100%" height="100%" fill="#07272D"/>
+
+        <!-- relationships (drawn before entities) -->
+        <line x1="140" y1="256" x2="140" y2="328" stroke="#B5BEC0" stroke-width="1"/>
+        <line x1="388" y1="256" x2="388" y2="328" stroke="#B5BEC0" stroke-width="1"/>
+        <line x1="736" y1="176" x2="784" y2="176" stroke="#B5BEC0" stroke-width="1"/>
+        <line x1="816" y1="256" x2="816" y2="328" stroke="#B5BEC0" stroke-width="1"/>
+        <!-- demand_line to match, bridged over the match-to-engagement line -->
+        <path d="M 636,328 V 300 Q 636,292 644,292 H 808 a 8,8 0 0,1 16,0 H 864 Q 872,292 872,284 V 260" fill="none" stroke="#B5BEC0" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- cardinality -->
+        <text x="148" y="272" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">1</text>
+        <text x="148" y="322" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">N</text>
+        <text x="396" y="272" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">1</text>
+        <text x="396" y="322" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">N</text>
+        <text x="744" y="168" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">1</text>
+        <text x="768" y="168" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">N</text>
+        <text x="824" y="272" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">1</text>
+        <text x="824" y="322" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">1</text>
+        <text x="644" y="316" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">1</text>
+        <text x="880" y="276" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600">N</text>
+
+        <!-- company (focal) -->
+        <rect x="40" y="112" width="200" height="144" rx="6" fill="#07272D"/>
+        <rect x="40" y="112" width="200" height="144" rx="6" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <line x1="40" y1="148" x2="240" y2="148" stroke="rgba(255,196,0,0.5)" stroke-width="1"/>
+        <rect x="48" y="120" width="46" height="12" rx="2" fill="none" stroke="rgba(255,196,0,0.5)" stroke-width="0.8"/>
+        <text x="71" y="129" fill="#FFC400" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">ROOT</text>
+        <text x="232" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">company</text>
+        <text x="52" y="168" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># id</text>
+        <text x="52" y="188" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">legal_name</text>
+        <text x="52" y="208" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">abn (unique, checksum)</text>
+        <text x="52" y="228" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">status (company_status)</text>
+        <text x="52" y="248" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">contact_email</text>
+
+        <!-- worker -->
+        <rect x="288" y="112" width="200" height="144" rx="6" fill="#07272D"/>
+        <rect x="288" y="112" width="200" height="144" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <line x1="288" y1="148" x2="488" y2="148" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="296" y="120" width="52" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="322" y="129" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">PERSON</text>
+        <text x="480" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">worker</text>
+        <text x="300" y="168" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># id</text>
+        <text x="300" y="188" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">mobile, email (both unique)</text>
+        <text x="300" y="208" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; primary_trade_id</text>
+        <text x="300" y="228" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">status (worker_status)</text>
+        <text x="300" y="248" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">no company_id column</text>
+
+        <!-- capacity_line -->
+        <rect x="536" y="112" width="200" height="144" rx="6" fill="#07272D"/>
+        <rect x="536" y="112" width="200" height="144" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <line x1="536" y1="148" x2="736" y2="148" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="544" y="120" width="52" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="570" y="129" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">SUPPLY</text>
+        <text x="728" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">capacity_line</text>
+        <text x="548" y="168" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># id</text>
+        <text x="548" y="188" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; company_id</text>
+        <text x="548" y="208" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; trade_role_id</text>
+        <text x="548" y="228" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">available_from, available_until</text>
+        <text x="548" y="248" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">supplier_rate_cents</text>
+
+        <!-- match -->
+        <rect x="784" y="112" width="184" height="144" rx="6" fill="#07272D"/>
+        <rect x="784" y="112" width="184" height="144" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <line x1="784" y1="148" x2="968" y2="148" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="792" y="120" width="60" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="822" y="129" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TWO SIDED</text>
+        <text x="960" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">match</text>
+        <text x="796" y="168" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># id</text>
+        <text x="796" y="188" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; capacity_line_id</text>
+        <text x="796" y="208" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; demand_line_id</text>
+        <text x="796" y="228" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">status (match_status)</text>
+        <text x="796" y="248" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">supplier rate, fee_bp, buyer rate</text>
+
+        <!-- company_user -->
+        <rect x="40" y="328" width="200" height="128" rx="6" fill="#07272D"/>
+        <rect x="40" y="328" width="200" height="128" rx="6" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <line x1="40" y1="364" x2="240" y2="364" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="48" y="336" width="72" height="12" rx="2" fill="none" stroke="rgba(181,190,192,0.4)" stroke-width="0.8"/>
+        <text x="84" y="345" fill="rgba(181,190,192,0.9)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">MEMBERSHIP</text>
+        <text x="232" y="358" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">company_user</text>
+        <text x="52" y="384" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># user_id (Clerk subject)</text>
+        <text x="52" y="404" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; company_id</text>
+        <text x="52" y="424" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">accepted_at (null grants nothing)</text>
+        <text x="52" y="444" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">no role column</text>
+
+        <!-- worker_employment -->
+        <rect x="288" y="328" width="200" height="128" rx="6" fill="#07272D"/>
+        <rect x="288" y="328" width="200" height="128" rx="6" fill="rgba(255,255,255,0.05)" stroke="#B5BEC0" stroke-width="1"/>
+        <line x1="288" y1="364" x2="488" y2="364" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="296" y="336" width="60" height="12" rx="2" fill="none" stroke="rgba(181,190,192,0.4)" stroke-width="0.8"/>
+        <text x="326" y="345" fill="rgba(181,190,192,0.9)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TENANCY</text>
+        <text x="480" y="358" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">worker_employment</text>
+        <text x="300" y="384" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># id</text>
+        <text x="300" y="404" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; worker_id, &#8594; company_id</text>
+        <text x="300" y="424" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">end_date (null means current)</text>
+        <text x="300" y="444" fill="#8F9EA1" font-size="9" font-weight="500" font-family="Manrope, sans-serif">at most one open row per worker</text>
+
+        <!-- demand_line -->
+        <rect x="536" y="328" width="200" height="128" rx="6" fill="#07272D"/>
+        <rect x="536" y="328" width="200" height="128" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <line x1="536" y1="364" x2="736" y2="364" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="544" y="336" width="52" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="570" y="345" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">DEMAND</text>
+        <text x="728" y="358" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">demand_line</text>
+        <text x="548" y="384" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># id</text>
+        <text x="548" y="404" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; company_id, &#8594; trade_role_id</text>
+        <text x="548" y="424" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">start_date, end_date</text>
+        <text x="548" y="444" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">quantity, hours_per_week</text>
+
+        <!-- engagement -->
+        <rect x="784" y="328" width="184" height="128" rx="6" fill="#07272D"/>
+        <rect x="784" y="328" width="184" height="128" rx="6" fill="#0C1319" stroke="rgba(255,255,255,0.40)" stroke-width="1"/>
+        <line x1="784" y1="364" x2="968" y2="364" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <rect x="792" y="336" width="60" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="0.8"/>
+        <text x="822" y="345" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Manrope, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="0.08em">BOOKED</text>
+        <text x="960" y="358" fill="#FFFFFF" font-size="12" font-weight="600" font-family="Manrope, sans-serif" text-anchor="end">engagement</text>
+        <text x="796" y="384" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif"># id</text>
+        <text x="796" y="404" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">&#8594; match_id (unique)</text>
+        <text x="796" y="424" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">status (engagement_status)</text>
+        <text x="796" y="444" fill="#B5BEC0" font-size="9" font-weight="500" font-family="Manrope, sans-serif">commercial_confirmed_at</text>
+
+        <!-- legend -->
+        <line x1="32" y1="492" x2="968" y2="492" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="32" y="510" fill="rgba(255,255,255,0.55)" font-size="8" font-family="Manrope, sans-serif" font-weight="600" letter-spacing="0.08em">LEGEND</text>
+        <text x="120" y="510" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500"># primary key</text>
+        <text x="232" y="510" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">&#8594; foreign key</text>
+        <line x1="352" y1="506" x2="384" y2="506" stroke="#B5BEC0" stroke-width="1"/>
+        <text x="392" y="510" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Drawn relationship</text>
+        <line x1="536" y1="506" x2="568" y2="506" stroke="#B5BEC0" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="576" y="510" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Crosses another line, bridged</text>
+        <rect x="792" y="500" width="16" height="12" rx="3" fill="rgba(255,196,0,0.08)" stroke="#FFC400" stroke-width="1"/>
+        <text x="816" y="510" fill="rgba(255,255,255,0.70)" font-size="9" font-family="Manrope, sans-serif" font-weight="500">Aggregate root</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Figure 10.</b> The remaining foreign keys are shown in the field lists rather than drawn, to
+      keep the spine readable. Note what is <b>absent</b>: <code>worker</code> has no
+      <code>company_id</code>, and <code>company_user</code> has no role.
+    </figcaption>
+  </figure>
+
+  <h3>Invariants the schema enforces directly</h3>
+  <ul class="points">
+    <li>
+      <strong>One open employment per worker.</strong> A partial unique index means changing employer
+      can never produce a second live record for the same person.
+    </li>
+    <li>
+      <strong>No overlapping committed work.</strong> An exclusion constraint on worker and committed
+      window, scoped to the committing statuses, refuses the insert.
+    </li>
+    <li>
+      <strong>One engagement per match.</strong> A unique constraint on the match reference.
+    </li>
+    <li>
+      <strong>One person, one company.</strong> The membership table's primary key is the Clerk user
+      id.
+    </li>
+    <li>
+      <strong>A valid ABN or none.</strong> A check constraint implements the modulus-89 algorithm,
+      and a second constraint forbids the empty string.
+    </li>
+    <li>
+      <strong>A demand line cannot be re-parented</strong> into another company's request, enforced
+      by a composite foreign key rather than by application care.
+    </li>
+  </ul>
+
+  <h3>Derived rather than stored</h3>
+  <p>
+    A great deal of what the interface shows is computed at read time and never written down, which
+    is what keeps it from going stale. A worker's marketplace state, whether they read as available,
+    partially available, engaged or unavailable, is a pure function of their account status, their
+    live capacity lines and their committing engagements. The fill level of a requirement counts
+    distinct committed workers. The commit level of a capacity line is derived the same way.
+  </p>
+  <p>
+    Only three line statuses are ever actually written: open, withdrawn and expired. The
+    partially-committed and fully-committed values exist in the enum and are read as live everywhere,
+    but no code path stores them.
+  </p>
+
+  <h3>Every write leaves evidence</h3>
+  <p>
+    Each privileged mutation is a security-definer function that locks its rows, re-reads the facts,
+    performs the change and appends an audit event <em>in the same transaction</em>. There is no
+    state change without an attributed audit row, which is the difference between a defensible
+    record and an email thread when two businesses disagree about a cancellation.
+  </p>
+  <p>
+    The functions also carry optimistic concurrency. The caller passes the status, and sometimes the
+    exact snapshot, that it displayed to the operator. If the live row has moved, the write is
+    rejected with a refresh-and-retry error rather than silently overwriting somebody else's
+    decision. Two operators working the same queue cannot both commit.
+  </p>
+</section>
+
+<!-- =========================================================
+     12  THE DAILY CLOCK
+     ========================================================= -->
+<section id="clock">
+  <div class="sec-head">
+    <span class="sec-num">12</span>
+    <h2>The daily clock</h2>
+  </div>
+
+  <p class="lead">
+    Availability, credentials and proposals all go stale on their own. One scheduled transaction a
+    night is what keeps the board honest, and without it the exchange would quietly show work that
+    is no longer there.
+  </p>
+
+  <p>
+    A Vercel Cron calls one route at midnight Brisbane time with a bearer secret. A deployment with
+    no secret configured rejects every call, so an unprotected environment is closed rather than
+    open. The route refuses to run without an exact Brisbane calendar date, and Brisbane is treated
+    as a fixed offset because Queensland has no daylight saving.
+  </p>
+
+  <h3>What the run does, in order</h3>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Nightly state transitions</caption>
+      <thead>
+        <tr><th scope="col">Pass</th><th scope="col">Effect</th><th scope="col">Consequence</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Credential ageing</td>
+          <td>Recomputes every company document and worker qualification into Current, Expiring Soon or Expired against today's Brisbane date.</td>
+          <td>Warnings go to the owning company and to Maintain thirty days out.</td>
+        </tr>
+        <tr>
+          <td>Compliance knockout</td>
+          <td>An expired mandatory company document, or an expired required worker ticket with no valid replacement, knocks that person out of live nominations.</td>
+          <td>A proposal that falls below the minimum crew size is automatically declined. Committed work is flagged for review, never cancelled.</td>
+        </tr>
+        <tr>
+          <td>Line expiry</td>
+          <td>Capacity lines past their last available day and demand lines past their end date move to Expired.</td>
+          <td>They stop appearing in the matching queue the next morning with nobody tidying up.</td>
+        </tr>
+        <tr>
+          <td>Match expiry</td>
+          <td>A proposal expires seven Brisbane days after it was made, or when either underlying line's window has passed.</td>
+          <td>Holds release and both lines become editable again.</td>
+        </tr>
+        <tr>
+          <td>Engagement activation</td>
+          <td>A confirmed engagement whose start date has arrived becomes Active.</td>
+          <td>This is the move a person is forbidden from making by hand.</td>
+        </tr>
+        <tr>
+          <td>Engagement completion</td>
+          <td>An active engagement whose end date has passed becomes Completed. The final on-site day still counts as committed.</td>
+          <td>The crew's committed dates release with it.</td>
+        </tr>
+        <tr>
+          <td>Overdue flag</td>
+          <td>An engagement that has reached its start date without a commercial trigger gets one audit row per day.</td>
+          <td>It shows as Overdue in the console. This is the pass that catches crew about to walk on site unpaid.</td>
+        </tr>
+        <tr>
+          <td>Transfer escalation</td>
+          <td>A request untouched for five Brisbane business days moves to Admin Review.</td>
+          <td>Both companies and Maintain are notified.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    All of it happens inside a single transaction that first takes a marketplace-wide advisory lock,
+    then locks every company and every worker in a fixed order. A partial run therefore cannot half
+    move the market, and it cannot send email about a transition that did not commit.
+  </p>
+
+  <h3>Email is an outbox, not a side effect</h3>
+  <p>
+    Nothing is ever sent without a durable row. Every notification is written to the database first,
+    then handed to the provider, so a delivery failure is visible and re-sendable and never blocks
+    or rolls back the workflow it belonged to. Sending happens after the transaction commits, with a
+    time budget, a per-send deadline and an idempotency key per attempt.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Delivery outcomes</caption>
+      <thead>
+        <tr><th scope="col">Outcome</th><th scope="col">Meaning</th><th scope="col">What happens next</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="status"><span class="dot dot-active"></span><span class="lab">Sent</span></span></td>
+          <td>The provider acknowledged and returned a message id.</td>
+          <td>Terminal.</td>
+        </tr>
+        <tr>
+          <td><span class="status"><span class="dot dot-scheduled"></span><span class="lab">Deferred</span></span></td>
+          <td>Another worker holds a live lease on the row.</td>
+          <td>Picked up on a later sweep.</td>
+        </tr>
+        <tr>
+          <td><span class="status"><span class="dot dot-critical"></span><span class="lab">Failed</span></span></td>
+          <td>An explicit provider rejection, or a local configuration error.</td>
+          <td>Never retried automatically. Only an identified Maintain admin can re-send it.</td>
+        </tr>
+        <tr>
+          <td><span class="status"><span class="dot dot-overdue"></span><span class="lab">Outcome unknown</span></span></td>
+          <td>A timeout, an aborted request, a server error, or a database failure after the provider had already accepted.</td>
+          <td>Recorded as uncertain and never downgraded to a plain failure. A retry reuses the same idempotency key so the recipient cannot be mailed twice.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    Email bodies deliberately carry no rates, no worker names and no counterparty names before the
+    related engagement is confirmed. They state the event and deep-link into the application, so
+    forwarding a notification cannot leak a competitor's pricing or a supplier's crew. The
+    disclosure rule lives in one template, which is what makes it auditable.
+  </p>
+</section>
+
+<!-- =========================================================
+     13  WHY IT IS BUILT THIS WAY
+     ========================================================= -->
+<section id="why">
+  <div class="sec-head">
+    <span class="sec-num">13</span>
+    <h2>Why it is built this way</h2>
+  </div>
+
+  <p class="lead">
+    Almost every structural decision in this system is an answer to a specific way that sharing
+    crew between competing businesses goes wrong. Read as a list, the architecture is a list of
+    those failures and the thing that makes each one impossible.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Failure, and the mechanism that prevents it</caption>
+      <thead>
+        <tr><th scope="col">What would otherwise go wrong</th><th scope="col">What prevents it</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A competitor learns your rates, and the exchange becomes a price-discovery tool used against you.</td>
+          <td>Rate asymmetry is two different database views. The base table is unreachable from a tenant session, so there is no query that could carry the other side's number.</td>
+        </tr>
+        <tr>
+          <td>A business uses the platform to find out who is short-staffed, or to map a competitor's crew.</td>
+          <td>Counterparty identity is withheld until a write-once marker is set, and that marker cannot be set without pre-authorised payment. Transfer requests disclose neither the current employer nor which worker matched.</td>
+        </tr>
+        <tr>
+          <td>The same person is promised to two sites for the same week.</td>
+          <td>A database exclusion constraint. Not a check that can race; a constraint that refuses the insert.</td>
+        </tr>
+        <tr>
+          <td>Two businesses each hold a record for the same person, and payroll and licensing become ambiguous.</td>
+          <td>Platform-wide uniqueness on contact details, one open employment row per person, and a formal transfer the current employer must decide.</td>
+        </tr>
+        <tr>
+          <td>An employer sits on a transfer request to keep someone from leaving.</td>
+          <td>Five Brisbane business days of silence escalates the decision to Maintain, and both sides are told.</td>
+        </tr>
+        <tr>
+          <td>A crew is pulled off a live site because a certificate lapsed overnight.</td>
+          <td>Expiry knocks people out of <em>pending</em> proposals, but committed work is flagged for a human to review and never cancelled automatically.</td>
+        </tr>
+        <tr>
+          <td>An agreed price moves because somebody edited a rate band afterwards.</td>
+          <td>The supplier rate, the fee and the derived buyer rate are snapshotted onto the match at proposal and copied to the engagement.</td>
+        </tr>
+        <tr>
+          <td>Crew arrive on a job nobody has agreed to pay for.</td>
+          <td>The engagement sits visibly at Awaiting Commercial, and the nightly job raises an overdue flag the moment its start date passes.</td>
+        </tr>
+        <tr>
+          <td>Unverified businesses trade on the exchange.</td>
+          <td>Capacity and demand intake require status Active, enforced in the server action and again under a row lock inside the transaction.</td>
+        </tr>
+        <tr>
+          <td>A suspended business keeps trading because the interface only hid the buttons.</td>
+          <td>Company status is a row level security predicate, so a suspended company cannot write even by calling the database API directly.</td>
+        </tr>
+        <tr>
+          <td>Two operators working the same queue overwrite each other.</td>
+          <td>Every privileged function takes the status the operator was shown and refuses the write if the row has moved.</td>
+        </tr>
+        <tr>
+          <td>A screen shows an empty roster because a token expired, and somebody staffs a job off it.</td>
+          <td>Reads fail visibly. A failed read renders an error, never a zero, and a null metric prints the word Unavailable rather than a number.</td>
+        </tr>
+        <tr>
+          <td>A dispute six months later comes down to whose email is more convincing.</td>
+          <td>Every state change writes an attributed audit event in its own transaction, including the frozen ticket snapshot for each worker on the job.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>The concierge model is a product decision, not a stopgap</h3>
+  <p>
+    Every introduction being made by a person is what lets the platform sit between direct
+    competitors at all. Maintain holds both sides of the book, so neither business has to publish
+    its client list, its labour costs or its crew to the other. Automating the introduction is on
+    the roadmap; automating it before the trust exists would be the wrong order.
+  </p>
+  <p>
+    The same reasoning runs through the concierge entry path. A site supervisor with a phone and no
+    appetite for a web form can still trade: a Maintain admin transcribes the capacity, the
+    requirement or the crew onto that company's own records, every such write is flagged as
+    admin-entered, carries an evidence note and is attributed to the acting staff member. A relayed
+    decision also carries an expected-version token, so a phone call that changes between the
+    conversation and the keystroke is rejected rather than recorded as agreement.
+  </p>
+
+  <h3>Operating a marketplace with a small team</h3>
+  <p>
+    One deployable, one database and two managed services is a deliberate ceiling on operational
+    surface. A build is refused outright when its environment variables are missing, malformed or
+    mismatched, because a deployment that reports success and then serves errors on every page is
+    the worst available failure. A separate check makes it structurally hard to ship the key that
+    bypasses every tenant boundary into a browser bundle.
+  </p>
+</section>
+
+<!-- =========================================================
+     14  OPERATIONAL NOTES
+     ========================================================= -->
+<section id="notes">
+  <div class="sec-head">
+    <span class="sec-num">14</span>
+    <h2>Operational notes</h2>
+  </div>
+
+  <p class="lead">
+    A few behaviours in the current build are correct but surprising, and are worth knowing before
+    reading the code or diagnosing a support question.
+  </p>
+
+  <ul class="points">
+    <li>
+      <strong>The verification checklist never blocks approval.</strong> A strict, checklist-enforcing
+      activation path exists in the database, but both admin screens route a Pending-to-Active
+      request to the staff-override function instead. In production the checklist informs the
+      decision and records what was outstanding; it does not veto it. An audit consumer can tell the
+      two paths apart by the presence of <code>approval_mode</code>.
+    </li>
+    <li>
+      <strong>Pending cannot be suspended.</strong> The only exits from Pending are Active and
+      Closed. Suspension applies to a business that was trading.
+    </li>
+    <li>
+      <strong>Rejection is not a status.</strong> It is an audit event plus an email. Anything that
+      counts rejected accounts has to read the audit trail, not the company table.
+    </li>
+    <li>
+      <strong>There is no company-level role.</strong> Every accepted member has full authority.
+      Anything that needs a read-only company seat needs a schema change, not a settings change.
+    </li>
+    <li>
+      <strong>Staff MFA is conditional.</strong> The second factor is required only for accounts
+      that have enabled two-factor in Clerk. An account that has never enrolled reaches the whole
+      admin console on one factor.
+    </li>
+    <li>
+      <strong>A blocked Active company gets the suspended wording.</strong> The
+      <code>requireActiveCompany</code> guard distinguishes Pending from everything else, so a Closed
+      company acting on a match is told it is suspended. The behaviour is correct; the copy is not
+      precise.
+    </li>
+    <li>
+      <strong>A role change in Clerk lands on the next request.</strong> There is no Clerk webhook,
+      which is exactly why the edge gate defers the role decision to the request itself.
+    </li>
+    <li>
+      <strong>Middleware is named <code>proxy.ts</code>.</strong> Searching for
+      <code>middleware.ts</code> in this repository finds nothing and gives the false impression
+      there is no edge gate.
+    </li>
+  </ul>
+
+  <div class="panel">
+    <h4>How this document was produced</h4>
+    <p>
+      Every claim here was read out of the repository rather than recalled from a design note. Each
+      subsystem was mapped from its migrations, server actions and route files, and then checked a
+      second time by an independent pass whose job was to refute the first. Where a markdown
+      document and the code disagreed, the code was taken as the answer and the disagreement was
+      resolved in favour of what actually runs.
+    </p>
+  </div>
+</section>
+
+    </main>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <h4>About this document</h4>
+      <p>
+        Written from the maintain-workforce repository: the migrations under <code>supabase/</code>,
+        the server actions under <code>src/lib/actions/</code> and the route tree under
+        <code>src/app/</code>. Where a design note and the code disagreed, the code was taken as
+        the answer.
+      </p>
+    </div>
+    <div>
+      <h4>Source of truth</h4>
+      <ul>
+        <li>Commit b3cb456</li>
+        <li>Branch main</li>
+        <li>21 September 2026</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Related</h4>
+      <ul>
+        <li>PRODUCT.md, strategy and voice</li>
+        <li>DESIGN.md, the Hi-Vis Standard</li>
+        <li>AGENTS.md, build conventions</li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section[id]'));
+  var links = {};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a'), function (a) {
+    links[a.getAttribute('href').slice(1)] = a;
+  });
+
+  // Wayfinding: mark the section the reader is actually in. Purely additive,
+  // so the document reads correctly with scripting switched off.
+  var current = null;
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var id = e.target.id;
+      if (id === current) return;
+      if (current && links[current]) links[current].removeAttribute('aria-current');
+      current = id;
+      if (links[id]) links[id].setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+  sections.forEach(function (s) { spy.observe(s); });
+})();
+</script>
+
+</body>
+</html>

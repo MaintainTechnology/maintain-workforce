@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { z } from "zod";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { requireCompanyAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { addWorkerQualification, setWorkerAccountStatus } from "@/lib/actions/worker";
@@ -38,7 +39,7 @@ function credentialStatus(expiry: string | null, today: string): DocumentStatus 
 
 const NOTICES: Record<string, string> = {
   "status-updated": "Worker status updated.",
-  "qualification-added": "Qualification recorded.",
+  "qualification-added": "Qualification saved.",
   "not-permitted": "That change is not yours to make.",
   invalid: "That entry was not valid.",
   "file-too-large": "Evidence documents are capped at 10 MB.",
@@ -366,12 +367,12 @@ export default async function WorkerDetailPage({
               accept="application/pdf,image/jpeg,image/png"
               className="min-h-11 w-full rounded-(--radius-md) border border-hairline bg-black-2 px-(--space-4) py-(--space-3) text-body text-on-dark file:mr-(--space-3) file:border-0 file:bg-transparent file:text-on-dark-muted"
             />
-            <span className="text-sm text-on-dark-muted">PDF, JPG or PNG, up to 10 MB.</span>
+            <span className="text-sm text-on-dark-muted">
+              PDF, JPG or PNG, up to 10 MB. You can save the qualification details without a file.
+            </span>
           </label>
           <div className="sm:col-span-2">
-            <button type="submit" className={BTN_PRIMARY}>
-              Record qualification
-            </button>
+            <PendingSubmitButton className={BTN_PRIMARY} idleLabel="Save qualification" />
           </div>
         </form>}
       </section>

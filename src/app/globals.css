@@ -303,7 +303,8 @@ details[open] .mw-menu-panel {
 /* Workspace chrome is a functional floating layer. Keep it solid when the
    reader requests less transparency or greater contrast. */
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .mw-workspace header {
+  .mw-workspace header,
+  .mw-admin header {
     background-color: var(--mw-ink-teal);
     backdrop-filter: none;
   }

@@ -20,6 +20,7 @@ vi.mock("@/lib/actions/company", () => ({
   removeCompanyAdmin: vi.fn(),
   updateCompanyProfile: vi.fn(),
   uploadCompanyDocument: vi.fn(),
+  saveCompanyDocumentForm: vi.fn(),
 }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => database() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => database() }));
